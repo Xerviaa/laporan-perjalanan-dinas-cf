@@ -11,15 +11,13 @@ export default function TemplateCPIB({ data }: { data: any }) {
   return (
     <div className="font-serif text-[11pt] leading-relaxed text-justify text-black">
       
-      {/* JUDUL LAPORAN */}
+      {/* JUDUL LAPORAN (Sesuai PDF) */}
       <div className="text-center mb-8">
         <h3 className="font-bold uppercase text-[12pt] leading-tight">
-          Laporan Perjalanan Dinas Kegiatan Inspeksi Cara Penanganan Ikan Yang Baik (CPIB) Di Atas Kapal
+          LAPORAN PERJALANAN DINAS<br/>
+          KEGIATAN INSPEKSI CARA PENANGANAN IKAN YANG BAIK (CPIB)<br/>
+          DI ATAS KAPAL
         </h3>
-        <h4 className="font-bold uppercase text-[12pt] mt-2">
-          {data.namaPerusahaan || "KM. NAGA MAS PERKASA"}
-        </h4>
-        <p className="font-bold mt-1">{tanggalIndo || "3 September 2026"}</p>
       </div>
 
       {/* I. DASAR PELAKSANAAN */}
@@ -38,15 +36,18 @@ export default function TemplateCPIB({ data }: { data: any }) {
       {/* II. PETUGAS PELAKSANA */}
       <div className="mb-4">
         <h4 className="font-bold">II. Petugas Pelaksana</h4>
-        <p className="mt-1">Petugas Pelaksana :</p>
-        <div className="pl-4">
-          {data.petugasPelaksana ? (
-            data.petugasPelaksana.split(',').map((petugas: string, index: number) => (
-              <p key={index}>{String.fromCharCode(97 + index)}. {petugas.trim()}</p>
-            ))
-          ) : (
-            <p>a. Siti Nurlatifah, S.St.Pi., M.Si</p>
-          )}
+        <div className="flex mt-1">
+          <span className="w-40">Petugas Pelaksana</span>
+          <span className="mr-2">:</span>
+          <div>
+            {data.petugasPelaksana ? (
+              data.petugasPelaksana.split(',').map((petugas: string, index: number) => (
+                <p key={index}>{String.fromCharCode(97 + index)}. {petugas.trim()}</p>
+              ))
+            ) : (
+              <p>a. Siti Nurlatifah, S.St.Pi., M.Si</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -54,7 +55,13 @@ export default function TemplateCPIB({ data }: { data: any }) {
       <div className="mb-4">
         <h4 className="font-bold">III. Pendahuluan</h4>
         <p className="indent-8 mt-1">
-          Penanganan Ikan adalah suatu rangkaian kegiatan dan/atau perlakuan terhadap ikan tanpa mengubah bentuk dasar. Cara Penanganan Ikan yang Baik adalah pedoman dan tata cara penanganan ikan hasil tangkapan di atas kapal penangkap ikan dan/atau kapal pengangkut ikan serta pembongkaran ikan dari kapal perikanan di pelabuhan perikanan untuk memenuhi persyaratan pengendalian mutu pada usaha penangkapan ikan. Ikan adalah segala jenis organisme yang seluruh atau sebagian dari siklus hidupnya berada di dalam lingkungan perairan. Sertifikat Cara Penanganan Ikan yang Baik adalah sertifikat yang diberikan kepada kapal penangkap ikan dan/atau kapal pengangkut ikan yang menyatakan bahwa kapal tersebut telah memenuhi persyaratan Pengendalian Mutu pada kegiatan Penangkapan Ikan.
+          Penanganan Ikan adalah suatu rangkaian kegiatan dan/atau perlakuan terhadap ikan tanpa mengubah bentuk dasar. Cara Penanganan Ikan yang Baik adalah pedoman dan tata cara penanganan ikan hasil tangkapan di atas kapal penangkap ikan dan/atau kapal pengangkut ikan serta pembongkaran ikan dari kapal perikanan di pelabuhan perikanan untuk memenuhi persyaratan pengendalian mutu pada usaha penangkapan ikan. Ikan adalah segala jenis organisme yang seluruh atau sebagian dari siklus hidupnya berada di dalam lingkungan perairan.
+        </p>
+        <p className="indent-8 mt-1">
+          Sertifikat Cara Penanganan Ikan yang Baik adalah sertifikat yang diberikan kepada kapal penangkap ikan dan/atau kapal pengangkut ikan yang menyatakan bahwa kapal tersebut telah memenuhi persyaratan Pengendalian Mutu pada kegiatan Penangkapan Ikan. Penangkapan Ikan adalah kegiatan untuk memperoleh Ikan di perairan yang tidak dalam keadaan dibudidayakan dengan alat dan cara yang mengedepankan asas keberlanjutan dan kelestarian, termasuk kegiatan yang menggunakan kapal untuk memuat, mengangkut, menyimpan, mendinginkan, menangani, mengolah, dan/atau mengawetkannya.
+        </p>
+        <p className="indent-8 mt-1">
+          Pengendalian Mutu adalah semua kegiatan yang meliputi inspeksi, surveilan, dan pengambilan contoh dalam rangka memberikan jaminan mutu dan keamanan hasil perikanan. Berdasarkan permen KP No. 16 Tahun 2024 terkait dengan kewenangan pengendalian penerbitan sertifikat jaminan mutu dan keamanan hasil perikanan antara lain sertifikat Cara Penanganan Ikan yang Baik dilaksnakaan oleh Kepala Badan yang mempunyai tugas menyelenggarakan pengendalian dan pengawasan mutu dan keamanan hasil kelautan dan perikanan berdasarkan hasil pembinaan dari direktorat jenderal yang mempunyai tugas menyelenggarakan perumusan dan pelaksanaan kebijakan di bidang pengelolaan perikanan tangkap sesuai dengan ketentuan peraturan perundang-undangan. Sertifikat Cara Penanganan Ikan yang Baik merupakan persyaratan bagi unit pengolahan ikan dalam menerima bahan baku yang berasal dari usaha penangkapan dan/atau pengangkutan ikan dalam sistem penjaminan mutu dan keamanan hasil perikanan.
         </p>
       </div>
 
@@ -77,9 +84,40 @@ export default function TemplateCPIB({ data }: { data: any }) {
         </p>
       </div>
 
-      {/* VI. PENUTUP */}
+      {/* VI. PELAKSANAAN KEGIATAN (Ini yang sebelumnya terlewat) */}
       <div className="mb-4">
-        <h4 className="font-bold">VI. Penutup</h4>
+        <h4 className="font-bold">VI. Pelaksanaan Kegiatan</h4>
+        <p className="indent-8 mt-1">
+          Inspeksi dapat dilakukan setelah adanya surat perintah dari pusat berdasarkan pengajuan permohonan kepada Kepala Balai PPMHKP Denpasar, dengan persyaratan sebagai berikut:
+        </p>
+        <div className="pl-4 mt-1 space-y-1">
+          <p>a. Nomor induk berusaha dan perizinan berusaha subsector Penangkapan Ikan atau subsector pengangkutan ikan;</p>
+          <p>b. Salinan Sertifikat Pelatihan Cara Penanganan Ikan yang Baik</p>
+          <p>c. Surat kesediaan dilakukan inspeksi pengendalian mutu</p>
+          <p>d. Salinan Sertifikat Kelaikan Kapal Perikanan – Laik Simpan sebagai hasil pembinaan dari Ditjen Perikanan Tangkap</p>
+        </div>
+        <p className="indent-8 mt-1">
+          Setelah kelengkapan terpenuhi maka pusat akan melakukan verifikasi dan membuat surat perintah untuk dilakukan inspeksi CPIB diatas kapal oleh inspektur mutu/asisten inspektur mutu.
+        </p>
+        <p className="indent-8 mt-1">
+          Sistem, mekanisme dan prosedur inspeksi CPIB diatas kapal adalah sebagai berikut
+        </p>
+        <div className="pl-4 mt-1 space-y-1">
+          <p>a. Pelaku usaha yang telah mendapatkan pembinaan dari Ditjen Perikanan Tangkap melakukan permohonan melalui system SIAPMUTU</p>
+          <p>b. Verifikasi kelengkapan dan keabsahan dokumen oleh petugas</p>
+          <p>c. Inspeksi CPIB oleh petugas</p>
+          <p>d. Review oleh Tim Teknis</p>
+          <p>e. Rekomendasi penerbitan sertifikat CPIB</p>
+          <p>f. Penerbitan sertifikat CPIB melalui system SIAPMUTU</p>
+        </div>
+        <p className="indent-8 mt-1">
+          Jangka waktu terbitnya sertifikat adalah 10 hari kerja sejak dokumen permohonan dinyatakan lengkap dan sesuai. Inspeksi jaminan mutu dilakukan jika persyaratan fasilitas, peralatan dan prosedur penanganan selama pembongkaran ikan dari Kapal Perikanan di pelabuhan perikanan atau pelabuhan yang ditunjuk, standar fasilitas penanganan dan penyimpanan ikan di Kapal Perikanan; dan standar prosedur penanganan ikan di Kapal Perikanan dalam penerapan Hazard Analysis Critical Control Points (HACCP)*
+        </p>
+      </div>
+
+      {/* VII. PENUTUP */}
+      <div className="mb-4">
+        <h4 className="font-bold">VII. Penutup</h4>
         <p className="indent-8 mt-1">
           Demikian laporan ini dibuat dari hasil kegiatan yang dilaksanakan dengan sebaik-baiknya dengan harapan dapat memberikan jaminan keamanan hasil perikanan yang diekspor ataupun yang dikonsumsi lokal oleh masyarakat Indonesia. Pelaksanaan kegiatan ini lebih baik dengan adanya peralatan dan perlengkapan yang disediakan oleh kantor Balai PPMHKP Denpasar sehingga hasil yang didapat lebih sempurna.
         </p>
@@ -88,18 +126,18 @@ export default function TemplateCPIB({ data }: { data: any }) {
       {/* TANDA TANGAN PETUGAS */}
       <div className="mt-8 mb-8">
         <p>Petugas Pelaksana :</p>
-        <div className="mt-4 space-y-4 pl-4">
+        <div className="mt-2 space-y-1">
           {data.petugasPelaksana ? (
             data.petugasPelaksana.split(',').map((petugas: string, index: number) => (
               <div key={index} className="flex">
                 <span className="w-[60%]">{String.fromCharCode(97 + index)}. {petugas.trim()}</span>
-                <span>(........................... )</span>
+                <span>(....................)</span>
               </div>
             ))
           ) : (
             <div className="flex">
               <span className="w-[60%]">a. Siti Nurlatifah, S.St.Pi., M.Si</span>
-              <span>(........................... )</span>
+              <span>(....................)</span>
             </div>
           )}
         </div>
@@ -110,7 +148,6 @@ export default function TemplateCPIB({ data }: { data: any }) {
         <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
         <div className="grid grid-cols-2 gap-4">
           {data.fotoKegiatan ? (
-             // Jika fotoKegiatan di database berupa array JSON (["url1", "url2"])
              JSON.parse(data.fotoKegiatan).map((url: string, i: number) => (
                 <div key={i} className="mb-4">
                   <img src={url} alt={`Dokumentasi ${i}`} className="w-full h-auto object-cover border border-gray-300" />
