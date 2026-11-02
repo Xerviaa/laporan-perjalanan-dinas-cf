@@ -13,3 +13,26 @@
 .animate-marquee:hover {
   animation-play-state: paused; /* Berhenti saat di-hover agar bisa dibaca */
 }
+@media print {
+  /* Sembunyikan elemen navigasi (sidebar, tombol) saat di-print */
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Atur ukuran kertas A4 dan margin */
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+  
+  /* Paksa background jadi putih */
+  body, html {
+    background-color: white !important;
+    -webkit-print-color-adjust: exact;
+  }
+}
+@media print {
+  .page-break-before-always {
+    page-break-before: always;
+  }
+}
