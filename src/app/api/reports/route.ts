@@ -4,21 +4,24 @@ import { desc } from "drizzle-orm";
 
 export async function GET() {
   try {
-    const db = await getDb(process.env.DATABASE_URL!);
+    // 1. Panggil getDb() tanpa parameter karena sudah pakai Hyperdrive
+    const db = getDb();
+    
+    // 2. Ambil data dari database
     const allReports = await db.select().from(reports).orderBy(desc(reports.createdAt));
 
-    // 1. Tentukan tanggal awal bulan ini dan awal bulan depan
+    // 3. Tentukan tanggal awal bulan ini dan awal bulan depan
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-    // 2. Filter laporan: Hanya ambil yang di-upload bulan ini
+    // 4. Filter laporan: Hanya ambil yang di-upload bulan ini (untuk leaderboard)
     const reportsThisMonth = allReports.filter(r => {
       const createdAt = new Date(r.createdAt!);
       return createdAt >= startOfMonth && createdAt <= endOfMonth;
     });
 
-    // 3. Tambahkan status tepat waktu / terlambat
+    // 5. Tambahkan status tepat waktu / terlambat
     const reportsWithStatus = allReports.map(r => {
       let status = "TEPAT WAKTU";
       if (r.deadline && new Date(r.createdAt!) > new Date(r.deadline)) {
@@ -27,28 +30,30 @@ export async function GET() {
       return { ...r, status };
     });
 
-    // 4. Hitung Leaderboard KHUSUS bulan ini
+    // 6. Hitung Leaderboard KHUSUS bulan ini
     const pegawaiMap = new Map();
     
     reportsThisMonth.forEach(report => {
-      if (!pegawaiMap.has(report.uploadedBy)) {
-        pegawaiMap.set(report.uploadedBy, { 
-          nama: report.uploadedBy, 
+      // GUNAKAN KOLOM pembuatLaporan (sesuai form baru)
+      const namaPegawai = report.pembuatLaporan || "Tidak Diketahui";
+      
+      if (!pegawaiMap.has(namaPegawai)) {
+        pegawaiMap.set(namaPegawai, { 
+          nama: namaPegawai, 
           totalLaporan: 0, 
           totalTepatWaktu: 0 
         });
       }
       
-      const data = pegawaiMap.get(report.uploadedBy);
+      const data = pegawaiMap.get(namaPegawai);
       data.totalLaporan += 1;
 
-      // Cek apakah upload sebelum deadline
       if (report.deadline && new Date(report.createdAt!) <= new Date(report.deadline)) {
         data.totalTepatWaktu += 1;
       }
     });
 
-    // 5. Urutkan berdasarkan yang paling banyak tepat waktu
+    // 7. Urutkan leaderboard
     const leaderboard = Array.from(pegawaiMap.values())
       .sort((a, b) => b.totalTepatWaktu - a.totalTepatWaktu || b.totalLaporan - a.totalLaporan)
       .slice(0, 5);
@@ -59,6 +64,7 @@ export async function GET() {
       leaderboard: leaderboard 
     });
   } catch (error: any) {
+    console.error("API Reports Error:", error);
     return Response.json({ status: "error", message: error.message }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // IMPORT ROUTER
 import Layout from '@/components/Layout';
 import { daftarPegawai } from '@/data/pegawai';
 import { daftarPerusahaan } from '@/data/perusahaan';
@@ -18,10 +19,17 @@ const jenisKegiatanData: Record<string, Record<string, string[]>> = {
   }
 };
 
+// --- TIPE DATA UNTUK PETUGAS ---
+type PetugasType = {
+  nama: string;
+  peran: string;
+  peranManual: string;
+};
+
 export default function UploadPage() {
-  const [fileDokumen, setFileDokumen] = useState<File | null>(null);
+  const router = useRouter(); // INISIALISASI ROUTER
+  
   const [fotoKegiatan, setFotoKegiatan] = useState<File[]>([]);
-  const [fotoLokasi, setFotoLokasi] = useState<File[]>([]);
   
   const [pembuatLaporan, setPembuatLaporan] = useState('');
   const [kategori, setKategori] = useState('');
@@ -32,7 +40,9 @@ export default function UploadPage() {
   const [isManualPerusahaan, setIsManualPerusahaan] = useState(false);
   const [tanggal, setTanggal] = useState('');
   const [noSurat, setNoSurat] = useState('');
-  const [petugas, setPetugas] = useState<string[]>(['']); 
+  
+  const [petugas, setPetugas] = useState<PetugasType[]>([{ nama: '', peran: '', peranManual: '' }]); 
+  
   const [status, setStatus] = useState('');
   const [isUploading, setIsUploading] = useState(false);
 
@@ -43,6 +53,8 @@ export default function UploadPage() {
   const [activePetugasIndex, setActivePetugasIndex] = useState<number | null>(null);
   const [searchName, setSearchName] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -64,6 +76,13 @@ export default function UploadPage() {
   const filteredPegawai = daftarPegawai.filter(nama => 
     nama.toLowerCase().includes(searchName.toLowerCase())
   );
+
+  const getTtdUrl = (namaLengkap: string) => {
+    if (!namaLengkap) return "";
+    const namaTanpaGelar = namaLengkap.split(',')[0];
+    const namaFile = namaTanpaGelar.toLowerCase().replace(/[.]/g, '').trim().replace(/\s+/g, '-');
+    return `/tanda-tangan/${namaFile}.png`;
+  };
 
   const handleSelectPerusahaan = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedNama = e.target.value;
@@ -89,77 +108,95 @@ export default function UploadPage() {
   };
 
   const handleAddPetugas = () => {
-    if (petugas.length < 10) setPetugas([...petugas, '']);
+    if (petugas.length < 10) setPetugas([...petugas, { nama: '', peran: '', peranManual: '' }]);
   };
 
   const handleRemovePetugas = (index: number) => {
     if (petugas.length > 1) setPetugas(petugas.filter((_, i) => i !== index));
   };
 
-  const handlePetugasChange = (index: number, value: string) => {
-    const newPetugas = [...petugas]; newPetugas[index] = value; setPetugas(newPetugas);
+  const handlePetugasChange = (index: number, field: keyof PetugasType, value: string) => {
+    const newPetugas = [...petugas];
+    newPetugas[index][field] = value;
+    if (field === 'peran' && value !== 'Lainnya') {
+      newPetugas[index].peranManual = '';
+    }
+    setPetugas(newPetugas);
   };
 
-  // --- VALIDASI FOTO (MAKS 5MB PER FILE) ---
   const handleFotoKegiatanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 5) return alert('Maksimal 5 foto kegiatan!');
-    
-    for (const file of files) {
-      if (file.size > 5 * 1024 * 1024) {
-        return alert(`File ${file.name} melebihi 5MB!`);
-      }
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (fotoKegiatan.length >= 5) {
+      return alert('Maksimal 5 foto kegiatan!');
     }
-    setFotoKegiatan(files);
+
+    if (file.size > 5 * 1024 * 1024) {
+      return alert(`File ${file.name} melebihi 5MB!`);
+    }
+
+    setFotoKegiatan(prev => [...prev, file]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleFotoLokasiChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length > 2) return alert('Maksimal 2 foto lokasi!');
-    
-    for (const file of files) {
-      if (file.size > 5 * 1024 * 1024) {
-        return alert(`File ${file.name} melebihi 5MB!`);
-      }
-    }
-    setFotoLokasi(files);
+  const handleRemoveFoto = (index: number) => {
+    setFotoKegiatan(fotoKegiatan.filter((_, i) => i !== index));
   };
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fileDokumen) return setStatus('Pilih file dokumen dulu!');
     if (!pembuatLaporan || !kategori || !jenis || !detailKegiatan || !namaPerusahaan || !tanggal || !noSurat) {
       return setStatus('Lengkapi semua data wajib!');
     }
 
+    const isPetugasValid = petugas.every(p => {
+      if (p.nama.trim() === '') return true; 
+      if (p.peran === '') return false; 
+      if (p.peran === 'Lainnya' && p.peranManual.trim() === '') return false; 
+      return true;
+    });
+
+    if (!isPetugasValid) {
+      return setStatus('Lengkapi nama dan peran (tugas) untuk setiap petugas!');
+    }
+
     setIsUploading(true);
-    setStatus('Mengunggah dokumen & foto...');
+    setStatus('Mengunggah data & foto...');
 
     const fullJenisKegiatan = `${kategori} - ${jenis} - ${detailKegiatan}`;
 
+    const petugasString = petugas
+      .filter(p => p.nama.trim() !== '')
+      .map(p => {
+        const peranFinal = p.peran === 'Lainnya' ? p.peranManual : p.peran;
+        return `${p.nama} (${peranFinal})`;
+      })
+      .join(', ');
+
     const formData = new FormData();
-    formData.append('fileDokumen', fileDokumen);
     formData.append('pembuatLaporan', pembuatLaporan);
     formData.append('jenisKegiatan', fullJenisKegiatan);
     formData.append('namaPerusahaan', namaPerusahaan);
     formData.append('alamatPerusahaan', alamatPerusahaan);
     formData.append('tanggal', tanggal);
     formData.append('noSurat', noSurat);
-    formData.append('petugasPelaksana', petugas.filter(p => p !== '').join(', '));
-    
+    formData.append('petugasPelaksana', petugasString);
     fotoKegiatan.forEach(foto => formData.append('fotoKegiatan', foto));
-    fotoLokasi.forEach(foto => formData.append('fotoLokasi', foto));
 
     try {
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
       
       if (res.ok) {
-        setStatus('Upload berhasil!');
-        setPembuatLaporan(''); setKategori(''); setJenis(''); setDetailKegiatan('');
-        setNamaPerusahaan(''); setAlamatPerusahaan(''); setIsManualPerusahaan(false); 
-        setTanggal(''); setNoSurat(''); setPetugas(['']); setFileDokumen(null);
-        setFotoKegiatan([]); setFotoLokasi([]);
+        setStatus('Upload berhasil! Mengalihkan ke halaman arsip...');
+        
+        // LOGIKA REDIRECT KE HALAMAN ARSIP
+        setTimeout(() => {
+          router.push('/arsip'); 
+          router.refresh(); // Memastikan data terbaru di halaman arsip termuat
+        }, 1500); // Jeda 1.5 detik agar user sempat melihat pesan sukses
+        
       } else {
         setStatus(`Gagal: ${data.message}`);
       }
@@ -177,7 +214,7 @@ export default function UploadPage() {
     <Layout>
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-slate-800">Upload Laporan</h1>
-        <p className="text-slate-500 mt-2">Unggah dokumen laporan perjalanan dinas beserta dokumentasi.</p>
+        <p className="text-slate-500 mt-2">Unggah data perjalanan dinas beserta dokumentasi.</p>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm max-w-3xl p-8">
@@ -254,7 +291,16 @@ export default function UploadPage() {
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Nama Perusahaan</label>
               {isManualPerusahaan ? (
-                <input type="text" value={namaPerusahaan} onChange={(e) => setNamaPerusahaan(e.target.value)} className="w-full border border-slate-300 p-3 rounded-lg outline-none" placeholder="Ketik nama perusahaan..." required />
+                <div>
+                  <input type="text" value={namaPerusahaan} onChange={(e) => setNamaPerusahaan(e.target.value)} className="w-full border border-slate-300 p-3 rounded-lg outline-none" placeholder="Ketik nama perusahaan..." required />
+                  <button 
+                    type="button" 
+                    onClick={() => { setIsManualPerusahaan(false); setNamaPerusahaan(''); setAlamatPerusahaan(''); }} 
+                    className="text-xs text-blue-600 hover:underline mt-1 cursor-pointer"
+                  >
+                    ← Kembali pilih dari daftar
+                  </button>
+                </div>
               ) : (
                 <select value={namaPerusahaan || ''} onChange={handleSelectPerusahaan} className="w-full border border-slate-300 p-3 rounded-lg outline-none bg-white cursor-pointer" required>
                   <option value="">-- Pilih Perusahaan --</option>
@@ -265,7 +311,12 @@ export default function UploadPage() {
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Alamat Perusahaan</label>
-              <input type="text" value={alamatPerusahaan} onChange={(e) => setAlamatPerusahaan(e.target.value)} className="w-full border border-slate-300 p-3 rounded-lg outline-none" placeholder="Alamat otomatis terisi" required />
+              <input 
+                type="text" value={alamatPerusahaan} onChange={(e) => setAlamatPerusahaan(e.target.value)} 
+                readOnly={!isManualPerusahaan} 
+                className={`w-full border border-slate-300 p-3 rounded-lg outline-none ${!isManualPerusahaan ? 'bg-slate-100 text-slate-500 cursor-not-allowed' : 'bg-white'}`} 
+                placeholder="Alamat otomatis terisi" required 
+              />
             </div>
           </div>
 
@@ -285,24 +336,85 @@ export default function UploadPage() {
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Petugas Pelaksana (Maks. 10 Orang)</label>
             {petugas.map((p, index) => (
-              <div key={index} className="flex gap-2 mb-2 relative">
-                <div className="flex-1 relative">
-                  <input type="text" value={p} onChange={(e) => handlePetugasChange(index, e.target.value)} onFocus={() => setActivePetugasIndex(index)} className="w-full border border-slate-300 p-3 rounded-lg outline-none" placeholder={`Nama Petugas ${index + 1}`} required />
+              <div key={index} className="flex flex-col xl:flex-row gap-3 mb-3 p-3 border border-slate-200 rounded-lg bg-slate-50 relative items-start">
+                
+                <div className="flex-1 relative w-full">
+                  <label className="block text-[10px] font-semibold text-slate-500 mb-1">Nama Petugas</label>
+                  <input 
+                    type="text" 
+                    value={p.nama} 
+                    onChange={(e) => handlePetugasChange(index, 'nama', e.target.value)} 
+                    onFocus={() => setActivePetugasIndex(index)} 
+                    className="w-full border border-slate-300 p-3 rounded-lg outline-none bg-white text-sm" 
+                    placeholder={`Nama Petugas ${index + 1}`} 
+                    required 
+                  />
                   {activePetugasIndex === index && (
                     <div className="absolute z-20 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-xl max-h-40 overflow-y-auto">
                       <div className="sticky top-0 bg-white p-2 border-b">
                         <input type="text" placeholder="Cari nama..." value={searchName} onChange={(e) => setSearchName(e.target.value)} className="w-full border border-slate-200 p-2 rounded text-xs outline-none" autoFocus />
                       </div>
                       {filteredPegawai.map((nama, i) => (
-                        <div key={i} className="p-2 text-sm hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0" onClick={() => { handlePetugasChange(index, nama); setActivePetugasIndex(null); setSearchName(''); }}>
+                        <div key={i} className="p-2 text-sm hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0" onClick={() => { handlePetugasChange(index, 'nama', nama); setActivePetugasIndex(null); setSearchName(''); }}>
                           {nama}
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
+
+                <div className="w-full xl:w-40 flex flex-col">
+                  <label className="block text-[10px] font-semibold text-slate-500 mb-1">Tanda Tangan</label>
+                  <div className="border border-slate-300 rounded-lg bg-white h-[46px] flex items-center justify-center overflow-hidden px-2">
+                    {p.nama ? (
+                      <img 
+                        src={getTtdUrl(p.nama)} 
+                        alt="TTD" 
+                        className="h-full object-contain" 
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.parentElement!.innerHTML = '<span class="text-[10px] text-slate-400 text-center">Belum ada TTD</span>';
+                        }}
+                      />
+                    ) : (
+                      <span className="text-[10px] text-slate-300">-</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="w-full xl:w-48 flex flex-col gap-2">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-500 mb-1">Peran / Tugas</label>
+                    <select 
+                      value={p.peran} 
+                      onChange={(e) => handlePetugasChange(index, 'peran', e.target.value)}
+                      className="w-full border border-slate-300 p-3 rounded-lg outline-none bg-white cursor-pointer text-sm"
+                      required
+                    >
+                      <option value="" disabled>-- Pilih Peran --</option>
+                      <option value="Ketua">Ketua</option>
+                      <option value="Anggota">Anggota</option>
+                      <option value="Observer">Observer</option>
+                      <option value="Lainnya">Lainnya (Isi Manual)</option>
+                    </select>
+                  </div>
+                  
+                  {p.peran === 'Lainnya' && (
+                    <input 
+                      type="text"
+                      value={p.peranManual}
+                      onChange={(e) => handlePetugasChange(index, 'peranManual', e.target.value)}
+                      className="w-full border border-slate-300 p-2.5 rounded-lg outline-none bg-white text-sm"
+                      placeholder="Ketik peran..."
+                      required
+                    />
+                  )}
+                </div>
+
                 {petugas.length > 1 && (
-                  <button type="button" onClick={() => handleRemovePetugas(index)} className="px-3 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 cursor-pointer">X</button>
+                  <button type="button" onClick={() => handleRemovePetugas(index)} className="px-3 py-3 bg-red-100 text-red-600 font-bold rounded-lg hover:bg-red-200 cursor-pointer w-full xl:w-auto mt-4 xl:mt-5">
+                    X
+                  </button>
                 )}
               </div>
             ))}
@@ -311,59 +423,47 @@ export default function UploadPage() {
             )}
           </div>
 
-          {/* UPLOAD FOTO KEGIATAN & LOKASI */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Foto Kegiatan (Maks. 5 file, 5MB/file)</label>
+          {/* UPLOAD FOTO KEGIATAN */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Foto Kegiatan (Maks. 5 file, 5MB/file)</label>
+            
+            {fotoKegiatan.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                {fotoKegiatan.map((file, index) => (
+                  <div key={index} className="relative group rounded-lg overflow-hidden border border-slate-200 shadow-sm aspect-square bg-slate-100">
+                    <img src={URL.createObjectURL(file)} alt={`Preview ${index}`} className="w-full h-full object-cover" />
+                    <button 
+                      type="button" 
+                      onClick={() => handleRemoveFoto(index)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer shadow-md"
+                    >
+                      X
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {fotoKegiatan.length < 5 && (
               <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:bg-slate-50 relative">
-                <input type="file" multiple accept="image/*" onChange={handleFotoKegiatanChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleFotoKegiatanChange} 
+                  ref={fileInputRef}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                />
                 <div className="text-slate-500">
                   <span className="text-3xl block mb-2">📸</span>
-                  <span className="text-sm">Klik untuk upload foto kegiatan</span>
-                  <p className="text-xs text-slate-400 mt-1">{fotoKegiatan.length} file terpilih</p>
+                  <span className="text-sm">Klik untuk tambah foto kegiatan ({fotoKegiatan.length}/5)</span>
+                  <p className="text-xs text-slate-400 mt-1">Bisa pilih satu per satu</p>
                 </div>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Foto Lokasi (Maks. 2 file, 5MB/file)</label>
-              <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:bg-slate-50 relative">
-                <input type="file" multiple accept="image/*" onChange={handleFotoLokasiChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-                <div className="text-slate-500">
-                  <span className="text-3xl block mb-2">📍</span>
-                  <span className="text-sm">Klik untuk upload foto lokasi</span>
-                  <p className="text-xs text-slate-400 mt-1">{fotoLokasi.length} file terpilih</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* UPLOAD DOKUMEN UTAMA */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">File Dokumen Laporan (PDF/Docx)</label>
-            {!fileDokumen ? (
-              <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center hover:bg-slate-50 relative">
-                <input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setFileDokumen(e.target.files?.[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required />
-                <div className="text-slate-500">
-                  <span className="text-3xl block mb-2">📄</span>
-                  <span className="text-sm">Klik untuk upload dokumen utama</span>
-                </div>
-              </div>
-            ) : (
-              <div className="border border-blue-200 bg-blue-50 rounded-lg p-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">📄</span>
-                  <div>
-                    <p className="text-sm font-bold text-blue-700">{fileDokumen.name}</p>
-                    <p className="text-xs text-blue-500">{(fileDokumen.size / 1024 / 1024).toFixed(2)} MB</p>
-                  </div>
-                </div>
-                <button type="button" onClick={() => setFileDokumen(null)} className="p-2 text-red-500 hover:bg-red-100 rounded-full cursor-pointer">X</button>
               </div>
             )}
           </div>
 
           {/* TOMBOL SUBMIT */}
-          <button type="submit" disabled={isUploading || !fileDokumen} className={`w-full font-semibold p-3 rounded-lg transition-colors shadow-sm flex justify-center items-center gap-2 ${isUploading || !fileDokumen ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'}`}>
+          <button type="submit" disabled={isUploading} className={`w-full font-semibold p-3 rounded-lg transition-colors shadow-sm flex justify-center items-center gap-2 ${isUploading ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'}`}>
             {isUploading ? (
               <><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Memproses Unggah...</>
             ) : (

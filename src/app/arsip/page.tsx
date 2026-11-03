@@ -89,8 +89,8 @@ export default function ArsipPage() {
 
   // Filter Berdasarkan Pencarian dan Tanggal
   const filteredReports = reports.filter(r => {
-    const matchSearch = r.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        r.uploadedBy.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchSearch = (r.namaPerusahaan && r.namaPerusahaan.toLowerCase().includes(searchTerm.toLowerCase())) || 
+                        (r.pembuatLaporan && r.pembuatLaporan.toLowerCase().includes(searchTerm.toLowerCase()));
     
     let matchDate = true;
     if (startDate || endDate) {
@@ -166,8 +166,8 @@ export default function ArsipPage() {
   };
 
   // --- FUNGSI COPY LINK ---
-  const handleCopyLink = (key: string, id: number) => {
-    const url = `${window.location.origin}/api/download?key=${key}`;
+  const handleCopyLink = (id: number) => {
+    const url = `${window.location.origin}/cetak/${id}`;
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
@@ -181,7 +181,10 @@ export default function ArsipPage() {
       const res = await fetch(`/api/reports/${editData.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: editData.title, tanggal: editData.tanggal }),
+        body: JSON.stringify({ 
+          namaPerusahaan: editData.namaPerusahaan, 
+          tanggal: editData.tanggal 
+        }),
       });
 
       if (res.ok) {
@@ -211,8 +214,9 @@ export default function ArsipPage() {
 
     const excelData = dataToExport.map((report, index) => ({
       'No': index + 1,
-      'Judul Laporan': report.title,
-      'Pelaksana': report.uploadedBy,
+      'Nama Perusahaan': report.namaPerusahaan || '-',
+      'Jenis Kegiatan': report.jenisKegiatan || '-',
+      'Pembuat Laporan': report.pembuatLaporan || '-',
       'Tanggal Dinas': report.tanggal || '-',
       'Tanggal Upload': new Date(report.createdAt).toLocaleDateString('id-ID'),
     }));
@@ -220,7 +224,7 @@ export default function ArsipPage() {
     const worksheet = XLSX.utils.json_to_sheet(excelData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Laporan Dinas');
-    worksheet['!cols'] = [{ wch: 5 }, { wch: 40 }, { wch: 30 }, { wch: 15 }, { wch: 15 }];
+    worksheet['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 30 }, { wch: 30 }, { wch: 15 }, { wch: 15 }];
     
     const fileName = selectedExportMonth === 'semua' 
       ? `Semua_Laporan_${new Date().toISOString().split('T')[0]}.xlsx`
@@ -239,8 +243,9 @@ export default function ArsipPage() {
 
     if (dataToPrint.length === 0) return alert('Tidak ada file yang dipilih untuk dicetak');
 
+    // Buka halaman cetak untuk setiap laporan yang dipilih
     dataToPrint.forEach((report) => {
-      window.open(`/api/download?key=${report.fileKey}`, '_blank');
+      window.open(`/cetak/${report.id}`, '_blank');
     });
 
     closePrintModal();
@@ -277,7 +282,7 @@ export default function ArsipPage() {
             <span>📊</span> Ekspor
           </button>
           <button onClick={() => setShowPrintModal(true)} className="flex-1 md:flex-none bg-slate-600 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-slate-700 text-xs md:text-sm font-semibold shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer">
-            <span>🖨️</span> Cetak
+            <span>🖨️</span> Cetak Masal
           </button>
         </div>
       </div>
@@ -290,7 +295,7 @@ export default function ArsipPage() {
           </div>
           
           <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-            <input type="text" placeholder="🔍 Cari..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-56" />
+            <input type="text" placeholder="🔍 Cari Nama/Perusahaan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-64" />
           </div>
         </div>
 
@@ -372,8 +377,8 @@ export default function ArsipPage() {
                               <table className="w-full text-sm text-left whitespace-nowrap md:whitespace-normal">
                                 <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-xs">
                                   <tr>
-                                    <th className="px-4 py-3">Judul Laporan</th>
-                                    <th className="px-4 py-3 hidden md:table-cell">Pelaksana</th>
+                                    <th className="px-4 py-3">Nama Perusahaan</th>
+                                    <th className="px-4 py-3 hidden md:table-cell">Pembuat Laporan</th>
                                     <th className="px-4 py-3 hidden lg:table-cell">Tanggal Dinas</th>
                                     <th className="px-4 py-3 text-center">Aksi</th>
                                   </tr>
@@ -382,10 +387,10 @@ export default function ArsipPage() {
                                   {monthData.reports.map((report: any) => (
                                     <tr key={report.id} className="hover:bg-slate-50 transition-colors">
                                       <td className="px-4 py-3">
-                                        <p className="font-semibold text-blue-600 line-clamp-1">{report.title}</p>
-                                        <p className="text-[10px] text-slate-400 mt-1">Diunggah: {new Date(report.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                        <p className="font-semibold text-blue-600 line-clamp-1">{report.namaPerusahaan}</p>
+                                        <p className="text-[10px] text-slate-400 mt-1">{report.jenisKegiatan}</p>
                                       </td>
-                                      <td className="px-4 py-3 text-slate-700 truncate max-w-[150px] hidden md:table-cell">{report.uploadedBy}</td>
+                                      <td className="px-4 py-3 text-slate-700 truncate max-w-[150px] hidden md:table-cell">{report.pembuatLaporan}</td>
                                       <td className="px-4 py-3 text-slate-500 font-medium hidden lg:table-cell">
                                         {report.tanggal ? new Date(report.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-'}
                                       </td>
@@ -397,12 +402,12 @@ export default function ArsipPage() {
                                           <button onClick={() => setEditData(report)} title="Edit" className="p-1.5 bg-slate-100 text-slate-500 rounded-md hover:bg-blue-50 hover:text-blue-600 cursor-pointer">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
                                           </button>
-                                          <button onClick={() => handleCopyLink(report.fileKey, report.id)} title="Salin Link" className={`p-1.5 rounded-md cursor-pointer ${copiedId === report.id ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                                          <button onClick={() => handleCopyLink(report.id)} title="Salin Link Cetak" className={`p-1.5 rounded-md cursor-pointer ${copiedId === report.id ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                                             {copiedId === report.id ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>}
                                           </button>
-                                          <a href={`/preview?key=${encodeURIComponent(report.fileKey)}&title=${encodeURIComponent(report.title)}&pelaksana=${encodeURIComponent(report.uploadedBy)}&bulan=${encodeURIComponent(monthData.fullMonth)}&from=arsip`} title="Preview" className="bg-blue-50 text-blue-600 px-2 py-1.5 rounded-md hover:bg-blue-600 hover:text-white font-medium text-xs transition-colors flex items-center gap-1 cursor-pointer">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                                            <span className="hidden md:inline">Preview</span>
+                                          <a href={`/cetak/${report.id}`} target="_blank" title="Cetak Laporan" className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 font-medium text-xs transition-colors flex items-center gap-1 cursor-pointer">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                            <span className="hidden md:inline">Cetak PDF</span>
                                           </a>
                                         </div>
                                       </td>
@@ -427,11 +432,11 @@ export default function ArsipPage() {
       {editData && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">Edit Laporan</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-4">Edit Data Laporan</h3>
             <form onSubmit={handleSaveEdit} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Judul Laporan</label>
-                <input type="text" value={editData.title} onChange={(e) => setEditData({ ...editData, title: e.target.value })} className="w-full border border-slate-300 p-2 rounded-lg outline-none" required />
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Perusahaan</label>
+                <input type="text" value={editData.namaPerusahaan || ''} onChange={(e) => setEditData({ ...editData, namaPerusahaan: e.target.value })} className="w-full border border-slate-300 p-2 rounded-lg outline-none" required />
               </div>
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">Tanggal Dinas</label>
@@ -497,7 +502,7 @@ export default function ArsipPage() {
                   {getReportsByMonth(selectedExportMonth).map(r => (
                     <label key={r.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
                       <input type="checkbox" className="w-4 h-4 cursor-pointer" checked={selectedExportIds.includes(r.id)} onChange={(e) => { if (e.target.checked) { setSelectedExportIds([...selectedExportIds, r.id]); } else { setSelectedExportIds(selectedExportIds.filter(id => id !== r.id)); } }} />
-                      <span className="text-sm text-slate-600 truncate">{r.title} - {r.uploadedBy}</span>
+                      <span className="text-sm text-slate-600 truncate">{r.namaPerusahaan} - {r.pembuatLaporan}</span>
                     </label>
                   ))}
                 </div>
@@ -514,7 +519,7 @@ export default function ArsipPage() {
         </div>
       )}
 
-      {/* --- MODAL CETAK --- */}
+      {/* --- MODAL CETAK MASAL --- */}
       {showPrintModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-4 md:p-6 rounded-xl shadow-2xl w-full max-w-lg">
@@ -554,7 +559,7 @@ export default function ArsipPage() {
                   {getReportsByMonth(selectedPrintMonth).map(r => (
                     <label key={r.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
                       <input type="checkbox" className="w-4 h-4 cursor-pointer" checked={selectedPrintIds.includes(r.id)} onChange={(e) => { if (e.target.checked) { setSelectedPrintIds([...selectedPrintIds, r.id]); } else { setSelectedPrintIds(selectedPrintIds.filter(id => id !== r.id)); } }} />
-                      <span className="text-sm text-slate-600 truncate">{r.title} - {r.uploadedBy}</span>
+                      <span className="text-sm text-slate-600 truncate">{r.namaPerusahaan} - {r.pembuatLaporan}</span>
                     </label>
                   ))}
                 </div>
