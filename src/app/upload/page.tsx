@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Tetap diimport untuk tombol manual
+import { useRouter } from 'next/navigation';
 import Layout from '@/components/Layout';
 import { daftarPegawai } from '@/data/pegawai';
-import { daftarPerusahaan } from '@/data/perusahaan';
+import { perusahaanSKP, perusahaanHACCP } from '@/data/perusahaan'; // IMPORT BARU
 
 // --- DATA BERTINGKAT UNTUK JENIS KEGIATAN ---
 const jenisKegiatanData: Record<string, Record<string, string[]>> = {
@@ -45,7 +45,7 @@ export default function UploadPage() {
   
   const [status, setStatus] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadBerhasil, setUploadBerhasil] = useState(false); // State baru untuk cek status berhasil
+  const [uploadBerhasil, setUploadBerhasil] = useState(false);
 
   const [showPembuatDropdown, setShowPembuatDropdown] = useState(false);
   const [searchPembuat, setSearchPembuat] = useState('');
@@ -94,7 +94,15 @@ export default function UploadPage() {
     } else {
       setIsManualPerusahaan(false);
       setNamaPerusahaan(selectedNama);
-      const company = daftarPerusahaan.find(c => c.nama === selectedNama);
+      
+      // Cari alamat di daftar yang sesuai (SKP atau HACCP)
+      let company = null;
+      if (detailKegiatan.includes("HACCP")) {
+        company = perusahaanHACCP.find(c => c.nama === selectedNama);
+      } else {
+        company = perusahaanSKP.find(c => c.nama === selectedNama);
+      }
+      
       if (company) setAlamatPerusahaan(company.alamat);
       else setAlamatPerusahaan('');
     }
@@ -192,9 +200,8 @@ export default function UploadPage() {
       
       if (res.ok) {
         setStatus('Upload berhasil!');
-        setUploadBerhasil(true); // Set berhasil, tapi jangan redirect
+        setUploadBerhasil(true); 
         
-        // Kosongkan form
         setPembuatLaporan(''); setKategori(''); setJenis(''); setDetailKegiatan('');
         setNamaPerusahaan(''); setAlamatPerusahaan(''); setIsManualPerusahaan(false); 
         setTanggal(''); setNoSurat(''); 
@@ -224,7 +231,6 @@ export default function UploadPage() {
         {status && (
           <div className={`p-4 mb-6 rounded-lg text-sm font-medium flex flex-col gap-2 ${status.includes('berhasil') ? 'bg-green-50 text-green-700' : status.includes('Gagal') ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
             <span>{status}</span>
-            {/* TOMBOL MANUAL KE ARSIP JIKA BERHASIL */}
             {uploadBerhasil && (
               <button 
                 onClick={() => router.push('/arsip')}
@@ -238,7 +244,6 @@ export default function UploadPage() {
         
         <form onSubmit={handleUpload} className="space-y-6">
           
-          {/* ... (SISA KODE FORM SAMA PERSIS SEPERTI SEBELUMNYA) ... */}
           {/* NAMA PEMBUAT LAPORAN */}
           <div className="relative z-40" ref={pembuatRef}>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Nama Pembuat Laporan</label>
@@ -317,7 +322,14 @@ export default function UploadPage() {
               ) : (
                 <select value={namaPerusahaan || ''} onChange={handleSelectPerusahaan} className="w-full border border-slate-300 p-3 rounded-lg outline-none bg-white cursor-pointer" required>
                   <option value="">-- Pilih Perusahaan --</option>
-                  {daftarPerusahaan.map((p, i) => <option key={i} value={p.nama}>{p.nama}</option>)}
+                  
+                  {/* LOGIKA FILTER PERUSAHAAN */}
+                  {detailKegiatan.includes("HACCP") ? (
+                    perusahaanHACCP.map((p, i) => <option key={i} value={p.nama}>{p.nama}</option>)
+                  ) : (
+                    perusahaanSKP.map((p, i) => <option key={i} value={p.nama}>{p.nama}</option>)
+                  )}
+
                   <option value="manual">Lainnya (Isi Manual)</option>
                 </select>
               )}
