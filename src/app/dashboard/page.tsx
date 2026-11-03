@@ -135,10 +135,22 @@ export default function DashboardPage() {
                   ) : (
                     recentReports.map((report) => (
                       <tr key={report.id} className="hover:bg-slate-50 transition-colors">
+                        
+                        {/* BAGIAN YANG DIUBAH: NAMA PERUSAHAAN & JENIS KEGIATAN SEJAJAR */}
                         <td className="px-4 md:px-6 py-4">
-                          <p className="font-semibold text-blue-600 line-clamp-1">{report.title}</p>
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <p className="font-semibold text-blue-600 line-clamp-1">
+                              {report.namaPerusahaan || report.title}
+                            </p>
+                            {report.jenisKegiatan && (
+                              <p className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 whitespace-nowrap">
+                                {report.jenisKegiatan}
+                              </p>
+                            )}
+                          </div>
                           <p className="text-[10px] md:text-xs text-slate-400 mt-1">Diunggah: {new Date(report.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                         </td>
+                        
                         <td className="px-4 md:px-6 py-4 text-slate-700 truncate max-w-[150px] hidden md:table-cell">{report.uploadedBy}</td>
                         <td className="px-4 md:px-6 py-4 text-slate-500 font-medium">{report.tanggal ? new Date(report.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</td>
                       </tr>

@@ -388,10 +388,14 @@ export default function ArsipPage() {
 
                                     return (
                                       <tr key={report.id} className="hover:bg-slate-50 transition-colors">
+                                        {/* BAGIAN YANG DIUBAH: NAMA PERUSAHAAN & JENIS KEGIATAN SEJAJAR */}
                                         <td className="px-4 py-3">
-                                          <p className="font-semibold text-blue-600 line-clamp-1">{report.namaPerusahaan}</p>
-                                          <p className="text-[10px] text-slate-400 mt-1">{report.jenisKegiatan}</p>
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                            <p className="font-semibold text-blue-600 line-clamp-1">{report.namaPerusahaan}</p>
+                                            <p className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 whitespace-nowrap">{report.jenisKegiatan}</p>
+                                          </div>
                                         </td>
+                                        
                                         <td className="px-4 py-3 text-slate-700 hidden md:table-cell">
                                           {/* TAMPILKAN NAMA + GELAR & TANGGAL UPLOAD */}
                                           <p className="font-medium text-slate-800">{report.uploadedBy}</p>
