@@ -6,12 +6,8 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     
-    // Ambil file utama (dokumen)
-    const fileDokumen = formData.get('fileDokumen') as File;
-    
-    // Ambil file foto (bisa banyak)
+    // Ambil foto kegiatan (bisa banyak)
     const filesKegiatan = formData.getAll('fotoKegiatan') as File[];
-    const filesLokasi = formData.getAll('fotoLokasi') as File[];
 
     // Ambil data teks
     const pembuatLaporan = formData.get('pembuatLaporan') as string;
@@ -22,7 +18,8 @@ export async function POST(request: Request) {
     const tanggal = formData.get('tanggal') as string;
     const petugasPelaksana = formData.get('petugasPelaksana') as string;
 
-    if (!fileDokumen || !pembuatLaporan || !jenisKegiatan || !namaPerusahaan) {
+    // VALIDASI: Hanya cek data teks, tidak perlu cek fileDokumen lagi
+    if (!pembuatLaporan || !jenisKegiatan || !namaPerusahaan) {
       return Response.json({ status: "error", message: "Data wajib belum lengkap" }, { status: 400 });
     }
 
@@ -38,10 +35,7 @@ export async function POST(request: Request) {
       return key;
     };
 
-    // 1. Upload Dokumen Utama
-    const keyDokumen = await uploadToR2(fileDokumen, 'dokumen');
-
-    // 2. Upload Foto Kegiatan (Loop)
+    // 1. Upload Foto Kegiatan (Loop)
     const keysKegiatan: string[] = [];
     for (const file of filesKegiatan) {
       if (file.size > 0) {
@@ -50,22 +44,14 @@ export async function POST(request: Request) {
       }
     }
 
-    // 3. Upload Foto Lokasi (Loop)
-    const keysLokasi: string[] = [];
-    for (const file of filesLokasi) {
-      if (file.size > 0) {
-        const key = await uploadToR2(file, 'foto-lokasi');
-        keysLokasi.push(key);
-      }
-    }
-
     const deadlineDate = new Date();
     deadlineDate.setDate(deadlineDate.getDate() + 3);
 
-    const db = await getDb(process.env.DATABASE_URL!);
+    // 2. Simpan ke Database menggunakan Hyperdrive (getDb tanpa parameter)
+    const db = getDb();
     await db.insert(reports).values({
-      title: `${jenisKegiatan} - ${namaPerusahaan}`,
-      fileKey: keyDokumen,
+      title: `${jenisKegiatan} - ${namaPerusahaan}`, // Title dibuat otomatis dari jenis & perusahaan
+      fileKey: "-", // Karena dokumen sudah dihapus, kita isi string kosong atau tanda hubung
       uploadedBy: pembuatLaporan,
       jenisKegiatan: jenisKegiatan,
       noSurat: noSurat,
@@ -77,7 +63,7 @@ export async function POST(request: Request) {
       isRewarded: false,
       // Simpan array keys sebagai JSON string
       fotoKegiatan: JSON.stringify(keysKegiatan),
-      fotoLokasi: JSON.stringify(keysLokasi),
+      fotoLokasi: JSON.stringify([]), // Kosongkan karena fitur foto lokasi sudah dihapus
     });
 
     return Response.json({ status: "success", message: "Berhasil diunggah" });
