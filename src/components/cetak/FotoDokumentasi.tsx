@@ -1,9 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function FotoDokumentasi({ fotoArray }: { fotoArray: string[] }) {
+  const [isClient, setIsClient] = useState(false);
   const [errorIds, setErrorIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return (
+      <div className="col-span-2 text-center text-gray-400 italic mt-4 border p-10 border-dashed">
+        Memuat dokumentasi...
+      </div>
+    );
+  }
 
   if (!fotoArray || fotoArray.length === 0) {
     return (
