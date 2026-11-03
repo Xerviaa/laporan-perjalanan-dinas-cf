@@ -1,9 +1,8 @@
 import TombolCetak from "@/components/TombolCetak";
 import TemplateCPIB from "@/components/cetak/TemplateCPIB";
-// Sementara comment import lainnya untuk uji isolasi
-// import TemplateHACCP from "@/components/cetak/TemplateHACCP";
-// import TemplateInspeksiSKP from "@/components/cetak/TemplateInspeksiSKP";
-// import TemplateSurveilanHACCP from "@/components/cetak/TemplateSurveilanHACCP";
+import TemplateHACCP from "@/components/cetak/TemplateHACCP";
+import TemplateInspeksiSKP from "@/components/cetak/TemplateInspeksiSKP";
+import TemplateSurveilanHACCP from "@/components/cetak/TemplateSurveilanHACCP";
 
 import { getDb } from "@/db";
 import { reports } from "@/db/schema";
@@ -54,18 +53,18 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
 
     let kontenLaporan = null;
 
-    // UJI ISOLASI: Semua jenis kegiatan menggunakan TemplateCPIB sementara
+    // LOGIKA PEMILIHAN TEMPLATE (DIKEMBALIKAN KE SEMULA)
     if (data.jenisKegiatan === "Primer - Inspeksi - Inspeksi CPIB Kapal") {
       kontenLaporan = <TemplateCPIB data={data} />;
     } 
     else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi HACCP") {
-      kontenLaporan = <TemplateCPIB data={data} />;
+      kontenLaporan = <TemplateHACCP data={data} />;
     }
     else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi SKP") {
-      kontenLaporan = <TemplateCPIB data={data} />;
+      kontenLaporan = <TemplateInspeksiSKP data={data} />;
     }
     else if (data.jenisKegiatan === "Pasca - Survailen - Survailen HACCP") {
-      kontenLaporan = <TemplateCPIB data={data} />;
+      kontenLaporan = <TemplateSurveilanHACCP data={data} />;
     }
     else {
       kontenLaporan = (
