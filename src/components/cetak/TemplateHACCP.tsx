@@ -1,3 +1,6 @@
+import TtdImage from "./TtdImage";
+import FotoDokumentasi from "./FotoDokumentasi";
+
 export default function TemplateHACCP({ data }: { data: any }) {
   const formatTanggal = (tgl: string) => {
     if (!tgl) return "";
@@ -10,6 +13,24 @@ export default function TemplateHACCP({ data }: { data: any }) {
   };
 
   const tanggalIndo = formatTanggal(data.tanggal);
+
+  const getTtdUrl = (nama: string) => {
+    if (!nama) return "";
+    const namaTanpaGelar = nama.split(',')[0];
+    const namaFile = namaTanpaGelar.toLowerCase().replace(/[.]/g, '').trim().replace(/\s+/g, '-');
+    return `/tanda-tangan/${namaFile}.png`;
+  };
+
+  // PENGAMAN EKSTRA: Pastikan fotoKegiatan adalah array yang valid
+  let fotoArray: string[] = [];
+  try {
+    if (data.fotoKegiatan && data.fotoKegiatan !== "[]") {
+      const parsed = JSON.parse(data.fotoKegiatan);
+      if (Array.isArray(parsed)) fotoArray = parsed;
+    }
+  } catch (e) {
+    fotoArray = [];
+  }
 
   return (
     <div className="font-serif text-[11pt] leading-relaxed text-justify text-black">
@@ -76,7 +97,7 @@ export default function TemplateHACCP({ data }: { data: any }) {
         </p>
       </div>
 
-      {/* TANDA TANGAN (UJI ISOLASI: TANPA GAMBAR) */}
+      {/* TANDA TANGAN */}
       <div className="mt-8 mb-8 ml-32">
         <p>Petugas Pelaksana :</p>
         <div className="mt-4 space-y-4">
@@ -89,7 +110,12 @@ export default function TemplateHACCP({ data }: { data: any }) {
                   <span className="w-6 shrink-0">{index + 1}.</span>
                   <span className="w-[280px] shrink-0">{namaLengkap}</span>
                   <div className="flex items-center">
-                    <span className="text-gray-600">(......)</span>
+                    <span className="text-gray-600">(</span>
+                    <div className="w-[80px] h-10 flex items-center justify-center relative">
+                      {/* GUNAKAN KOMPONEN CLIENT UNTUK GAMBAR TTD */}
+                      <TtdImage nama={namaLengkap} getTtdUrl={getTtdUrl} />
+                    </div>
+                    <span className="text-gray-600">)</span>
                   </div>
                 </div>
               );
@@ -104,13 +130,12 @@ export default function TemplateHACCP({ data }: { data: any }) {
         </div>
       </div>
 
-      {/* DOKUMENTASI (UJI ISOLASI: TANPA GAMBAR) */}
+      {/* DOKUMENTASI */}
       <div className="page-break-before-always mt-10 pt-10">
         <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
         <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2 text-center text-gray-500 italic mt-4 border p-10 border-dashed">
-            (Uji isolasi: foto dimatikan sementara)
-          </div>
+          {/* GUNAKAN KOMPONEN CLIENT UNTUK FOTO */}
+          <FotoDokumentasi fotoArray={fotoArray} />
         </div>
       </div>
 
