@@ -7,7 +7,6 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Menunggu parameter ID dibaca oleh Next.js
     const resolvedParams = await params; 
     const id = resolvedParams.id;
 
@@ -15,7 +14,8 @@ export async function DELETE(
       return Response.json({ error: "ID tidak valid" }, { status: 400 });
     }
 
-    const db = await getDb(process.env.DATABASE_URL!);
+    // Panggil getDb tanpa parameter (menggunakan Hyperdrive)
+    const db = getDb();
     
     // Hapus dari database
     await db.delete(reports).where(eq(reports.id, Number(id)));
@@ -39,11 +39,14 @@ export async function PUT(
       return Response.json({ error: "ID tidak valid" }, { status: 400 });
     }
 
-    const { title, tanggal } = await request.json();
-    const db = await getDb(process.env.DATABASE_URL!);
+    // Ambil data yang dikirim dari form edit (namaPerusahaan dan tanggal)
+    const { namaPerusahaan, tanggal } = await request.json();
     
+    const db = getDb();
+    
+    // Update namaPerusahaan dan tanggal
     await db.update(reports)
-      .set({ title, tanggal })
+      .set({ namaPerusahaan, tanggal })
       .where(eq(reports.id, Number(id)));
 
     return Response.json({ status: "success", message: "Laporan berhasil diupdate" });
