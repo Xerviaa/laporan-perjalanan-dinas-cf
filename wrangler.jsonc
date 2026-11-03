@@ -31,10 +31,25 @@
 		}
 	],
 	"hyperdrive": [
-  {
-    "binding": "HYPERDRIVE",
-    "id": "f78066d43943419299ac78a80c3cd7a6",
-    "localConnectionString": "postgres://unused:unused@127.0.0.1:5432/unused"
-  }
-]
+		{
+			"binding": "HYPERDRIVE",
+			"id": "f78066d43943419299ac78a80c3cd7a6",
+			"localConnectionString": "postgres://unused:unused@127.0.0.1:5432/unused"
+		}
+	],
+	// TAMBAHKAN BAGIAN INI UNTUK MENGAKTIFKAN LOGS
+	"observability": {
+		"logs": {
+			"enabled": true,
+			"head_sampling_rate": 1,
+			"invocation_logs": true,
+			"persist": true
+		},
+		"traces": {
+			"enabled": false
+		},
+		"issue_detection": {
+			"enabled": false
+		}
+	}
 }
