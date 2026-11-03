@@ -146,18 +146,33 @@ export default function ArsipPage() {
     }
   };
 
-  // --- FUNGSI HAPUS ---
+  // --- FUNGSI HAPUS (DIPERBAIKI DENGAN OPTIMISTIC UI) ---
   const confirmDelete = async () => {
     if (!deleteId) return;
+    
+    // Simpan data lama untuk jaga-jaga jika gagal
+    const previousReports = [...reports];
+    
+    // 1. Langsung hapus dari tampilan (Optimistic Update)
+    setReports(reports.filter(r => r.id !== deleteId));
+    setDeleteId(null); // Tutup modal konfirmasi
     setIsDeleting(true);
+
     try {
+      // 2. Kirim permintaan hapus ke server
       const res = await fetch(`/api/reports/${deleteId}`, { method: 'DELETE' });
-      if (res.ok) fetchReports();
+      
+      if (!res.ok) {
+        // Jika gagal, kembalikan data
+        setReports(previousReports);
+        alert('Gagal menghapus laporan dari server');
+      }
     } catch (error) {
-      alert('Terjadi kesalahan sistem');
+      // Jika error jaringan, kembalikan data
+      setReports(previousReports);
+      alert('Terjadi kesalahan jaringan saat menghapus');
     } finally {
       setIsDeleting(false);
-      setDeleteId(null);
     }
   };
 
