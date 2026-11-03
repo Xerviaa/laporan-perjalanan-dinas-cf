@@ -1,8 +1,9 @@
 import TombolCetak from "@/components/TombolCetak";
 import TemplateCPIB from "@/components/cetak/TemplateCPIB";
-import TemplateHACCP from "@/components/cetak/TemplateHACCP";
-import TemplateInspeksiSKP from "@/components/cetak/TemplateInspeksiSKP";
-import TemplateSurveilanHACCP from "@/components/cetak/TemplateSurveilanHACCP";
+// Sementara comment import lainnya untuk uji isolasi
+// import TemplateHACCP from "@/components/cetak/TemplateHACCP";
+// import TemplateInspeksiSKP from "@/components/cetak/TemplateInspeksiSKP";
+// import TemplateSurveilanHACCP from "@/components/cetak/TemplateSurveilanHACCP";
 
 import { getDb } from "@/db";
 import { reports } from "@/db/schema";
@@ -21,7 +22,6 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
       return <div className="p-10 text-xl font-bold text-center mt-20">Laporan dengan ID {idLaporan} tidak ditemukan.</div>;
     }
 
-    // Ubah semua properti menjadi string murni
     const data = {
       id: String(rawData.id),
       title: String(rawData.title || ""),
@@ -54,19 +54,18 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
 
     let kontenLaporan = null;
 
-    // LOGIKA PEMILIHAN TEMPLATE BERDASARKAN JENIS KEGIATAN
+    // UJI ISOLASI: Semua jenis kegiatan menggunakan TemplateCPIB sementara
     if (data.jenisKegiatan === "Primer - Inspeksi - Inspeksi CPIB Kapal") {
       kontenLaporan = <TemplateCPIB data={data} />;
     } 
     else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi HACCP") {
-      kontenLaporan = <TemplateHACCP data={data} />;
+      kontenLaporan = <TemplateCPIB data={data} />;
     }
     else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi SKP") {
-      kontenLaporan = <TemplateInspeksiSKP data={data} />;
+      kontenLaporan = <TemplateCPIB data={data} />;
     }
-    // PERBAIKAN: Ubah "Surveilan" menjadi "Survailen" (sesuai data form)
     else if (data.jenisKegiatan === "Pasca - Survailen - Survailen HACCP") {
-      kontenLaporan = <TemplateSurveilanHACCP data={data} />;
+      kontenLaporan = <TemplateCPIB data={data} />;
     }
     else {
       kontenLaporan = (
@@ -123,7 +122,6 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
     );
 
   } catch (error: any) {
-    // TAMPILKAN ERROR ASLI (STACK TRACE) DI LAYAR
     return (
       <div className="p-10 text-red-500 font-mono mt-20">
         <h1 className="text-2xl font-bold mb-4">ERROR ASLI DITEMUKAN:</h1>
