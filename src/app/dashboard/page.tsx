@@ -17,13 +17,6 @@ export default function DashboardPage() {
   const [availableYears, setAvailableYears] = useState<string[]>([]);
   const [selectedYear, setSelectedYear] = useState<string>('');
 
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [copiedId, setCopiedId] = useState<number | null>(null);
-
-  const [editData, setEditData] = useState<any>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
   const fetchData = () => {
     fetch('/api/reports')
       .then(res => res.json())
@@ -87,53 +80,10 @@ export default function DashboardPage() {
   const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
   chartData.sort((a: any, b: any) => monthOrder.indexOf(a.name) - monthOrder.indexOf(b.name));
 
+  // UBAH DISINI: Menampilkan 10 laporan terbaru
   const recentReports = reports
     .filter(r => r.title.toLowerCase().includes(searchTerm.toLowerCase()) || r.uploadedBy.toLowerCase().includes(searchTerm.toLowerCase()))
-    .slice(0, 5);
-
-  const confirmDelete = async () => {
-    if (!deleteId) return;
-    setIsDeleting(true);
-    try {
-      const res = await fetch(`/api/reports/${deleteId}`, { method: 'DELETE' });
-      if (res.ok) fetchData();
-    } catch (error) {
-      alert('Terjadi kesalahan');
-    } finally {
-      setIsDeleting(false);
-      setDeleteId(null);
-    }
-  };
-
-  const handleCopyLink = (key: string, id: number) => {
-    const url = `${window.location.origin}/api/download?key=${key}`;
-    navigator.clipboard.writeText(url);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleSaveEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    try {
-      const res = await fetch(`/api/reports/${editData.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: editData.title, tanggal: editData.tanggal }),
-      });
-
-      if (res.ok) {
-        fetchData();
-        setEditData(null);
-      } else {
-        alert('Gagal menyimpan perubahan');
-      }
-    } catch (error) {
-      alert('Terjadi kesalahan sistem');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    .slice(0, 10);
 
   // Handler Klik Grafik
   const handleBarClick = (state: any) => {
@@ -149,7 +99,7 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-                  <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col lg:flex-row gap-6">
         
         {/* KIRI: Header & Tabel */}
         <div className="flex-1 flex flex-col gap-6 min-w-0">
@@ -175,14 +125,13 @@ export default function DashboardPage() {
                     <th className="px-4 md:px-6 py-4">Judul Laporan</th>
                     <th className="px-4 md:px-6 py-4 hidden md:table-cell">Pelaksana</th>
                     <th className="px-4 md:px-6 py-4">Tanggal Dinas</th>
-                    <th className="px-4 md:px-6 py-4 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {loading ? (
-                    <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-500">Memuat...</td></tr>
+                    <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-500">Memuat...</td></tr>
                   ) : recentReports.length === 0 ? (
-                    <tr><td colSpan={4} className="px-4 py-8 text-center text-slate-500">Belum ada laporan</td></tr>
+                    <tr><td colSpan={3} className="px-4 py-8 text-center text-slate-500">Belum ada laporan</td></tr>
                   ) : (
                     recentReports.map((report) => (
                       <tr key={report.id} className="hover:bg-slate-50 transition-colors">
@@ -192,19 +141,6 @@ export default function DashboardPage() {
                         </td>
                         <td className="px-4 md:px-6 py-4 text-slate-700 truncate max-w-[150px] hidden md:table-cell">{report.uploadedBy}</td>
                         <td className="px-4 md:px-6 py-4 text-slate-500 font-medium">{report.tanggal ? new Date(report.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</td>
-                        <td className="px-4 md:px-6 py-4">
-                          <div className="flex items-center justify-center gap-1 md:gap-2">
-                            <button onClick={() => setDeleteId(report.id)} className="p-1.5 md:p-2 bg-slate-100 text-slate-500 rounded-md hover:bg-red-50 hover:text-red-600 cursor-pointer">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                            </button>
-                            <button onClick={() => setEditData(report)} className="p-1.5 md:p-2 bg-slate-100 text-slate-500 rounded-md hover:bg-blue-50 hover:text-blue-600 cursor-pointer">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                            </button>
-                            <button onClick={() => handleCopyLink(report.fileKey, report.id)} className={`p-1.5 md:p-2 rounded-md cursor-pointer ${copiedId === report.id ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
-                              {copiedId === report.id ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>}
-                            </button>
-                          </div>
-                        </td>
                       </tr>
                     ))
                   )}
@@ -262,7 +198,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* 2. GRAFIK (Dengan Filter Tahun & onClick di BarChart) */}
+          {/* 2. GRAFIK */}
           <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-3 md:p-4">
             <div className="flex justify-between items-center mb-3">
               <div>
@@ -364,43 +300,6 @@ export default function DashboardPage() {
               >
                 Tutup
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL EDIT LAPORAN */}
-      {editData && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">Edit Laporan</h3>
-            <form onSubmit={handleSaveEdit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Judul Laporan</label>
-                <input type="text" value={editData.title} onChange={(e) => setEditData({ ...editData, title: e.target.value })} className="w-full border border-slate-300 p-2 rounded-lg outline-none" required />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Tanggal Dinas</label>
-                <input type="date" value={editData.tanggal || ''} onChange={(e) => setEditData({ ...editData, tanggal: e.target.value })} className="w-full border border-slate-300 p-2 rounded-lg outline-none" required />
-              </div>
-              <div className="flex justify-end gap-3 mt-6">
-                <button type="button" onClick={() => setEditData(null)} disabled={isSaving} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Batal</button>
-                <button type="submit" disabled={isSaving} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg cursor-pointer">{isSaving ? 'Menyimpan...' : 'Simpan'}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL KONFIRMASI HAPUS */}
-      {deleteId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm">
-            <h3 className="text-lg font-bold text-slate-800 mb-2">Hapus Laporan?</h3>
-            <p className="text-slate-500 text-sm mb-6">Laporan ini akan dihapus permanen.</p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setDeleteId(null)} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Batal</button>
-              <button onClick={confirmDelete} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg cursor-pointer">{isDeleting ? 'Menghapus...' : 'Hapus'}</button>
             </div>
           </div>
         </div>
