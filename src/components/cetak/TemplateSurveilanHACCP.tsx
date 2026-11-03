@@ -21,7 +21,6 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
   return (
     <div className="font-serif text-[11pt] leading-relaxed text-justify text-black">
       
-      {/* JUDUL LAPORAN */}
       <div className="text-center mb-8">
         <h3 className="font-bold uppercase text-[12pt] leading-tight">
           LAPORAN PERJALANAN DINAS<br/>
@@ -30,7 +29,6 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </h3>
       </div>
 
-      {/* I. DASAR PELAKSANAAN */}
       <div className="mb-4">
         <h4 className="font-bold">I. Dasar Pelaksanaan</h4>
         <ol className="list-decimal pl-5 mt-1 space-y-1">
@@ -43,7 +41,6 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </ol>
       </div>
 
-      {/* II. PENDAHULUAN */}
       <div className="mb-4">
         <h4 className="font-bold">II. Pendahuluan</h4>
         <p className="indent-8 mt-1">
@@ -60,7 +57,6 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </p>
       </div>
 
-      {/* III. MAKSUD DAN TUJUAN */}
       <div className="mb-4">
         <h4 className="font-bold">III. Maksud dan Tujuan</h4>
         <p className="indent-8 mt-1">
@@ -68,7 +64,6 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </p>
       </div>
 
-      {/* IV. WAKTU DAN TEMPAT PELAKSANAAN */}
       <div className="mb-4">
         <h4 className="font-bold">IV. Waktu dan Tempat Pelaksanaan</h4>
         <p className="indent-8 mt-1">
@@ -76,7 +71,6 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </p>
       </div>
 
-      {/* V. PETUGAS PELAKSANA (Tampil di Tengah) */}
       <div className="mb-4">
         <h4 className="font-bold">V. Petugas Pelaksana</h4>
         <div className="flex mt-1">
@@ -101,7 +95,6 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </div>
       </div>
 
-      {/* VI. PELAKSANAAN KEGIATAN */}
       <div className="mb-4">
         <h4 className="font-bold">VI. Pelaksanaan Kegiatan</h4>
         <p className="indent-8 mt-1">
@@ -109,7 +102,6 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </p>
       </div>
 
-      {/* VII. PENUTUP */}
       <div className="mb-4">
         <h4 className="font-bold">VII. Penutup</h4>
         <p className="indent-8 mt-1">
@@ -117,7 +109,6 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </p>
       </div>
 
-      {/* TANDA TANGAN PETUGAS (Di bawah) */}
       <div className="mt-8 mb-8 ml-32">
         <p>Petugas Pelaksana :</p>
         <div className="mt-4 space-y-4">
@@ -125,21 +116,14 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
             data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
               const match = petugas.trim().match(/(.*)\((.*)\)/);
               const namaLengkap = match ? match[1].trim() : petugas.trim();
-
               return (
                 <div key={index} className="flex items-center">
                   <span className="w-6 shrink-0">{index + 1}.</span>
-                  
                   <span className="w-[280px] shrink-0">{namaLengkap}</span>
-                  
                   <div className="flex items-center">
                     <span className="text-gray-600">(</span>
                     <div className="w-[80px] h-10 flex items-center justify-center relative">
-                      <img 
-                        src={getTtdUrl(namaLengkap)} 
-                        alt="TTD" 
-                        className="absolute h-14 object-contain z-10" 
-                      />
+                      <img src={getTtdUrl(namaLengkap)} alt="TTD" className="absolute h-14 object-contain z-10" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                     </div>
                     <span className="text-gray-600">)</span>
                   </div>
@@ -150,17 +134,12 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
             <div className="flex items-center">
               <span className="w-6 shrink-0">1.</span>
               <span className="w-[280px] shrink-0">-</span>
-              <div className="flex items-center">
-                <span className="text-gray-600">(</span>
-                <div className="w-[80px] h-10"></div>
-                <span className="text-gray-600">)</span>
-              </div>
+              <span className="text-gray-600">(......)</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* HALAMAN BARU UNTUK DOKUMENTASI */}
       <div className="page-break-before-always mt-10 pt-10">
         <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
         <div className="grid grid-cols-2 gap-4">

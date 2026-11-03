@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Layout from '@/components/Layout';
 import { daftarPegawai } from '@/data/pegawai';
-import { perusahaanSKP, perusahaanHACCP } from '@/data/perusahaan'; // IMPORT BARU
+import { perusahaanSKP, perusahaanHACCP } from '@/data/perusahaan';
 
 // --- DATA BERTINGKAT UNTUK JENIS KEGIATAN ---
 const jenisKegiatanData: Record<string, Record<string, string[]>> = {
@@ -95,7 +95,6 @@ export default function UploadPage() {
       setIsManualPerusahaan(false);
       setNamaPerusahaan(selectedNama);
       
-      // Cari alamat di daftar yang sesuai (SKP atau HACCP)
       let company = null;
       if (detailKegiatan.includes("HACCP")) {
         company = perusahaanHACCP.find(c => c.nama === selectedNama);
@@ -323,7 +322,6 @@ export default function UploadPage() {
                 <select value={namaPerusahaan || ''} onChange={handleSelectPerusahaan} className="w-full border border-slate-300 p-3 rounded-lg outline-none bg-white cursor-pointer" required>
                   <option value="">-- Pilih Perusahaan --</option>
                   
-                  {/* LOGIKA FILTER PERUSAHAAN */}
                   {detailKegiatan.includes("HACCP") ? (
                     perusahaanHACCP.map((p, i) => <option key={i} value={p.nama}>{p.nama}</option>)
                   ) : (
@@ -398,7 +396,10 @@ export default function UploadPage() {
                         className="h-full object-contain" 
                         onError={(e) => {
                           e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement!.innerHTML = '<span class="text-[10px] text-slate-400 text-center">Belum ada TTD</span>';
+                          // Ganti isi parent dengan titik-titik
+                          if (e.currentTarget.parentElement) {
+                            e.currentTarget.parentElement.innerHTML = '<span class="text-[10px] text-slate-400 text-center font-mono">(......)</span>';
+                          }
                         }}
                       />
                     ) : (

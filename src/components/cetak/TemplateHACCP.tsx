@@ -21,7 +21,6 @@ export default function TemplateHACCP({ data }: { data: any }) {
   return (
     <div className="font-serif text-[11pt] leading-relaxed text-justify text-black">
       
-      {/* JUDUL LAPORAN */}
       <div className="text-center mb-8">
         <h3 className="font-bold uppercase text-[12pt] leading-tight">
           LAPORAN PERJALANAN DINAS<br/>
@@ -84,7 +83,7 @@ export default function TemplateHACCP({ data }: { data: any }) {
         </p>
       </div>
 
-      {/* TANDA TANGAN PETUGAS (Diletakkan di bawah setelah penutup) */}
+      {/* TANDA TANGAN */}
       <div className="mt-8 mb-8 ml-32">
         <p>Petugas Pelaksana :</p>
         <div className="mt-4 space-y-4">
@@ -92,23 +91,14 @@ export default function TemplateHACCP({ data }: { data: any }) {
             data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
               const match = petugas.trim().match(/(.*)\((.*)\)/);
               const namaLengkap = match ? match[1].trim() : petugas.trim();
-
               return (
                 <div key={index} className="flex items-center">
                   <span className="w-6 shrink-0">{index + 1}.</span>
-                  
-                  {/* Nama Petugas */}
                   <span className="w-[280px] shrink-0">{namaLengkap}</span>
-                  
-                  {/* Area Tanda Tangan */}
                   <div className="flex items-center">
                     <span className="text-gray-600">(</span>
                     <div className="w-[80px] h-10 flex items-center justify-center relative">
-                      <img 
-                        src={getTtdUrl(namaLengkap)} 
-                        alt="TTD" 
-                        className="absolute h-14 object-contain z-10" 
-                      />
+                      <img src={getTtdUrl(namaLengkap)} alt="TTD" className="absolute h-14 object-contain z-10" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                     </div>
                     <span className="text-gray-600">)</span>
                   </div>
@@ -119,17 +109,13 @@ export default function TemplateHACCP({ data }: { data: any }) {
             <div className="flex items-center">
               <span className="w-6 shrink-0">1.</span>
               <span className="w-[280px] shrink-0">-</span>
-              <div className="flex items-center">
-                <span className="text-gray-600">(</span>
-                <div className="w-[80px] h-10"></div>
-                <span className="text-gray-600">)</span>
-              </div>
+              <span className="text-gray-600">(......)</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* HALAMAN BARU UNTUK DOKUMENTASI */}
+      {/* DOKUMENTASI */}
       <div className="page-break-before-always mt-10 pt-10">
         <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
         <div className="grid grid-cols-2 gap-4">
