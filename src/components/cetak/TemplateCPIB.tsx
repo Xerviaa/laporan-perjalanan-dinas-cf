@@ -8,10 +8,18 @@ export default function TemplateCPIB({ data }: { data: any }) {
 
   const tanggalIndo = formatTanggal(data.tanggal);
 
+  // Fungsi untuk menebak nama file TTD berdasarkan nama pegawai
+  const getTtdUrl = (nama: string) => {
+    if (!nama) return "";
+    const namaTanpaGelar = nama.split(',')[0];
+    const namaFile = namaTanpaGelar.toLowerCase().replace(/[.]/g, '').trim().replace(/\s+/g, '-');
+    return `/tanda-tangan/${namaFile}.png`;
+  };
+
   return (
     <div className="font-serif text-[11pt] leading-relaxed text-justify text-black">
       
-      {/* JUDUL LAPORAN (Sesuai PDF) */}
+      {/* JUDUL LAPORAN */}
       <div className="text-center mb-8">
         <h3 className="font-bold uppercase text-[12pt] leading-tight">
           LAPORAN PERJALANAN DINAS<br/>
@@ -37,15 +45,34 @@ export default function TemplateCPIB({ data }: { data: any }) {
       <div className="mb-4">
         <h4 className="font-bold">II. Petugas Pelaksana</h4>
         <div className="flex mt-1">
-          <span className="w-40">Petugas Pelaksana</span>
-          <span className="mr-2">:</span>
-          <div>
+          <span className="w-40 shrink-0">Petugas Pelaksana</span>
+          <span className="mr-2 shrink-0">:</span>
+          <div className="flex-1">
             {data.petugasPelaksana ? (
-              data.petugasPelaksana.split(',').map((petugas: string, index: number) => (
-                <p key={index}>{String.fromCharCode(97 + index)}. {petugas.trim()}</p>
-              ))
+              data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
+                const match = petugas.trim().match(/(.*)\((.*)\)/);
+                
+                if (match) {
+                  const nama = match[1].trim();
+                  const peran = match[2].trim();
+                  
+                  return (
+                    <div key={index} className="flex items-start mb-1">
+                      <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
+                      <span className="flex-1">{nama}</span>
+                      <span className="ml-4 font-semibold shrink-0">({peran})</span>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={index} className="flex items-start mb-1">
+                    <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
+                    <span className="flex-1">{petugas.trim()}</span>
+                  </div>
+                );
+              })
             ) : (
-              <p>a. Siti Nurlatifah, S.St.Pi., M.Si</p>
+              <p>a. -</p>
             )}
           </div>
         </div>
@@ -84,7 +111,7 @@ export default function TemplateCPIB({ data }: { data: any }) {
         </p>
       </div>
 
-      {/* VI. PELAKSANAAN KEGIATAN (Ini yang sebelumnya terlewat) */}
+      {/* VI. PELAKSANAAN KEGIATAN */}
       <div className="mb-4">
         <h4 className="font-bold">VI. Pelaksanaan Kegiatan</h4>
         <p className="indent-8 mt-1">
@@ -123,21 +150,41 @@ export default function TemplateCPIB({ data }: { data: any }) {
         </p>
       </div>
 
-      {/* TANDA TANGAN PETUGAS */}
+      {/* TANDA TANGAN PETUGAS (DENGAN GAMBAR TTD) */}
       <div className="mt-8 mb-8">
         <p>Petugas Pelaksana :</p>
-        <div className="mt-2 space-y-1">
+        <div className="mt-4 space-y-6">
           {data.petugasPelaksana ? (
-            data.petugasPelaksana.split(',').map((petugas: string, index: number) => (
-              <div key={index} className="flex">
-                <span className="w-[60%]">{String.fromCharCode(97 + index)}. {petugas.trim()}</span>
-                <span>(....................)</span>
-              </div>
-            ))
+            data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
+              const match = petugas.trim().match(/(.*)\((.*)\)/);
+              const namaLengkap = match ? match[1].trim() : petugas.trim();
+              const peran = match ? match[2].trim() : "";
+
+              return (
+                <div key={index} className="flex flex-col">
+                  <div className="flex items-center">
+                    <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
+                    <span className="w-[250px] shrink-0 font-semibold">{namaLengkap}</span>
+                    
+                    {/* Area Tanda Tangan */}
+                    <div className="flex-1 flex items-center relative">
+                      <img 
+                        src={getTtdUrl(namaLengkap)} 
+                        alt="TTD" 
+                        className="absolute h-12 object-contain -mt-8 ml-4 z-10" 
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }} 
+                      />
+                      <span className="text-gray-600 ml-2">(.............................................)</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
           ) : (
             <div className="flex">
-              <span className="w-[60%]">a. Siti Nurlatifah, S.St.Pi., M.Si</span>
-              <span>(....................)</span>
+              <span className="w-6 shrink-0">a.</span>
+              <span className="w-[250px] shrink-0">Siti Nurlatifah, S.St.Pi., M.Si</span>
+              <span className="flex-1 text-gray-600 ml-2">(.............................................)</span>
             </div>
           )}
         </div>
@@ -148,9 +195,10 @@ export default function TemplateCPIB({ data }: { data: any }) {
         <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
         <div className="grid grid-cols-2 gap-4">
           {data.fotoKegiatan ? (
-             JSON.parse(data.fotoKegiatan).map((url: string, i: number) => (
+             // Menggunakan API /api/r2/ untuk memanggil gambar dari bucket R2
+             JSON.parse(data.fotoKegiatan).map((key: string, i: number) => (
                 <div key={i} className="mb-4">
-                  <img src={url} alt={`Dokumentasi ${i}`} className="w-full h-auto object-cover border border-gray-300" />
+                  <img src={`/api/r2/${key}`} alt={`Dokumentasi ${i}`} className="w-full h-auto object-cover border border-gray-300" />
                 </div>
              ))
           ) : (

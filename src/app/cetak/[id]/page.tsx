@@ -31,15 +31,11 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
     let kontenLaporan = null;
 
     // LOGIKA PEMILIHAN TEMPLATE BERDASARKAN JENIS KEGIATAN
-    // Silakan sesuaikan string ini dengan data dari form upload Anda
     if (data.jenisKegiatan === "Primer - Inspeksi - Inspeksi CPIB Kapal") {
       kontenLaporan = <TemplateCPIB data={data} />;
     } 
     // else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi HACCP") {
     //   kontenLaporan = <TemplateHACCP data={data} />;
-    // }
-    // else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi SKP") {
-    //   kontenLaporan = <TemplateSKP data={data} />;
     // }
     else {
       // Jika jenis kegiatan belum memiliki template
@@ -56,7 +52,7 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
         
         <div className="mx-auto w-[21cm] bg-white shadow-xl print:shadow-none">
           
-          {/* HALAMAN 1: COVER (Bisa dibuat dinamis menyesuaikan jenis kegiatan nanti) */}
+          {/* HALAMAN 1: COVER */}
           <div className="w-[21cm] h-[29.7cm] p-[2cm] flex flex-col justify-between items-center text-center font-serif print:break-after-page relative">
             <div className="mt-10 w-full">
               <h1 className="text-[16pt] font-bold uppercase leading-tight mb-4">
@@ -87,18 +83,8 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
             </div>
           </div>
 
-          {/* HALAMAN 2: ISI LAPORAN (KOP SURAT + TEMPLATE DINAMIS) */}
+          {/* HALAMAN 2: ISI LAPORAN (Tanpa Kop Surat) */}
           <div className="w-[21cm] min-h-[29.7cm] p-[2cm]">
-            {/* KOP SURAT */}
-            <div className="flex items-center border-b-[3px] border-black pb-4 mb-6">
-              <img src="/logo-kkp.png" alt="Logo" className="w-24 h-24 object-contain mr-6" />
-              <div className="text-center flex-1 font-serif">
-                <h1 className="text-lg font-bold uppercase">KEMENTERIAN KELAUTAN DAN PERIKANAN</h1>
-                <h2 className="text-lg font-bold uppercase">BADAN PENGENDALIAN DAN PENGAWASAN MUTU<br/>HASIL KELAUTAN DAN PERIKANAN</h2>
-                <h3 className="text-xl font-bold uppercase">BALAI PPMHKP DENPASAR</h3>
-              </div>
-            </div>
-
             {/* RENDER TEMPLATE YANG SUDAH DIPILIH DI ATAS */}
             {kontenLaporan}
           </div>

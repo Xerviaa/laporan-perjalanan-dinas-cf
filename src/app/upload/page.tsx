@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // IMPORT ROUTER
+import { useRouter } from 'next/navigation';
 import Layout from '@/components/Layout';
 import { daftarPegawai } from '@/data/pegawai';
 import { daftarPerusahaan } from '@/data/perusahaan';
@@ -27,7 +27,7 @@ type PetugasType = {
 };
 
 export default function UploadPage() {
-  const router = useRouter(); // INISIALISASI ROUTER
+  const router = useRouter();
   
   const [fotoKegiatan, setFotoKegiatan] = useState<File[]>([]);
   
@@ -166,13 +166,14 @@ export default function UploadPage() {
 
     const fullJenisKegiatan = `${kategori} - ${jenis} - ${detailKegiatan}`;
 
+    // PENTING: Ubah join(', ') menjadi join(' | ') agar nama & gelar tidak terpisah
     const petugasString = petugas
       .filter(p => p.nama.trim() !== '')
       .map(p => {
         const peranFinal = p.peran === 'Lainnya' ? p.peranManual : p.peran;
         return `${p.nama} (${peranFinal})`;
       })
-      .join(', ');
+      .join(' | ');
 
     const formData = new FormData();
     formData.append('pembuatLaporan', pembuatLaporan);
@@ -191,11 +192,10 @@ export default function UploadPage() {
       if (res.ok) {
         setStatus('Upload berhasil! Mengalihkan ke halaman arsip...');
         
-        // LOGIKA REDIRECT KE HALAMAN ARSIP
         setTimeout(() => {
           router.push('/arsip'); 
-          router.refresh(); // Memastikan data terbaru di halaman arsip termuat
-        }, 1500); // Jeda 1.5 detik agar user sempat melihat pesan sukses
+          router.refresh(); 
+        }, 1500); 
         
       } else {
         setStatus(`Gagal: ${data.message}`);
