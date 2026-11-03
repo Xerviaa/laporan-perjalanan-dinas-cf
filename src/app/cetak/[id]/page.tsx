@@ -21,8 +21,7 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
       return <div className="p-10 text-xl font-bold text-center mt-20">Laporan dengan ID {idLaporan} tidak ditemukan.</div>;
     }
 
-    // PERBAIKAN RADIKAL: Ubah SEMUA properti menjadi string murni
-    // Ini mencegah error serialisasi JSON pada objek Date
+    // Ubah semua properti menjadi string murni
     const data = {
       id: String(rawData.id),
       title: String(rawData.title || ""),
@@ -45,7 +44,7 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
       if (!tgl) return "";
       try {
         const date = new Date(tgl);
-        if (isNaN(date.getTime())) return tgl; // Jika tanggal tidak valid, kembalikan teks aslinya
+        if (isNaN(date.getTime())) return tgl; 
         return date.toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' });
       } catch (e) {
         return tgl;
@@ -53,10 +52,8 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
     };
     const tanggalIndo = formatTanggal(data.tanggal);
 
-    // Variabel untuk menampung komponen template yang akan dirender
     let kontenLaporan = null;
 
-    // LOGIKA PEMILIHAN TEMPLATE BERDASARKAN JENIS KEGIATAN
     if (data.jenisKegiatan === "Primer - Inspeksi - Inspeksi CPIB Kapal") {
       kontenLaporan = <TemplateCPIB data={data} />;
     } 
@@ -124,20 +121,13 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
     );
 
   } catch (error: any) {
-    // PERBAIKAN: Cegah error serialization dengan hanya menampilkan pesan string
-    const errorMessage = error?.message ? String(error.message) : "Terjadi kesalahan tidak diketahui";
-    
-    console.error("Gagal koneksi ke database:", errorMessage);
-    
+    // TAMPILKAN ERROR ASLI (STACK TRACE) DI LAYAR
     return (
-      <div className="p-10 text-red-500 font-bold mt-20 text-center font-mono">
-        <p className="text-2xl mb-4">ERROR ASLI DITEMUKAN:</p>
-        <p className="bg-red-100 p-4 rounded border border-red-300 inline-block">
-          {errorMessage}
-        </p>
-        <p className="mt-4 text-sm text-gray-500">
-          Cek terminal VS Code untuk detail stack trace.
-        </p>
+      <div className="p-10 text-red-500 font-mono mt-20">
+        <h1 className="text-2xl font-bold mb-4">ERROR ASLI DITEMUKAN:</h1>
+        <pre className="bg-red-50 p-4 rounded border border-red-300 overflow-auto text-sm">
+          {error?.stack || error?.message || String(error)}
+        </pre>
       </div>
     );
   }
