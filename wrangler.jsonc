@@ -31,9 +31,10 @@
 		}
 	],
 	"hyperdrive": [
-		{
-			"binding": "HYPERDRIVE",
-			"id": "f78066d43943419299ac78a80c3cd7a6"
-		}
-	]
+  {
+    "binding": "HYPERDRIVE",
+    "id": "f78066d43943419299ac78a80c3cd7a6",
+    "localConnectionString": "postgres://unused:unused@127.0.0.1:5432/unused"
+  }
+]
 }
