@@ -15,52 +15,64 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
   try {
     const db = getDb(); 
     const result = await db.select().from(reports).where(eq(reports.id, idLaporan));
-    const data = result[0];
+    const rawData = result[0];
 
-    if (!data) {
+    if (!rawData) {
       return <div className="p-10 text-xl font-bold text-center mt-20">Laporan dengan ID {idLaporan} tidak ditemukan.</div>;
     }
 
-    // PERBAIKAN: Ubah semua data menjadi string yang aman untuk serialisasi
-    const safeData = {
-      ...data,
-      tanggal: data.tanggal ? new Date(data.tanggal).toISOString() : null,
-      createdAt: data.createdAt ? new Date(data.createdAt).toISOString() : null,
-      // Pastikan semua field string tidak null/undefined
-      namaPerusahaan: data.namaPerusahaan || "-",
-      petugasPelaksana: data.petugasPelaksana || "-",
-      noSurat: data.noSurat || "-",
-      jenisKegiatan: data.jenisKegiatan || "-",
-      alamatPerusahaan: data.alamatPerusahaan || "-",
+    // PERBAIKAN RADIKAL: Ubah SEMUA properti menjadi string murni
+    // Ini mencegah error serialisasi JSON pada objek Date
+    const data = {
+      id: String(rawData.id),
+      title: String(rawData.title || ""),
+      fileKey: String(rawData.fileKey || ""),
+      uploadedBy: String(rawData.uploadedBy || ""),
+      jenisKegiatan: String(rawData.jenisKegiatan || ""),
+      noSurat: String(rawData.noSurat || ""),
+      petugasPelaksana: String(rawData.petugasPelaksana || ""),
+      namaPerusahaan: String(rawData.namaPerusahaan || ""),
+      alamatPerusahaan: String(rawData.alamatPerusahaan || ""),
+      tanggal: rawData.tanggal ? new Date(rawData.tanggal).toISOString() : "",
+      createdAt: rawData.createdAt ? new Date(rawData.createdAt).toISOString() : "",
+      deadline: rawData.deadline ? new Date(rawData.deadline).toISOString() : "",
+      isRewarded: Boolean(rawData.isRewarded),
+      fotoKegiatan: rawData.fotoKegiatan ? String(rawData.fotoKegiatan) : "[]",
+      fotoLokasi: rawData.fotoLokasi ? String(rawData.fotoLokasi) : "[]",
     };
 
     const formatTanggal = (tgl: string) => {
       if (!tgl) return "";
-      const date = new Date(tgl);
-      return date.toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' });
+      try {
+        const date = new Date(tgl);
+        if (isNaN(date.getTime())) return tgl; // Jika tanggal tidak valid, kembalikan teks aslinya
+        return date.toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' });
+      } catch (e) {
+        return tgl;
+      }
     };
-    const tanggalIndo = formatTanggal(safeData.tanggal || "");
+    const tanggalIndo = formatTanggal(data.tanggal);
 
     // Variabel untuk menampung komponen template yang akan dirender
     let kontenLaporan = null;
 
     // LOGIKA PEMILIHAN TEMPLATE BERDASARKAN JENIS KEGIATAN
-    if (safeData.jenisKegiatan === "Primer - Inspeksi - Inspeksi CPIB Kapal") {
-      kontenLaporan = <TemplateCPIB data={safeData} />;
+    if (data.jenisKegiatan === "Primer - Inspeksi - Inspeksi CPIB Kapal") {
+      kontenLaporan = <TemplateCPIB data={data} />;
     } 
-    else if (safeData.jenisKegiatan === "Pasca - Inspeksi - Inspeksi HACCP") {
-      kontenLaporan = <TemplateHACCP data={safeData} />;
+    else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi HACCP") {
+      kontenLaporan = <TemplateHACCP data={data} />;
     }
-    else if (safeData.jenisKegiatan === "Pasca - Inspeksi - Inspeksi SKP") {
-      kontenLaporan = <TemplateInspeksiSKP data={safeData} />;
+    else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi SKP") {
+      kontenLaporan = <TemplateInspeksiSKP data={data} />;
     }
-    else if (safeData.jenisKegiatan === "Pasca - Surveilan - Surveilan HACCP") {
-      kontenLaporan = <TemplateSurveilanHACCP data={safeData} />;
+    else if (data.jenisKegiatan === "Pasca - Surveilan - Surveilan HACCP") {
+      kontenLaporan = <TemplateSurveilanHACCP data={data} />;
     }
     else {
       kontenLaporan = (
         <div className="text-center mt-20 font-serif text-lg">
-          <p>Template untuk jenis kegiatan <strong>"{safeData.jenisKegiatan}"</strong> belum tersedia.</p>
+          <p>Template untuk jenis kegiatan <strong>"{data.jenisKegiatan}"</strong> belum tersedia.</p>
         </div>
       );
     }
@@ -78,11 +90,11 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
                 PELAPORAN PERJALANAN DINAS
               </h1>
               <h2 className="text-[14pt] font-bold uppercase leading-tight">
-                {safeData.jenisKegiatan ? safeData.jenisKegiatan.replace(/-/g, '\n') : "-"}
+                {data.jenisKegiatan ? data.jenisKegiatan.replace(/-/g, '\n') : "-"}
               </h2>
               
               <div className="mt-8 space-y-2">
-                <p className="font-bold text-[14pt] uppercase">{safeData.namaPerusahaan}</p>
+                <p className="font-bold text-[14pt] uppercase">{data.namaPerusahaan || "NAMA KAPAL / PT"}</p>
                 <p className="font-bold text-[14pt] uppercase">{tanggalIndo || "TANGGAL"}</p>
               </div>
             </div>
@@ -112,7 +124,9 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
     );
 
   } catch (error: any) {
+    // PERBAIKAN: Cegah error serialization dengan hanya menampilkan pesan string
     const errorMessage = error?.message ? String(error.message) : "Terjadi kesalahan tidak diketahui";
+    
     console.error("Gagal koneksi ke database:", errorMessage);
     
     return (
