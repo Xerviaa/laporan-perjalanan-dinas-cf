@@ -2,7 +2,7 @@ import TombolCetak from "@/components/TombolCetak";
 import TemplateCPIB from "@/components/cetak/TemplateCPIB";
 import TemplateHACCP from "@/components/cetak/TemplateHACCP";
 import TemplateInspeksiSKP from "@/components/cetak/TemplateInspeksiSKP";
-import TemplateSurveilanHACCP from "@/components/cetak/TemplateSurveilanHACCP"; // Import template Surveilan HACCP
+import TemplateSurveilanHACCP from "@/components/cetak/TemplateSurveilanHACCP";
 
 import { getDb } from "@/db";
 import { reports } from "@/db/schema";
@@ -99,13 +99,16 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
     );
 
   } catch (error: any) {
-    // TAMPILKAN ERROR ASLI DI LAYAR UNTUK DEBUGGING
-    console.error("Gagal koneksi ke database:", error);
+    // PERBAIKAN: Cegah error serialization dengan hanya menampilkan pesan string
+    const errorMessage = error?.message ? String(error.message) : "Terjadi kesalahan tidak diketahui";
+    
+    console.error("Gagal koneksi ke database:", errorMessage);
+    
     return (
       <div className="p-10 text-red-500 font-bold mt-20 text-center font-mono">
         <p className="text-2xl mb-4">ERROR ASLI DITEMUKAN:</p>
         <p className="bg-red-100 p-4 rounded border border-red-300 inline-block">
-          {error.message || "Pesan error tidak diketahui"}
+          {errorMessage}
         </p>
         <p className="mt-4 text-sm text-gray-500">
           Cek terminal VS Code untuk detail stack trace.
