@@ -18,10 +18,6 @@ export default function ArsipPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
-  // --- STATE UNTUK EDIT ---
-  const [editData, setEditData] = useState<any>(null);
-  const [isSaving, setIsSaving] = useState(false);
-
   // --- STATE UNTUK SCROLL TO TOP ---
   const [showScrollTop, setShowScrollTop] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
@@ -171,33 +167,6 @@ export default function ArsipPage() {
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  // --- FUNGSI SIMPAN EDIT ---
-  const handleSaveEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    try {
-      const res = await fetch(`/api/reports/${editData.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          namaPerusahaan: editData.namaPerusahaan, 
-          tanggal: editData.tanggal 
-        }),
-      });
-
-      if (res.ok) {
-        fetchReports();
-        setEditData(null);
-      } else {
-        alert('Gagal menyimpan perubahan');
-      }
-    } catch (error) {
-      alert('Terjadi kesalahan sistem');
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   // --- FUNGSI EKSPOR EXCEL ---
@@ -430,9 +399,6 @@ export default function ArsipPage() {
                                             <button onClick={() => setDeleteId(report.id)} title="Hapus" className="p-1.5 bg-slate-100 text-slate-500 rounded-md hover:bg-red-50 hover:text-red-600 cursor-pointer">
                                               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                                             </button>
-                                            <button onClick={() => setEditData(report)} title="Edit" className="p-1.5 bg-slate-100 text-slate-500 rounded-md hover:bg-blue-50 hover:text-blue-600 cursor-pointer">
-                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                                            </button>
                                             <button onClick={() => handleCopyLink(report.id)} title="Salin Link Cetak" className={`p-1.5 rounded-md cursor-pointer ${copiedId === report.id ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                                               {copiedId === report.id ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>}
                                             </button>
@@ -457,29 +423,6 @@ export default function ArsipPage() {
               </div>
             );
           })}
-        </div>
-      )}
-
-      {/* --- MODAL EDIT LAPORAN --- */}
-      {editData && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">Edit Data Laporan</h3>
-            <form onSubmit={handleSaveEdit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Perusahaan</label>
-                <input type="text" value={editData.namaPerusahaan || ''} onChange={(e) => setEditData({ ...editData, namaPerusahaan: e.target.value })} className="w-full border border-slate-300 p-2 rounded-lg outline-none" required />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Tanggal Dinas</label>
-                <input type="date" value={editData.tanggal || ''} onChange={(e) => setEditData({ ...editData, tanggal: e.target.value })} className="w-full border border-slate-300 p-2 rounded-lg outline-none" required />
-              </div>
-              <div className="flex justify-end gap-3 mt-6">
-                <button type="button" onClick={() => setEditData(null)} disabled={isSaving} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Batal</button>
-                <button type="submit" disabled={isSaving} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg cursor-pointer">{isSaving ? 'Menyimpan...' : 'Simpan'}</button>
-              </div>
-            </form>
-          </div>
         </div>
       )}
 
