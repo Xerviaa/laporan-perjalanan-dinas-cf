@@ -34,11 +34,7 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
     if (data.jenisKegiatan === "Primer - Inspeksi - Inspeksi CPIB Kapal") {
       kontenLaporan = <TemplateCPIB data={data} />;
     } 
-    // else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi HACCP") {
-    //   kontenLaporan = <TemplateHACCP data={data} />;
-    // }
     else {
-      // Jika jenis kegiatan belum memiliki template
       kontenLaporan = (
         <div className="text-center mt-20 font-serif text-lg">
           <p>Template untuk jenis kegiatan <strong>"{data.jenisKegiatan}"</strong> belum tersedia.</p>
@@ -59,7 +55,7 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
                 PELAPORAN PERJALANAN DINAS
               </h1>
               <h2 className="text-[14pt] font-bold uppercase leading-tight">
-                {data.jenisKegiatan.replace(/-/g, '\n')}
+                {data.jenisKegiatan ? data.jenisKegiatan.replace(/-/g, '\n') : "-"}
               </h2>
               
               <div className="mt-8 space-y-2">
@@ -83,9 +79,8 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
             </div>
           </div>
 
-          {/* HALAMAN 2: ISI LAPORAN (Tanpa Kop Surat) */}
+          {/* HALAMAN 2: ISI LAPORAN */}
           <div className="w-[21cm] min-h-[29.7cm] p-[2cm]">
-            {/* RENDER TEMPLATE YANG SUDAH DIPILIH DI ATAS */}
             {kontenLaporan}
           </div>
 
@@ -93,8 +88,19 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
       </div>
     );
 
-  } catch (error) {
+  } catch (error: any) {
+    // TAMPILKAN ERROR ASLI DI LAYAR UNTUK DEBUGGING
     console.error("Gagal koneksi ke database:", error);
-    return <div className="p-10 text-red-500 font-bold mt-20 text-center">Error koneksi database. Cek terminal.</div>;
+    return (
+      <div className="p-10 text-red-500 font-bold mt-20 text-center font-mono">
+        <p className="text-2xl mb-4">ERROR ASLI DITEMUKAN:</p>
+        <p className="bg-red-100 p-4 rounded border border-red-300 inline-block">
+          {error.message || "Pesan error tidak diketahui"}
+        </p>
+        <p className="mt-4 text-sm text-gray-500">
+          Cek terminal VS Code untuk detail stack trace.
+        </p>
+      </div>
+    );
   }
 }

@@ -62,7 +62,7 @@ export default function TemplateCPIB({ data }: { data: any }) {
                     <div key={index} className="flex items-start mb-1">
                       <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
                       <span className="flex-1">{nama}</span>
-                      <span className="ml-4 font-semibold shrink-0">({peran})</span>
+                      <span className="ml-4 shrink-0">({peran})</span>
                     </div>
                   );
                 }
@@ -153,39 +153,45 @@ export default function TemplateCPIB({ data }: { data: any }) {
       </div>
 
       {/* TANDA TANGAN PETUGAS */}
-      <div className="mt-8 mb-8">
+      <div className="mt-8 mb-8 ml-32">
         <p>Petugas Pelaksana :</p>
-        <div className="mt-4 space-y-6">
+        <div className="mt-4 space-y-4">
           {data.petugasPelaksana ? (
             data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
               const match = petugas.trim().match(/(.*)\((.*)\)/);
               const namaLengkap = match ? match[1].trim() : petugas.trim();
-              const peran = match ? match[2].trim() : "";
 
               return (
-                <div key={index} className="flex flex-col">
+                <div key={index} className="flex items-center">
+                  <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
+                  
+                  {/* Nama Petugas */}
+                  <span className="w-[280px] shrink-0">{namaLengkap}</span>
+                  
+                  {/* Area Tanda Tangan (Gambar di Tengah Kurung) */}
                   <div className="flex items-center">
-                    <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
-                    <span className="w-[250px] shrink-0 font-semibold">{namaLengkap}</span>
-                    
-                    <div className="flex-1 flex items-center relative">
+                    <span className="text-gray-600">(</span>
+                    <div className="w-[80px] h-10 flex items-center justify-center relative">
                       <img 
                         src={getTtdUrl(namaLengkap)} 
                         alt="TTD" 
-                        className="absolute h-12 object-contain -mt-8 ml-4 z-10" 
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }} 
+                        className="absolute h-14 object-contain z-10" 
                       />
-                      <span className="text-gray-600 ml-2">(.............................................)</span>
                     </div>
+                    <span className="text-gray-600">)</span>
                   </div>
                 </div>
               );
             })
           ) : (
-            <div className="flex">
+            <div className="flex items-center">
               <span className="w-6 shrink-0">a.</span>
-              <span className="w-[250px] shrink-0">-</span>
-              <span className="flex-1 text-gray-600 ml-2">(.............................................)</span>
+              <span className="w-[280px] shrink-0">-</span>
+              <div className="flex items-center">
+                <span className="text-gray-600">(</span>
+                <div className="w-[80px] h-10"></div>
+                <span className="text-gray-600">)</span>
+              </div>
             </div>
           )}
         </div>
