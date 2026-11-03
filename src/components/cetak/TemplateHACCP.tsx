@@ -1,49 +1,35 @@
-export default function TemplateHACCP({ data }: { data: any }) {
-  return (
-    <div className="font-serif text-[11pt] leading-relaxed text-justify text-black">
-      <div className="text-center mb-8">
-        <h3 className="font-bold uppercase text-[12pt] leading-tight">
-          LAPORAN PERJALANAN DINAS<br/>
-          KEGIATAN INSPEKSI PENERAPAN HACCP<br/>
-          UNIT PENGOLAHAN IKAN
-        </h3>
-      </div>
-      
-      {/* I. DASAR PELAKSANAAN */}
-      <div className="mb-4">
-        <h4 className="font-bold">I. Dasar Pelaksanaan</h4>
-        <p>Ini adalah teks dasar pelaksanaan...</p>
-      </div>
+// ... (bagian teks I-VI tetap sama) ...
 
-      {/* II. PENDAHULUAN */}
-      <div className="mb-4">
-        <h4 className="font-bold">II. Pendahuluan</h4>
-        <p>Ini adalah teks pendahuluan...</p>
+{/* TANDA TANGAN (VERSI TEKS) */}
+<div className="mt-8 mb-8 ml-32">
+  <p>Petugas Pelaksana :</p>
+  <div className="mt-4 space-y-4">
+    {data.petugasPelaksana ? (
+      data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
+        const match = petugas.trim().match(/(.*)\((.*)\)/);
+        const namaLengkap = match ? match[1].trim() : petugas.trim();
+        return (
+          <div key={index} className="flex items-center">
+            <span className="w-6 shrink-0">{index + 1}.</span>
+            <span className="w-[280px] shrink-0">{namaLengkap}</span>
+            <span className="text-gray-600">(......)</span>
+          </div>
+        );
+      })
+    ) : (
+      <div className="flex items-center">
+        <span className="w-6 shrink-0">1.</span>
+        <span className="w-[280px] shrink-0">-</span>
+        <span className="text-gray-600">(......)</span>
       </div>
+    )}
+  </div>
+</div>
 
-      {/* III. MAKSUD DAN TUJUAN */}
-      <div className="mb-4">
-        <h4 className="font-bold">III. Maksud dan Tujuan</h4>
-        <p>Ini adalah teks maksud dan tujuan...</p>
-      </div>
-
-      {/* IV. WAKTU DAN TEMPAT PELAKSANAAN */}
-      <div className="mb-4">
-        <h4 className="font-bold">IV. Waktu dan Tempat Pelaksanaan</h4>
-        <p>Ini adalah teks waktu dan tempat...</p>
-      </div>
-
-      {/* V. PELAKSANAAN KEGIATAN */}
-      <div className="mb-4">
-        <h4 className="font-bold">V. Pelaksanaan Kegiatan</h4>
-        <p>Ini adalah teks pelaksanaan kegiatan...</p>
-      </div>
-
-      {/* VI. PENUTUP */}
-      <div className="mb-4">
-        <h4 className="font-bold">VI. Penutup</h4>
-        <p>Ini adalah teks penutup...</p>
-      </div>
-    </div>
-  );
-}
+{/* DOKUMENTASI (VERSI TEKS) */}
+<div className="page-break-before-always mt-10 pt-10">
+  <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
+  <div className="text-center text-gray-500 italic mt-4 border p-10 border-dashed">
+    (Fitur foto akan diaktifkan kembali nanti)
+  </div>
+</div>
