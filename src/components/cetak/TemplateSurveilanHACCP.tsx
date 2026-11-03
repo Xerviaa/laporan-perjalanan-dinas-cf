@@ -1,5 +1,5 @@
 export default function TemplateSurveilanHACCP({ data }: { data: any }) {
-  const formatTanggal = (tgl: string) => {
+    const formatTanggal = (tgl: string) => {
     if (!tgl) return "-";
     try {
       const date = new Date(tgl);
@@ -82,6 +82,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </p>
       </div>
 
+      {/* V. PETUGAS PELAKSANA (DIPERBAIKI: MENAMPILKAN PERAN) */}
       <div className="mb-4">
         <h4 className="font-bold">V. Petugas Pelaksana</h4>
         <div className="flex mt-1">
@@ -92,10 +93,13 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
               data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
                 const match = petugas.trim().match(/(.*)\((.*)\)/);
                 const nama = match ? match[1].trim() : petugas.trim();
+                const peran = match ? match[2].trim() : ""; // Ambil peran
+
                 return (
                   <div key={index} className="flex items-start mb-1">
                     <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
                     <span className="flex-1">{nama}</span>
+                    {peran && <span className="ml-4 shrink-0">({peran})</span>}
                   </div>
                 );
               })
