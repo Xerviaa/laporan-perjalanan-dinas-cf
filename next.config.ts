@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  // TAMBAHKAN BARIS INI:
+  serverExternalPackages: ["postgres", "jose"],
 };
 
 export default nextConfig;
