@@ -386,22 +386,12 @@ export default function UploadPage() {
                   )}
                 </div>
 
+                {/* AREA TANDA TANGAN YANG SUDAH DI PERBAIKI */}
                 <div className="w-full xl:w-40 flex flex-col">
                   <label className="block text-[10px] font-semibold text-slate-500 mb-1">Tanda Tangan</label>
                   <div className="border border-slate-300 rounded-lg bg-white h-[46px] flex items-center justify-center overflow-hidden px-2">
                     {p.nama ? (
-                      <img 
-                        src={getTtdUrl(p.nama)} 
-                        alt="TTD" 
-                        className="h-full object-contain" 
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          // Ganti isi parent dengan titik-titik
-                          if (e.currentTarget.parentElement) {
-                            e.currentTarget.parentElement.innerHTML = '<span class="text-[10px] text-slate-400 text-center font-mono">(......)</span>';
-                          }
-                        }}
-                      />
+                      <TtdImage nama={p.nama} getTtdUrl={getTtdUrl} />
                     ) : (
                       <span className="text-[10px] text-slate-300">-</span>
                     )}
@@ -499,5 +489,23 @@ export default function UploadPage() {
         </form>
       </div>
     </Layout>
+  );
+}
+
+// --- KOMPONEN KECIL UNTUK MENANGANI GAMBAR TTD YANG AMAN ---
+function TtdImage({ nama, getTtdUrl }: { nama: string, getTtdUrl: (n: string) => string }) {
+  const [error, setError] = useState(false);
+
+  if (error) {
+    return <span className="text-[10px] text-slate-400 text-center font-mono">(......)</span>;
+  }
+
+  return (
+    <img 
+      src={getTtdUrl(nama)} 
+      alt="TTD" 
+      className="h-full object-contain" 
+      onError={() => setError(true)} 
+    />
   );
 }
