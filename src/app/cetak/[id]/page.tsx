@@ -9,8 +9,10 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
   const idLaporan = Number(resolvedParams.id);
 
   try {
-    // PENTING: Kata 'await' dihapus karena postgres.js menginisialisasi secara sinkron
-    const db = getDb(process.env.DIRECT_URL!);
+    // PENTING: Tidak perlu parameter URL lagi. 
+    // getDb() akan mengambil koneksi otomatis dari Hyperdrive Cloudflare.
+    const db = getDb(); 
+    
     const result = await db.select().from(reports).where(eq(reports.id, idLaporan));
     const data = result[0];
 

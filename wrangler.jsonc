@@ -29,5 +29,11 @@
 			"binding": "MY_BUCKET",
 			"bucket_name": "laporan-files"
 		}
+	],
+	"hyperdrive": [
+		{
+			"binding": "HYPERDRIVE",
+			"id": "f78066d43943419299ac78a80c3cd7a6"
+		}
 	]
 }
