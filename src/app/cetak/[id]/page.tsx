@@ -54,6 +54,7 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
 
     let kontenLaporan = null;
 
+    // LOGIKA PEMILIHAN TEMPLATE BERDASARKAN JENIS KEGIATAN
     if (data.jenisKegiatan === "Primer - Inspeksi - Inspeksi CPIB Kapal") {
       kontenLaporan = <TemplateCPIB data={data} />;
     } 
@@ -63,7 +64,8 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
     else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi SKP") {
       kontenLaporan = <TemplateInspeksiSKP data={data} />;
     }
-    else if (data.jenisKegiatan === "Pasca - Surveilan - Surveilan HACCP") {
+    // PERBAIKAN: Ubah "Surveilan" menjadi "Survailen" (sesuai data form)
+    else if (data.jenisKegiatan === "Pasca - Survailen - Survailen HACCP") {
       kontenLaporan = <TemplateSurveilanHACCP data={data} />;
     }
     else {
