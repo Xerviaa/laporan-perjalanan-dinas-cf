@@ -4,15 +4,26 @@ import { Pool } from "pg";
 import * as schema from "./schema";
 import { cache } from "react";
 
-// Gunakan cache agar koneksi hanya dibuat sekali per request
 export const getDb = cache(() => {
-  const { env } = getCloudflareContext();
+  // Jika di lokal, kita ambil dari .env. Jika di Cloudflare, dari Hyperdrive
+  let connectionString;
   
-  // Hyperdrive menyediakan connectionString yang sudah dioptimasi
-  const pool = new Pool({
-    connectionString: env.HYPERDRIVE.connectionString,
-    maxUses: 1, // Jangan gunakan ulang koneksi antar request
-  });
+  try {
+    const { env } = getCloudflareContext();
+    connectionString = env.HYPERDRIVE?.connectionString;
+  } catch (e) {
+    // Abaikan error ini saat berjalan di lokal
+  }
 
+  // Fallback ke .env jika Hyperdrive tidak tersedia (saat lokal)
+  if (!connectionString) {
+    connectionString = process.env.DIRECT_URL;
+  }
+
+  if (!connectionString) {
+    throw new Error("Connection string tidak ditemukan (DIRECT_URL atau Hyperdrive)");
+  }
+
+  const pool = new Pool({ connectionString, maxUses: 1 });
   return drizzle({ client: pool, schema });
 });

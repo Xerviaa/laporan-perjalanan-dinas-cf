@@ -90,7 +90,7 @@ export default function ArsipPage() {
   // Filter Berdasarkan Pencarian dan Tanggal
   const filteredReports = reports.filter(r => {
     const matchSearch = (r.namaPerusahaan && r.namaPerusahaan.toLowerCase().includes(searchTerm.toLowerCase())) || 
-                        (r.pembuatLaporan && r.pembuatLaporan.toLowerCase().includes(searchTerm.toLowerCase()));
+                        (r.uploadedBy && r.uploadedBy.toLowerCase().includes(searchTerm.toLowerCase()));
     
     let matchDate = true;
     if (startDate || endDate) {
@@ -216,7 +216,7 @@ export default function ArsipPage() {
       'No': index + 1,
       'Nama Perusahaan': report.namaPerusahaan || '-',
       'Jenis Kegiatan': report.jenisKegiatan || '-',
-      'Pembuat Laporan': report.pembuatLaporan || '-',
+      'Pembuat Laporan': report.uploadedBy || '-',
       'Tanggal Dinas': report.tanggal || '-',
       'Tanggal Upload': new Date(report.createdAt).toLocaleDateString('id-ID'),
     }));
@@ -243,7 +243,6 @@ export default function ArsipPage() {
 
     if (dataToPrint.length === 0) return alert('Tidak ada file yang dipilih untuk dicetak');
 
-    // Buka halaman cetak untuk setiap laporan yang dipilih
     dataToPrint.forEach((report) => {
       window.open(`/cetak/${report.id}`, '_blank');
     });
@@ -384,35 +383,68 @@ export default function ArsipPage() {
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
-                                  {monthData.reports.map((report: any) => (
-                                    <tr key={report.id} className="hover:bg-slate-50 transition-colors">
-                                      <td className="px-4 py-3">
-                                        <p className="font-semibold text-blue-600 line-clamp-1">{report.namaPerusahaan}</p>
-                                        <p className="text-[10px] text-slate-400 mt-1">{report.jenisKegiatan}</p>
-                                      </td>
-                                      <td className="px-4 py-3 text-slate-700 truncate max-w-[150px] hidden md:table-cell">{report.pembuatLaporan}</td>
-                                      <td className="px-4 py-3 text-slate-500 font-medium hidden lg:table-cell">
-                                        {report.tanggal ? new Date(report.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-'}
-                                      </td>
-                                      <td className="px-4 py-3">
-                                        <div className="flex items-center justify-center gap-1 md:gap-2">
-                                          <button onClick={() => setDeleteId(report.id)} title="Hapus" className="p-1.5 bg-slate-100 text-slate-500 rounded-md hover:bg-red-50 hover:text-red-600 cursor-pointer">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                                          </button>
-                                          <button onClick={() => setEditData(report)} title="Edit" className="p-1.5 bg-slate-100 text-slate-500 rounded-md hover:bg-blue-50 hover:text-blue-600 cursor-pointer">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                                          </button>
-                                          <button onClick={() => handleCopyLink(report.id)} title="Salin Link Cetak" className={`p-1.5 rounded-md cursor-pointer ${copiedId === report.id ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
-                                            {copiedId === report.id ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>}
-                                          </button>
-                                          <a href={`/cetak/${report.id}`} target="_blank" title="Cetak Laporan" className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 font-medium text-xs transition-colors flex items-center gap-1 cursor-pointer">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-                                            <span className="hidden md:inline">Cetak PDF</span>
-                                          </a>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ))}
+                                  {monthData.reports.map((report: any) => {
+                                    // LOGIKA HITUNG KETERLAMBATAN
+                                    let statusTeks = "Tepat Waktu";
+                                    let statusWarna = "text-emerald-600 bg-emerald-50 border-emerald-200";
+
+                                    if (report.tanggal && report.createdAt) {
+                                      const tglDinas = new Date(report.tanggal);
+                                      const tglUpload = new Date(report.createdAt);
+                                      
+                                      // Hitung selisih hari (dibulatkan ke bawah)
+                                      const selisihWaktu = tglUpload.getTime() - tglDinas.getTime();
+                                      const selisihHari = Math.floor(selisihWaktu / (1000 * 3600 * 24));
+                                      
+                                      if (selisihHari > 3) {
+                                        statusTeks = "Terlambat";
+                                        statusWarna = "text-red-600 bg-red-50 border-red-200";
+                                      }
+                                    }
+
+                                    return (
+                                      <tr key={report.id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="px-4 py-3">
+                                          <p className="font-semibold text-blue-600 line-clamp-1">{report.namaPerusahaan}</p>
+                                          <p className="text-[10px] text-slate-400 mt-1">{report.jenisKegiatan}</p>
+                                        </td>
+                                        <td className="px-4 py-3 text-slate-700 hidden md:table-cell">
+                                          {/* TAMPILKAN NAMA + GELAR & TANGGAL UPLOAD */}
+                                          <p className="font-medium text-slate-800">{report.uploadedBy}</p>
+                                          <p className="text-[10px] text-slate-400 mt-1">
+                                            Diunggah: {new Date(report.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })} 
+                                            {' '}pukul{' '}
+                                            {new Date(report.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                          </p>
+                                        </td>
+                                        <td className="px-4 py-3 text-slate-500 font-medium hidden lg:table-cell">
+                                          {report.tanggal ? new Date(report.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-'}
+                                          
+                                          {/* BADGE STATUS TEPAT WAKTU / TERLAMBAT */}
+                                          <div className={`mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full inline-block border ${statusWarna}`}>
+                                            {statusTeks}
+                                          </div>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                          <div className="flex items-center justify-center gap-1 md:gap-2">
+                                            <button onClick={() => setDeleteId(report.id)} title="Hapus" className="p-1.5 bg-slate-100 text-slate-500 rounded-md hover:bg-red-50 hover:text-red-600 cursor-pointer">
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                            </button>
+                                            <button onClick={() => setEditData(report)} title="Edit" className="p-1.5 bg-slate-100 text-slate-500 rounded-md hover:bg-blue-50 hover:text-blue-600 cursor-pointer">
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                                            </button>
+                                            <button onClick={() => handleCopyLink(report.id)} title="Salin Link Cetak" className={`p-1.5 rounded-md cursor-pointer ${copiedId === report.id ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                                              {copiedId === report.id ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>}
+                                            </button>
+                                            <a href={`/cetak/${report.id}`} target="_blank" title="Cetak Laporan" className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 font-medium text-xs transition-colors flex items-center gap-1 cursor-pointer">
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                              <span className="hidden md:inline">Cetak PDF</span>
+                                            </a>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
                                 </tbody>
                               </table>
                             </div>
@@ -502,7 +534,7 @@ export default function ArsipPage() {
                   {getReportsByMonth(selectedExportMonth).map(r => (
                     <label key={r.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
                       <input type="checkbox" className="w-4 h-4 cursor-pointer" checked={selectedExportIds.includes(r.id)} onChange={(e) => { if (e.target.checked) { setSelectedExportIds([...selectedExportIds, r.id]); } else { setSelectedExportIds(selectedExportIds.filter(id => id !== r.id)); } }} />
-                      <span className="text-sm text-slate-600 truncate">{r.namaPerusahaan} - {r.pembuatLaporan}</span>
+                      <span className="text-sm text-slate-600 truncate">{r.namaPerusahaan} - {r.uploadedBy}</span>
                     </label>
                   ))}
                 </div>
@@ -559,7 +591,7 @@ export default function ArsipPage() {
                   {getReportsByMonth(selectedPrintMonth).map(r => (
                     <label key={r.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
                       <input type="checkbox" className="w-4 h-4 cursor-pointer" checked={selectedPrintIds.includes(r.id)} onChange={(e) => { if (e.target.checked) { setSelectedPrintIds([...selectedPrintIds, r.id]); } else { setSelectedPrintIds(selectedPrintIds.filter(id => id !== r.id)); } }} />
-                      <span className="text-sm text-slate-600 truncate">{r.namaPerusahaan} - {r.pembuatLaporan}</span>
+                      <span className="text-sm text-slate-600 truncate">{r.namaPerusahaan} - {r.uploadedBy}</span>
                     </label>
                   ))}
                 </div>

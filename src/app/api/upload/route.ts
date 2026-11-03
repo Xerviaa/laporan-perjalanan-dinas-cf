@@ -9,16 +9,16 @@ export async function POST(request: Request) {
     // Ambil foto kegiatan (bisa banyak)
     const filesKegiatan = formData.getAll('fotoKegiatan') as File[];
 
-    // Ambil data teks
-    const pembuatLaporan = formData.get('pembuatLaporan') as string;
-    const jenisKegiatan = formData.get('jenisKegiatan') as string;
-    const noSurat = formData.get('noSurat') as string;
-    const namaPerusahaan = formData.get('namaPerusahaan') as string;
-    const alamatPerusahaan = formData.get('alamatPerusahaan') as string;
-    const tanggal = formData.get('tanggal') as string;
-    const petugasPelaksana = formData.get('petugasPelaksana') as string;
+    // Ambil data teks & pastikan tidak ada yang undefined
+    const pembuatLaporan = (formData.get('pembuatLaporan') as string) || "";
+    const jenisKegiatan = (formData.get('jenisKegiatan') as string) || "";
+    const noSurat = (formData.get('noSurat') as string) || "";
+    const namaPerusahaan = (formData.get('namaPerusahaan') as string) || "";
+    const alamatPerusahaan = (formData.get('alamatPerusahaan') as string) || "";
+    const tanggal = (formData.get('tanggal') as string) || "";
+    const petugasPelaksana = (formData.get('petugasPelaksana') as string) || "";
 
-    // VALIDASI: Hanya cek data teks, tidak perlu cek fileDokumen lagi
+    // VALIDASI
     if (!pembuatLaporan || !jenisKegiatan || !namaPerusahaan) {
       return Response.json({ status: "error", message: "Data wajib belum lengkap" }, { status: 400 });
     }
@@ -26,7 +26,6 @@ export async function POST(request: Request) {
     const { env } = getCloudflareContext();
     const bucket = (env as any).MY_BUCKET as R2Bucket;
 
-    // --- FUNGSI BANTU UPLOAD KE R2 ---
     const uploadToR2 = async (file: File, prefix: string) => {
       const key = `reports/${prefix}/${Date.now()}-${file.name}`;
       await bucket.put(key, file.slice(), {
@@ -35,7 +34,7 @@ export async function POST(request: Request) {
       return key;
     };
 
-    // 1. Upload Foto Kegiatan (Loop)
+    // Upload Foto Kegiatan
     const keysKegiatan: string[] = [];
     for (const file of filesKegiatan) {
       if (file.size > 0) {
@@ -47,12 +46,12 @@ export async function POST(request: Request) {
     const deadlineDate = new Date();
     deadlineDate.setDate(deadlineDate.getDate() + 3);
 
-    // 2. Simpan ke Database menggunakan Hyperdrive (getDb tanpa parameter)
+    // Simpan ke Database
     const db = getDb();
     await db.insert(reports).values({
-      title: `${jenisKegiatan} - ${namaPerusahaan}`, // Title dibuat otomatis dari jenis & perusahaan
-      fileKey: "-", // Karena dokumen sudah dihapus, kita isi string kosong atau tanda hubung
-      uploadedBy: pembuatLaporan,
+      title: `${jenisKegiatan} - ${namaPerusahaan}`,
+      fileKey: "-", 
+      uploadedBy: pembuatLaporan, 
       jenisKegiatan: jenisKegiatan,
       noSurat: noSurat,
       petugasPelaksana: petugasPelaksana,
@@ -61,9 +60,8 @@ export async function POST(request: Request) {
       tanggal: tanggal,
       deadline: deadlineDate,
       isRewarded: false,
-      // Simpan array keys sebagai JSON string
       fotoKegiatan: JSON.stringify(keysKegiatan),
-      fotoLokasi: JSON.stringify([]), // Kosongkan karena fitur foto lokasi sudah dihapus
+      fotoLokasi: JSON.stringify([]), 
     });
 
     return Response.json({ status: "success", message: "Berhasil diunggah" });

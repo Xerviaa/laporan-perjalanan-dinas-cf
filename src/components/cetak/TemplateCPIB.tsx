@@ -1,14 +1,16 @@
 export default function TemplateCPIB({ data }: { data: any }) {
-  // Format tanggal dari database (YYYY-MM-DD) menjadi format Indonesia
   const formatTanggal = (tgl: string) => {
     if (!tgl) return "";
-    const date = new Date(tgl);
-    return date.toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' });
+    try {
+      const date = new Date(tgl);
+      return date.toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch (e) {
+      return tgl;
+    }
   };
 
   const tanggalIndo = formatTanggal(data.tanggal);
 
-  // Fungsi untuk menebak nama file TTD berdasarkan nama pegawai
   const getTtdUrl = (nama: string) => {
     if (!nama) return "";
     const namaTanpaGelar = nama.split(',')[0];
@@ -32,7 +34,7 @@ export default function TemplateCPIB({ data }: { data: any }) {
       <div className="mb-4">
         <h4 className="font-bold">I. Dasar Pelaksanaan</h4>
         <ol className="list-decimal pl-5 mt-1 space-y-1">
-          <li>Surat Tugas Nomor : {data.noSurat || "ST/03.0/IX/2026/00183"}</li>
+          <li>Surat Tugas Nomor : {data.noSurat || "-"}</li>
           <li>DIPA -032.13.2.427624/2026 Tanggal 1 Desember 2025</li>
           <li>Peraturan Menteri Kelautan dan Perikanan Nomor 10 Tahun 2021 tentang Standar Kegiatan Usaha dan Produk Pada Penyelenggaraan Perizinan Berusaha Berbasis Risiko Sektor Kelautan dan Perikanan</li>
           <li>Peraturan Presiden Nomor 193 Tahun 2024 tentang Kementerian Kelautan dan Perikanan</li>
@@ -104,10 +106,10 @@ export default function TemplateCPIB({ data }: { data: any }) {
       <div className="mb-4">
         <h4 className="font-bold">V. Waktu dan Tempat Pelaksanaan</h4>
         <p className="indent-8 mt-1">
-          Kegiatan ini dilaksanakan di <strong>{data.namaPerusahaan || "KM. Naga Mas Perkasa"}</strong> di Pelabuhan Benoa, Denpasar-Bali yang mengajukan permohonan kepada BPPMHKP dan akan diteruskan pada inspektur mutu/asisten inspektur mutu yang berada di Balai PPMHKP Denpasar setelah dilakukan verifikasi permohonan.
+          Kegiatan ini dilaksanakan di <strong>{data.namaPerusahaan || "-"}</strong> di Pelabuhan Benoa, Denpasar-Bali yang mengajukan permohonan kepada BPPMHKP dan akan diteruskan pada inspektur mutu/asisten inspektur mutu yang berada di Balai PPMHKP Denpasar setelah dilakukan verifikasi permohonan.
         </p>
         <p className="indent-8 mt-1">
-          Inspeksi dilaksanakan pada tanggal <strong>{tanggalIndo || "3 September 2026"}</strong> oleh Inspektur Mutu/Asisten Inspektur Mutu dan petugas yang dimiliki oleh Balai PPMHKP Denpasar.
+          Inspeksi dilaksanakan pada tanggal <strong>{tanggalIndo || "-"}</strong> oleh Inspektur Mutu/Asisten Inspektur Mutu dan petugas yang dimiliki oleh Balai PPMHKP Denpasar.
         </p>
       </div>
 
@@ -150,7 +152,7 @@ export default function TemplateCPIB({ data }: { data: any }) {
         </p>
       </div>
 
-      {/* TANDA TANGAN PETUGAS (DENGAN GAMBAR TTD) */}
+      {/* TANDA TANGAN PETUGAS */}
       <div className="mt-8 mb-8">
         <p>Petugas Pelaksana :</p>
         <div className="mt-4 space-y-6">
@@ -166,7 +168,6 @@ export default function TemplateCPIB({ data }: { data: any }) {
                     <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
                     <span className="w-[250px] shrink-0 font-semibold">{namaLengkap}</span>
                     
-                    {/* Area Tanda Tangan */}
                     <div className="flex-1 flex items-center relative">
                       <img 
                         src={getTtdUrl(namaLengkap)} 
@@ -183,7 +184,7 @@ export default function TemplateCPIB({ data }: { data: any }) {
           ) : (
             <div className="flex">
               <span className="w-6 shrink-0">a.</span>
-              <span className="w-[250px] shrink-0">Siti Nurlatifah, S.St.Pi., M.Si</span>
+              <span className="w-[250px] shrink-0">-</span>
               <span className="flex-1 text-gray-600 ml-2">(.............................................)</span>
             </div>
           )}
@@ -194,8 +195,7 @@ export default function TemplateCPIB({ data }: { data: any }) {
       <div className="page-break-before-always mt-10 pt-10">
         <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
         <div className="grid grid-cols-2 gap-4">
-          {data.fotoKegiatan ? (
-             // Menggunakan API /api/r2/ untuk memanggil gambar dari bucket R2
+          {data.fotoKegiatan && data.fotoKegiatan !== "[]" ? (
              JSON.parse(data.fotoKegiatan).map((key: string, i: number) => (
                 <div key={i} className="mb-4">
                   <img src={`/api/r2/${key}`} alt={`Dokumentasi ${i}`} className="w-full h-auto object-cover border border-gray-300" />
