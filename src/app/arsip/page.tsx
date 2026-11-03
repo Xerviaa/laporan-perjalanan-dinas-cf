@@ -119,9 +119,9 @@ export default function ArsipPage() {
   // Urutkan Tahun dari terbaru ke terlama
   const sortedYears = Object.keys(dataByYear).sort((a, b) => parseInt(b) - parseInt(a));
 
-  // Daftar semua bulan (untuk keperluan dropdown ekspor/cetak)
-  const availableMonths = Object.values(dataByYear).flatMap(months => 
-    Object.values(months).map(m => m.fullMonth)
+  // Daftar semua bulan (untuk keperluan dropdown ekspor/cetak) - DIPERBAIKI
+  const availableMonths: string[] = Object.values(dataByYear).flatMap((months: any) => 
+    Object.values(months).map((m: any) => m.fullMonth)
   );
 
   const getReportsByMonth = (monthYear: string) => {
@@ -307,11 +307,11 @@ export default function ArsipPage() {
           {sortedYears.map((year) => {
             const isYearOpen = selectedYear === year;
             const monthsInYear = dataByYear[year];
-            const totalReportsInYear = Object.values(monthsInYear).reduce((sum, m) => sum + m.reports.length, 0);
+            const totalReportsInYear = Object.values(monthsInYear).reduce((sum: number, m: any) => sum + m.reports.length, 0);
             
-            // Urutkan bulan (Januari - Desember)
+            // Urutkan bulan (Januari - Desember) - DIPERBAIKI
             const monthOrder = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-            const sortedMonthsInYear = Object.keys(monthsInYear).sort((a, b) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
+            const sortedMonthsInYear: string[] = Object.keys(monthsInYear).sort((a: string, b: string) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
 
             return (
               <div key={year} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -333,7 +333,7 @@ export default function ArsipPage() {
                 {/* DAFTAR BULAN (Jika Tahun Dibuka) */}
                 {isYearOpen && (
                   <div className="bg-slate-50 border-t border-slate-200 p-3 space-y-2">
-                    {sortedMonthsInYear.map((month) => {
+                    {sortedMonthsInYear.map((month: string) => {
                       const monthData = monthsInYear[month];
                       const isMonthOpen = openMonths.includes(monthData.fullMonth);
 
@@ -361,13 +361,15 @@ export default function ArsipPage() {
                                 <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-xs">
                                   <tr>
                                     <th className="px-4 py-3">Nama Perusahaan</th>
+                                    <th className="px-4 py-3 hidden md:table-cell">Jenis Kegiatan</th>
                                     <th className="px-4 py-3 hidden md:table-cell">Pembuat Laporan</th>
                                     <th className="px-4 py-3 hidden lg:table-cell">Tanggal Dinas</th>
                                     <th className="px-4 py-3 text-center">Aksi</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
-                                  {monthData.reports.map((report: any) => {
+                                  {/* DIPERBAIKI: Tambahkan (as any[]) */}
+                                  {(monthData.reports as any[]).map((report: any) => {
                                     // LOGIKA HITUNG KETERLAMBATAN
                                     let statusTeks = "Tepat Waktu";
                                     let statusWarna = "text-emerald-600 bg-emerald-50 border-emerald-200";
@@ -388,12 +390,15 @@ export default function ArsipPage() {
 
                                     return (
                                       <tr key={report.id} className="hover:bg-slate-50 transition-colors">
-                                        {/* BAGIAN YANG DIUBAH: NAMA PERUSAHAAN & JENIS KEGIATAN SEJAJAR */}
+                                        
+                                        {/* KOLOM 1: NAMA PERUSAHAAN SAJA */}
                                         <td className="px-4 py-3">
-                                          <div className="flex items-center gap-2 flex-wrap">
-                                            <p className="font-semibold text-blue-600 line-clamp-1">{report.namaPerusahaan}</p>
-                                            <p className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 whitespace-nowrap">{report.jenisKegiatan}</p>
-                                          </div>
+                                          <p className="font-semibold text-blue-600 line-clamp-1">{report.namaPerusahaan}</p>
+                                        </td>
+
+                                        {/* KOLOM 2: JENIS KEGIATAN SAJA */}
+                                        <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
+                                          <p className="line-clamp-2 text-xs">{report.jenisKegiatan}</p>
                                         </td>
                                         
                                         <td className="px-4 py-3 text-slate-700 hidden md:table-cell">
@@ -475,7 +480,7 @@ export default function ArsipPage() {
                   {openExportDropdown && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                       <div onClick={() => { setSelectedExportMonth('semua'); setOpenExportDropdown(false); }} className="p-3 hover:bg-emerald-50 cursor-pointer text-sm font-semibold text-slate-700 border-b">Semua Bulan</div>
-                      {availableMonths.map(m => (
+                      {availableMonths.map((m: string) => (
                         <div key={m} onClick={() => { setSelectedExportMonth(m); setOpenExportDropdown(false); }} className="p-3 hover:bg-emerald-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0">{m}</div>
                       ))}
                     </div>
@@ -532,7 +537,7 @@ export default function ArsipPage() {
                   {openPrintDropdown && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
                       <div onClick={() => { setSelectedPrintMonth('semua'); setOpenPrintDropdown(false); }} className="p-3 hover:bg-blue-50 cursor-pointer text-sm font-semibold text-slate-700 border-b">Semua Bulan</div>
-                      {availableMonths.map(m => (
+                      {availableMonths.map((m: string) => (
                         <div key={m} onClick={() => { setSelectedPrintMonth(m); setOpenPrintDropdown(false); }} className="p-3 hover:bg-blue-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0">{m}</div>
                       ))}
                     </div>
