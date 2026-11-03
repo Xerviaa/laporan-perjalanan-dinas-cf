@@ -36,3 +36,12 @@
     page-break-before: always;
   }
 }
+@media print {
+  @page {
+    margin: 0;
+    size: auto;
+  }
+  body {
+    margin: 1.5cm; /* Beri margin manual pada body agar teks tidak terpotong */
+  }
+}

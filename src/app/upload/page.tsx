@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation'; // Tetap diimport untuk tombol manual
 import Layout from '@/components/Layout';
 import { daftarPegawai } from '@/data/pegawai';
 import { daftarPerusahaan } from '@/data/perusahaan';
@@ -45,6 +45,7 @@ export default function UploadPage() {
   
   const [status, setStatus] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadBerhasil, setUploadBerhasil] = useState(false); // State baru untuk cek status berhasil
 
   const [showPembuatDropdown, setShowPembuatDropdown] = useState(false);
   const [searchPembuat, setSearchPembuat] = useState('');
@@ -146,6 +147,7 @@ export default function UploadPage() {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUploadBerhasil(false);
     if (!pembuatLaporan || !kategori || !jenis || !detailKegiatan || !namaPerusahaan || !tanggal || !noSurat) {
       return setStatus('Lengkapi semua data wajib!');
     }
@@ -166,7 +168,6 @@ export default function UploadPage() {
 
     const fullJenisKegiatan = `${kategori} - ${jenis} - ${detailKegiatan}`;
 
-    // PENTING: Ubah join(', ') menjadi join(' | ') agar nama & gelar tidak terpisah
     const petugasString = petugas
       .filter(p => p.nama.trim() !== '')
       .map(p => {
@@ -190,13 +191,15 @@ export default function UploadPage() {
       const data = await res.json();
       
       if (res.ok) {
-        setStatus('Upload berhasil! Mengalihkan ke halaman arsip...');
+        setStatus('Upload berhasil!');
+        setUploadBerhasil(true); // Set berhasil, tapi jangan redirect
         
-        setTimeout(() => {
-          router.push('/arsip'); 
-          router.refresh(); 
-        }, 1500); 
-        
+        // Kosongkan form
+        setPembuatLaporan(''); setKategori(''); setJenis(''); setDetailKegiatan('');
+        setNamaPerusahaan(''); setAlamatPerusahaan(''); setIsManualPerusahaan(false); 
+        setTanggal(''); setNoSurat(''); 
+        setPetugas([{ nama: '', peran: '', peranManual: '' }]);
+        setFotoKegiatan([]);
       } else {
         setStatus(`Gagal: ${data.message}`);
       }
@@ -219,13 +222,23 @@ export default function UploadPage() {
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm max-w-3xl p-8">
         {status && (
-          <div className={`p-4 mb-6 rounded-lg text-sm font-medium ${status.includes('berhasil') ? 'bg-green-50 text-green-700' : status.includes('Gagal') ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
-            {status}
+          <div className={`p-4 mb-6 rounded-lg text-sm font-medium flex flex-col gap-2 ${status.includes('berhasil') ? 'bg-green-50 text-green-700' : status.includes('Gagal') ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
+            <span>{status}</span>
+            {/* TOMBOL MANUAL KE ARSIP JIKA BERHASIL */}
+            {uploadBerhasil && (
+              <button 
+                onClick={() => router.push('/arsip')}
+                className="mt-2 bg-green-600 text-white px-4 py-2 rounded-lg w-fit text-sm font-semibold hover:bg-green-700 cursor-pointer"
+              >
+                Lihat di Halaman Arsip →
+              </button>
+            )}
           </div>
         )}
         
         <form onSubmit={handleUpload} className="space-y-6">
           
+          {/* ... (SISA KODE FORM SAMA PERSIS SEPERTI SEBELUMNYA) ... */}
           {/* NAMA PEMBUAT LAPORAN */}
           <div className="relative z-40" ref={pembuatRef}>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Nama Pembuat Laporan</label>

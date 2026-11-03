@@ -1,7 +1,8 @@
 import TombolCetak from "@/components/TombolCetak";
 import TemplateCPIB from "@/components/cetak/TemplateCPIB";
-// import TemplateHACCP from "@/components/cetak/TemplateHACCP"; // Nanti kita buat
-// import TemplateSKP from "@/components/cetak/TemplateSKP"; // Nanti kita buat
+import TemplateHACCP from "@/components/cetak/TemplateHACCP";
+import TemplateInspeksiSKP from "@/components/cetak/TemplateInspeksiSKP";
+import TemplateSurveilanHACCP from "@/components/cetak/TemplateSurveilanHACCP"; // Import template Surveilan HACCP
 
 import { getDb } from "@/db";
 import { reports } from "@/db/schema";
@@ -34,6 +35,15 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
     if (data.jenisKegiatan === "Primer - Inspeksi - Inspeksi CPIB Kapal") {
       kontenLaporan = <TemplateCPIB data={data} />;
     } 
+    else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi HACCP") {
+      kontenLaporan = <TemplateHACCP data={data} />;
+    }
+    else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi SKP") {
+      kontenLaporan = <TemplateInspeksiSKP data={data} />;
+    }
+    else if (data.jenisKegiatan === "Pasca - Surveilan - Surveilan HACCP") {
+      kontenLaporan = <TemplateSurveilanHACCP data={data} />;
+    }
     else {
       kontenLaporan = (
         <div className="text-center mt-20 font-serif text-lg">
