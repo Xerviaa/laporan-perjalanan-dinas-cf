@@ -1,3 +1,6 @@
+import TtdImage from "./TtdImage";
+import FotoDokumentasi from "./FotoDokumentasi";
+
 export default function TemplateHACCP({ data }: { data: any }) {
   const formatTanggal = (tgl: string) => {
     if (!tgl) return "";
@@ -18,7 +21,6 @@ export default function TemplateHACCP({ data }: { data: any }) {
     return `/tanda-tangan/${namaFile}.png`;
   };
 
-  // PENGAMAN EKSTRA: Pastikan fotoKegiatan adalah array yang valid
   let fotoArray: string[] = [];
   try {
     if (data.fotoKegiatan && data.fotoKegiatan !== "[]") {
@@ -109,7 +111,8 @@ export default function TemplateHACCP({ data }: { data: any }) {
                   <div className="flex items-center">
                     <span className="text-gray-600">(</span>
                     <div className="w-[80px] h-10 flex items-center justify-center relative">
-                      <img src={getTtdUrl(namaLengkap)} alt="TTD" className="absolute h-14 object-contain z-10" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                      {/* GUNAKAN KOMPONEN CLIENT UNTUK GAMBAR TTD */}
+                      <TtdImage nama={namaLengkap} getTtdUrl={getTtdUrl} />
                     </div>
                     <span className="text-gray-600">)</span>
                   </div>
@@ -130,17 +133,8 @@ export default function TemplateHACCP({ data }: { data: any }) {
       <div className="page-break-before-always mt-10 pt-10">
         <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
         <div className="grid grid-cols-2 gap-4">
-          {fotoArray.length > 0 ? (
-             fotoArray.map((key: string, i: number) => (
-                <div key={i} className="mb-4">
-                  <img src={`/api/r2/${key}`} alt={`Dokumentasi ${i}`} className="w-full h-auto object-cover border border-gray-300" />
-                </div>
-             ))
-          ) : (
-            <div className="col-span-2 text-center text-gray-500 italic mt-4 border p-10 border-dashed">
-              (Belum ada foto dokumentasi yang di-upload)
-            </div>
-          )}
+          {/* GUNAKAN KOMPONEN CLIENT UNTUK FOTO */}
+          <FotoDokumentasi fotoArray={fotoArray} />
         </div>
       </div>
 
