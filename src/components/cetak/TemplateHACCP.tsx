@@ -18,6 +18,17 @@ export default function TemplateHACCP({ data }: { data: any }) {
     return `/tanda-tangan/${namaFile}.png`;
   };
 
+  // PERBAIKAN: Pastikan fotoKegiatan adalah array yang valid
+  let fotoArray: string[] = [];
+  try {
+    if (data.fotoKegiatan && data.fotoKegiatan !== "[]") {
+      const parsed = JSON.parse(data.fotoKegiatan);
+      if (Array.isArray(parsed)) fotoArray = parsed;
+    }
+  } catch (e) {
+    fotoArray = [];
+  }
+
   return (
     <div className="font-serif text-[11pt] leading-relaxed text-justify text-black">
       
@@ -119,8 +130,8 @@ export default function TemplateHACCP({ data }: { data: any }) {
       <div className="page-break-before-always mt-10 pt-10">
         <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
         <div className="grid grid-cols-2 gap-4">
-          {data.fotoKegiatan && data.fotoKegiatan !== "[]" ? (
-             JSON.parse(data.fotoKegiatan).map((key: string, i: number) => (
+          {fotoArray.length > 0 ? (
+             fotoArray.map((key: string, i: number) => (
                 <div key={i} className="mb-4">
                   <img src={`/api/r2/${key}`} alt={`Dokumentasi ${i}`} className="w-full h-auto object-cover border border-gray-300" />
                 </div>
