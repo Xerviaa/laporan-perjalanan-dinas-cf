@@ -21,6 +21,7 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
       return <div className="p-10 text-xl font-bold text-center mt-20">Laporan dengan ID {idLaporan} tidak ditemukan.</div>;
     }
 
+    // PERBAIKAN FINAL: Ubah SEMUA properti menjadi string murni
     const data = {
       id: String(rawData.id),
       title: String(rawData.title || ""),
@@ -53,7 +54,7 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
 
     let kontenLaporan = null;
 
-    // LOGIKA PEMILIHAN TEMPLATE (DIKEMBALIKAN KE SEMULA)
+    // LOGIKA PEMILIHAN TEMPLATE
     if (data.jenisKegiatan === "Primer - Inspeksi - Inspeksi CPIB Kapal") {
       kontenLaporan = <TemplateCPIB data={data} />;
     } 
@@ -121,6 +122,7 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
     );
 
   } catch (error: any) {
+    // TAMPILKAN ERROR ASLI (STACK TRACE) DI LAYAR
     return (
       <div className="p-10 text-red-500 font-mono mt-20">
         <h1 className="text-2xl font-bold mb-4">ERROR ASLI DITEMUKAN:</h1>

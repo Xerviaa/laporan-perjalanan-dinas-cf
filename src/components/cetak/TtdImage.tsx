@@ -5,7 +5,6 @@ import { useState } from "react";
 export default function TtdImage({ nama, getTtdUrl }: { nama: string, getTtdUrl: (n: string) => string }) {
   const [error, setError] = useState(false);
 
-  // Jika nama kosong atau error, tampilkan teks titik-titik
   if (!nama || error) {
     return <span className="text-[10px] text-slate-400 text-center font-mono">(......)</span>;
   }

@@ -1,16 +1,5 @@
-import { ErrorBoundary } from "react-error-boundary";
 import TtdImage from "./TtdImage";
 import FotoDokumentasi from "./FotoDokumentasi";
-
-function ErrorFallback({ error }: { error: any }) {
-  return (
-    <div className="p-4 bg-red-100 text-red-700 font-mono text-sm">
-      <h2 className="font-bold">ERROR DI KOMPONEN GAMBAR:</h2>
-      <pre>{error.message}</pre>
-      <pre>{error.stack}</pre>
-    </div>
-  );
-}
 
 export default function TemplateHACCP({ data }: { data: any }) {
   const formatTanggal = (tgl: string) => {
@@ -107,7 +96,7 @@ export default function TemplateHACCP({ data }: { data: any }) {
         </p>
       </div>
 
-      {/* TANDA TANGAN (DENGAN ERROR BOUNDARY) */}
+      {/* TANDA TANGAN */}
       <div className="mt-8 mb-8 ml-32">
         <p>Petugas Pelaksana :</p>
         <div className="mt-4 space-y-4">
@@ -122,9 +111,7 @@ export default function TemplateHACCP({ data }: { data: any }) {
                   <div className="flex items-center">
                     <span className="text-gray-600">(</span>
                     <div className="w-[80px] h-10 flex items-center justify-center relative">
-                      <ErrorBoundary FallbackComponent={ErrorFallback}>
-                        <TtdImage nama={namaLengkap} getTtdUrl={getTtdUrl} />
-                      </ErrorBoundary>
+                      <TtdImage nama={namaLengkap} getTtdUrl={getTtdUrl} />
                     </div>
                     <span className="text-gray-600">)</span>
                   </div>
@@ -141,13 +128,11 @@ export default function TemplateHACCP({ data }: { data: any }) {
         </div>
       </div>
 
-      {/* DOKUMENTASI (DENGAN ERROR BOUNDARY) */}
+      {/* DOKUMENTASI */}
       <div className="page-break-before-always mt-10 pt-10">
         <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
         <div className="grid grid-cols-2 gap-4">
-          <ErrorBoundary FallbackComponent={ErrorFallback}>
-            <FotoDokumentasi fotoArray={fotoArray} />
-          </ErrorBoundary>
+          <FotoDokumentasi fotoArray={fotoArray} />
         </div>
       </div>
 
