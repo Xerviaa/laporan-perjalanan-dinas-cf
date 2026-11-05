@@ -6,8 +6,8 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     
-    // Ambil foto kegiatan (bisa banyak)
-    const filesKegiatan = formData.getAll('fotoKegiatan') as File[];
+    // Ambil foto kegiatan (DIPERBAIKI: 'foto' sesuai yang dikirim frontend)
+    const filesKegiatan = formData.getAll('foto') as File[];
 
     // Ambil data teks & pastikan tidak ada yang undefined
     const pembuatLaporan = (formData.get('pembuatLaporan') as string) || "";
