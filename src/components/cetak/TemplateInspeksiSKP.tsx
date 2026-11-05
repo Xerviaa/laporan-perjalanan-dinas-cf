@@ -140,6 +140,7 @@ export default function TemplateInspeksiSKP({ data }: { data: any }) {
                           src={getTtdUrl(namaLengkap)} 
                           alt="TTD" 
                           className="absolute h-14 object-contain z-10" 
+                          loading="eager" // <-- Tambahan
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
                       </div>
@@ -165,7 +166,12 @@ export default function TemplateInspeksiSKP({ data }: { data: any }) {
             {data.fotoKegiatan && data.fotoKegiatan !== "[]" ? (
                JSON.parse(data.fotoKegiatan).map((key: string, i: number) => (
                   <div key={i} className="mb-4">
-                    <img src={`/api/r2/${key}`} alt={`Dokumentasi ${i}`} className="w-full h-auto object-cover border border-gray-300" />
+                    <img 
+                      src={`/api/r2/${key}`} 
+                      alt={`Dokumentasi ${i}`} 
+                      className="w-full h-auto object-cover border border-gray-300" 
+                      loading="eager" // <-- Tambahan
+                    />
                   </div>
                ))
             ) : (
