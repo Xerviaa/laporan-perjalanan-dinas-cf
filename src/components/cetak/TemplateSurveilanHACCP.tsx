@@ -169,56 +169,36 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
           </p>
         </div>
 
-                {/* TANDA TANGAN PETUGAS (MENJOROK KE KANAN) */}
-        <div className="mt-8 mb-8">
-          {/* Menggunakan ml-[35%] agar menjorok ke kanan (tengah halaman) */}
-          <div className="ml-[35%] inline-block text-left">
-            <p className="mb-3">Petugas Pelaksana :</p>
-            
-            <div className="space-y-2">
-              {data.petugasPelaksana ? (
-                data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
-                  const match = petugas.trim().match(/(.*)\((.*)\)/);
-                  const namaLengkap = match ? match[1].trim() : petugas.trim();
-
-                  return (
-                    <div key={index} className="flex items-center">
-                      {/* Huruf a, b, c */}
-                      <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
-                      
-                      {/* Nama Petugas (Lebar pas agar kurung dekat) */}
-                      <span className="w-[230px] shrink-0">{namaLengkap}</span>
-                      
-                      {/* Area Tanda Tangan */}
-                      <div className="flex items-center ml-2">
-                        <span className="text-gray-600">(</span>
-                        <div className="w-[70px] h-8 flex items-center justify-center relative">
-                          <img 
-                            src={getTtdUrl(namaLengkap)} 
-                            alt="TTD" 
-                            className="absolute h-12 object-contain z-10" 
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        </div>
-                        <span className="text-gray-600">)</span>
-                      </div>
+        {/* TANDA TANGAN */}
+        <div className="mt-8 mb-8 ml-32">
+          <p>Petugas Pelaksana :</p>
+          <div className="mt-4 space-y-4">
+            {data.petugasPelaksana ? (
+              data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
+                const match = petugas.trim().match(/(.*)\((.*)\)/);
+                const namaLengkap = match ? match[1].trim() : petugas.trim();
+                return (
+                  <div key={index} className="flex items-center">
+                    <span className="w-6 shrink-0">{index + 1}.</span>
+                    <span className="w-[280px] shrink-0">{namaLengkap}</span>
+                    <div className="flex items-center">
+                      <span className="text-gray-600">(</span>
+                      <div 
+                        className="w-[80px] h-10 bg-no-repeat bg-contain bg-center"
+                        style={{ backgroundImage: `url(${getTtdUrl(namaLengkap)})` }}
+                      ></div>
+                      <span className="text-gray-600">)</span>
                     </div>
-                  );
-                })
-              ) : (
-                <div className="flex items-center">
-                  <span className="w-6 shrink-0">a.</span>
-                  <span className="w-[230px] shrink-0">-</span>
-                  <div className="flex items-center ml-2">
-                    <span className="text-gray-600">(</span>
-                    <div className="w-[70px] h-8"></div>
-                    <span className="text-gray-600">)</span>
                   </div>
-                </div>
-              )}
-            </div>
+                );
+              })
+            ) : (
+              <div className="flex items-center">
+                <span className="w-6 shrink-0">1.</span>
+                <span className="w-[280px] shrink-0">-</span>
+                <span className="text-gray-600">(......)</span>
+              </div>
+            )}
           </div>
         </div>
 
