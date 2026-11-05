@@ -5,6 +5,38 @@ import Layout from '@/components/Layout';
 import { perusahaanHACCP, perusahaanSKP } from '@/data/perusahaan'; 
 import { daftarPegawai } from '@/data/pegawai'; 
 
+// ==========================================
+// KOMPONEN KHUSUS UNTUK MENAMPILKAN TTD
+// ==========================================
+const TtdPreview = ({ nama }: { nama: string }) => {
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [nama]);
+
+  if (!nama) {
+    return <span className="text-xs text-slate-400 italic">Pilih nama dulu</span>;
+  }
+
+  const namaTanpaGelar = nama.split(',')[0];
+  const namaFile = namaTanpaGelar.toLowerCase().replace(/[.]/g, '').trim().replace(/\s+/g, '-');
+  const ttdUrl = `/tanda-tangan/${namaFile}.png`;
+
+  if (imgError) {
+    return <span className="text-xs text-slate-400 italic">TTD belum ada</span>;
+  }
+
+  return (
+    <img 
+      src={ttdUrl} 
+      alt="TTD" 
+      className="h-10 object-contain"
+      onError={() => setImgError(true)}
+    />
+  );
+};
+
 export default function UploadPage() {
   // State
   const [jenisKegiatan, setJenisKegiatan] = useState('');
@@ -14,18 +46,20 @@ export default function UploadPage() {
   const [tanggal, setTanggal] = useState('');
   const [noSurat, setNoSurat] = useState('');
   
-  // STATE BARU UNTUK HASIL & KENDALA
+  // State untuk Hasil & Kendala
   const [hasilKegiatan, setHasilKegiatan] = useState('');
   const [kendala, setKendala] = useState('');
 
-  // State untuk Petugas
-  const [petugasList, setPetugasList] = useState([{ nama: '', peran: '', ttd: '' }]);
+  // State untuk Petugas (TAMBAHAN: customPeran)
+  const [petugasList, setPetugasList] = useState([{ nama: '', peran: '', customPeran: '', ttd: '' }]);
   
+  // State untuk Pencarian Pegawai (Custom Dropdown)
+  const [searchQuery, setSearchQuery] = useState<{ [key: number]: string }>({});
+  const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+
   // State untuk Foto
   const [fotoFiles, setFotoFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Ref untuk input file tersembunyi
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Efek untuk mengisi alamat otomatis berdasarkan nama perusahaan
@@ -48,7 +82,15 @@ export default function UploadPage() {
 
   const addPetugas = () => {
     if (petugasList.length < 10) {
-      setPetugasList([...petugasList, { nama: '', peran: '', ttd: '' }]);
+      // Pastikan menambahkan customPeran saat tambah baris
+      setPetugasList([...petugasList, { nama: '', peran: '', customPeran: '', ttd: '' }]);
+    }
+  };
+
+  const removePetugas = (index: number) => {
+    if (petugasList.length > 1) {
+      const newList = petugasList.filter((_, i) => i !== index);
+      setPetugasList(newList);
     }
   };
 
@@ -57,7 +99,6 @@ export default function UploadPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Validasi
     const isDetailRequired = jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Survailen';
     
     if (!jenisKegiatan || (isDetailRequired && !detailKegiatan) || !namaPerusahaan || !tanggal) {
@@ -66,22 +107,21 @@ export default function UploadPage() {
       return;
     }
 
-    // Gabungkan petugas
+    // LOGIKA BARU: Handle customPeran jika memilih 'Lainnya'
     const petugasString = petugasList
       .filter(p => p.nama.trim() !== '')
-      .map(p => `${p.nama}${p.peran ? ` (${p.peran})` : ''}`)
+      .map(p => {
+        const finalPeran = p.peran === 'Lainnya' ? p.customPeran : p.peran;
+        return `${p.nama}${finalPeran ? ` (${finalPeran})` : ''}`;
+      })
       .join('|');
 
-    // --- LOGIKA BARU: TANPA PRIMER/PASCA ---
     let fullJenisKegiatan = '';
-    
     if (jenisKegiatan === 'Inspeksi') {
       fullJenisKegiatan = `Inspeksi ${detailKegiatan}`; 
-    } 
-    else if (jenisKegiatan === 'Survailen') {
+    } else if (jenisKegiatan === 'Survailen') {
       fullJenisKegiatan = `Survailen ${detailKegiatan}`; 
-    }
-    else {
+    } else {
       fullJenisKegiatan = jenisKegiatan; 
     }
 
@@ -92,8 +132,6 @@ export default function UploadPage() {
     formData.append('tanggal', tanggal);
     formData.append('noSurat', noSurat);
     formData.append('petugasPelaksana', petugasString);
-    
-    // KIRIM HASIL & KENDALA KE SERVER
     formData.append('hasilKegiatan', hasilKegiatan);
     formData.append('kendala', kendala);
     
@@ -109,7 +147,6 @@ export default function UploadPage() {
 
       if (res.ok) {
         alert('Laporan berhasil diunggah!');
-        // Reset form
         setJenisKegiatan('');
         setDetailKegiatan('');
         setNamaPerusahaan('');
@@ -117,7 +154,8 @@ export default function UploadPage() {
         setNoSurat('');
         setHasilKegiatan('');
         setKendala('');
-        setPetugasList([{ nama: '', peran: '', ttd: '' }]);
+        // Reset form petugas dengan customPeran
+        setPetugasList([{ nama: '', peran: '', customPeran: '', ttd: '' }]);
         setFotoFiles([]);
       } else {
         alert('Gagal mengunggah laporan.');
@@ -129,7 +167,6 @@ export default function UploadPage() {
     }
   };
 
-  // --- OPSI DROPDOWN ---
   const opsiJenisKegiatan = ['Inspeksi', 'Survailen', 'Inpres', 'Selfdeclare Kapal'];
   
   const getOpsiDetail = () => {
@@ -152,69 +189,122 @@ export default function UploadPage() {
           {/* 1. BAGIAN PETUGAS PELAKSANA */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Petugas Pelaksana (Maks. 10 Orang)</label>
-            {petugasList.map((petugas, index) => {
-              const getTtdUrl = (nama: string) => {
-                if (!nama) return "";
-                const namaTanpaGelar = nama.split(',')[0];
-                const namaFile = namaTanpaGelar.toLowerCase().replace(/[.]/g, '').trim().replace(/\s+/g, '-');
-                return `/tanda-tangan/${namaFile}.png`;
-              };
+            {petugasList.map((petugas, index) => (
+              <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 p-3 border border-slate-100 rounded-lg bg-slate-50 relative">
+                
+                {/* Tombol Hapus Petugas */}
+                {petugasList.length > 1 && (
+                  <button 
+                    type="button"
+                    onClick={() => removePetugas(index)}
+                    className="absolute -top-2 -right-2 bg-red-100 text-red-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-200 shadow-sm"
+                    title="Hapus Petugas"
+                  >
+                    ✕
+                  </button>
+                )}
 
-              return (
-                <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 p-3 border border-slate-100 rounded-lg bg-slate-50">
+                {/* CUSTOM DROPDOWN NAMA PETUGAS */}
+                <div className="relative">
+                  <label className="text-xs text-slate-500">Nama Petugas</label>
                   
-                  {/* Dropdown Nama Petugas (Bisa Diketik) */}
-                  <div>
-                    <label className="text-xs text-slate-500">Nama Petugas</label>
+                  <div className="relative mt-1">
                     <input 
                       type="text"
-                      list={`pegawai-list-${index}`}
-                      value={petugas.nama}
-                      onChange={(e) => handlePetugasChange(index, 'nama', e.target.value)}
-                      placeholder="Ketik nama atau pilih..."
-                      className="w-full border border-slate-300 rounded px-3 py-2 text-sm mt-1 bg-white"
+                      placeholder="Klik atau ketik nama..."
+                      value={activeDropdown === index ? (searchQuery[index] || '') : petugas.nama}
+                      onChange={(e) => {
+                        setSearchQuery({ ...searchQuery, [index]: e.target.value });
+                        setActiveDropdown(index); 
+                        if (e.target.value === '') handlePetugasChange(index, 'nama', ''); 
+                      }}
+                      onFocus={() => {
+                        setActiveDropdown(index);
+                        setSearchQuery({ ...searchQuery, [index]: '' }); 
+                      }}
+                      onBlur={() => {
+                        setTimeout(() => setActiveDropdown(null), 200);
+                      }}
+                      className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white cursor-pointer"
+                      readOnly={activeDropdown !== index && petugas.nama !== ''} 
                     />
-                    <datalist id={`pegawai-list-${index}`}>
-                      {daftarPegawai.map((namaPegawai: string, idx: number) => (
-                        <option key={idx} value={namaPegawai} />
-                      ))}
-                    </datalist>
-                  </div>
-                  
-                  <div>
-                    <label className="text-xs text-slate-500">Tanda Tangan</label>
-                    <div className="w-full h-[38px] mt-1 border border-slate-200 rounded bg-white flex items-center justify-center overflow-hidden">
-                      {petugas.nama ? (
-                        <img 
-                          src={getTtdUrl(petugas.nama)} 
-                          alt="TTD" 
-                          className="h-10 object-contain"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                            (e.target as HTMLImageElement).parentElement!.innerHTML = '<span class="text-xs text-slate-400 italic">TTD belum ada</span>';
-                          }}
-                        />
-                      ) : (
-                        <span className="text-xs text-slate-400 italic">Pilih nama dulu</span>
-                      )}
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                      <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                   </div>
-                  <div>
-                    <label className="text-xs text-slate-500">Peran / Tugas</label>
-                    <select 
-                      value={petugas.peran}
-                      onChange={(e) => handlePetugasChange(index, 'peran', e.target.value)}
-                      className="w-full border border-slate-300 rounded px-3 py-2 text-sm mt-1 bg-white"
-                    >
-                      <option value="">-- Pilih Peran --</option>
-                      <option value="Ketua">Ketua</option>
-                      <option value="Anggota">Anggota</option>
-                      <option value="Observer">Observer</option>
-                    </select>
+
+                  {/* List Dropdown */}
+                  {activeDropdown === index && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {daftarPegawai
+                        .filter((nama: string) => nama.toLowerCase().includes((searchQuery[index] || '').toLowerCase()))
+                        .map((namaPegawai: string, idx: number) => (
+                          <div 
+                            key={idx}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              handlePetugasChange(index, 'nama', namaPegawai);
+                              setActiveDropdown(null); 
+                            }}
+                            className="px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0"
+                          >
+                            {namaPegawai}
+                          </div>
+                      ))}
+                      {daftarPegawai.filter((nama: string) => nama.toLowerCase().includes((searchQuery[index] || '').toLowerCase())).length === 0 && (
+                        <div className="px-3 py-2 text-sm text-slate-400 italic text-center">Nama tidak ditemukan</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Preview TTD Otomatis */}
+                <div>
+                  <label className="text-xs text-slate-500">Tanda Tangan</label>
+                  <div className="w-full h-[38px] mt-1 border border-slate-200 rounded bg-white flex items-center justify-center overflow-hidden">
+                    <TtdPreview nama={petugas.nama} />
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Pilihan Peran (TAMBAHAN: Opsi Lainnya) */}
+                <div>
+                  <label className="text-xs text-slate-500">Peran / Tugas</label>
+                                  <select 
+                  value={petugas.peran}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    // Kita update kedua field sekaligus dalam satu kali proses
+                    const newList = [...petugasList];
+                    newList[index] = { 
+                      ...newList[index], 
+                      peran: newValue,
+                      customPeran: newValue === 'Lainnya' ? newList[index].customPeran : '' 
+                    };
+                    setPetugasList(newList);
+                  }}
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm mt-1 bg-white"
+                >
+                    <option value="">-- Pilih Peran --</option>
+                    <option value="Ketua">Ketua</option>
+                    <option value="Anggota">Anggota</option>
+                    <option value="Observer">Observer</option>
+                    <option value="Lainnya">Lainnya...</option>
+                  </select>
+
+                  {/* Input Manual Jika Pilih 'Lainnya' */}
+                  {petugas.peran === 'Lainnya' && (
+                    <input 
+                      type="text"
+                      placeholder="Ketik peran manual..."
+                      value={petugas.customPeran || ''}
+                      onChange={(e) => handlePetugasChange(index, 'customPeran', e.target.value)}
+                      className="w-full border border-slate-300 rounded px-3 py-1.5 text-xs mt-1 bg-yellow-50 focus:ring-1 focus:ring-blue-500 outline-none"
+                      required
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
             <button type="button" onClick={addPetugas} className="text-sm text-blue-600 hover:underline font-semibold">
               + Tambah Petugas
             </button>
@@ -224,30 +314,23 @@ export default function UploadPage() {
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
             <label className="block text-sm font-semibold text-slate-700 mb-3">Jenis Kegiatan</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              {/* Dropdown Jenis (Bisa Diketik) */}
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">Jenis</label>
-                <input 
-                  type="text"
-                  list="jenis-kegiatan-list"
+                <select 
                   value={jenisKegiatan}
                   onChange={(e) => {
                     setJenisKegiatan(e.target.value);
                     setDetailKegiatan(''); 
                   }}
-                  placeholder="-- Pilih Jenis --"
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white"
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white" 
                   required
-                />
-                <datalist id="jenis-kegiatan-list">
+                >
+                  <option value="">-- Pilih Jenis --</option>
                   {opsiJenisKegiatan.map(jenis => (
-                    <option key={jenis} value={jenis} />
+                    <option key={jenis} value={jenis}>{jenis}</option>
                   ))}
-                </datalist>
+                </select>
               </div>
-
-              {/* Dropdown Detail (Tetap Select) */}
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">Detail Kegiatan</label>
                 <select 
@@ -267,7 +350,6 @@ export default function UploadPage() {
                   ))}
                 </select>
               </div>
-
             </div>
           </div>
 
@@ -319,9 +401,7 @@ export default function UploadPage() {
             </div>
           </div>
 
-          {/* ======================================================== */}
           {/* TAMBAHAN BARU: HASIL KEGIATAN & KENDALA */}
-          {/* ======================================================== */}
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">Hasil Kegiatan</label>
@@ -342,9 +422,8 @@ export default function UploadPage() {
               ></textarea>
             </div>
           </div>
-          {/* ======================================================== */}
 
-          {/* 4. BAGIAN FOTO DOKUMENTASI */}
+          {/* 4. BAGIAN FOTO DOKUMENTASI (TAMBAHAN: PREVIEW) */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Foto Kegiatan (Maks. 5 file, 5MB/file)</label>
             
@@ -379,21 +458,30 @@ export default function UploadPage() {
               }}
             />
 
+            {/* PREVIEW FOTO */}
             {fotoFiles.length > 0 && (
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
                 {fotoFiles.map((file, idx) => (
-                  <div key={idx} className="text-xs text-slate-600 bg-slate-100 px-3 py-2 rounded-lg flex justify-between items-center border border-slate-200">
-                    <span className="truncate max-w-[80%] font-medium">{file.name}</span>
-                    <button 
-                      type="button" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setFotoFiles(fotoFiles.filter((_, i) => i !== idx));
-                      }}
-                      className="text-red-500 hover:text-red-700 font-bold ml-2 bg-red-50 px-2 py-0.5 rounded"
-                    >
-                      ✕
-                    </button>
+                  <div key={idx} className="relative bg-slate-50 border border-slate-200 rounded-lg p-2 flex flex-col items-center">
+                    <img 
+                      src={URL.createObjectURL(file)} 
+                      alt={`Preview ${idx}`} 
+                      className="w-full h-32 object-cover rounded-md mb-2 border border-slate-200" 
+                    />
+                    <div className="w-full flex justify-between items-center">
+                      <span className="text-[10px] text-slate-600 truncate max-w-[80%]">{file.name}</span>
+                      <button 
+                        type="button" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFotoFiles(fotoFiles.filter((_, i) => i !== idx));
+                        }}
+                        className="text-red-500 hover:text-red-700 font-bold bg-red-50 px-1.5 py-0.5 rounded text-xs"
+                        title="Hapus Foto"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

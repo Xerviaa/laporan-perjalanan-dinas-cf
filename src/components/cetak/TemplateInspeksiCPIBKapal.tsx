@@ -39,7 +39,7 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
     // Menggunakan font Times New Roman (menggantikan font-serif biasa)
     <div className="text-[11pt] leading-relaxed text-justify text-black" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
       
-            {/* ========================================= */}
+      {/* ========================================= */}
       {/* HALAMAN 1: COVER                          */}
       {/* ========================================= */}
       <div className="w-full h-[25.7cm] relative print:break-after-page flex flex-col items-center">
@@ -51,14 +51,12 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
             PELAPORAN PERJALANAN DINAS
           </h1>
           
-          {/* TAMBAHKAN w-full DAN text-center DI SINI */}
           <h2 className="w-full text-center text-[14pt] font-bold uppercase leading-snug">
             KEGIATAN INSPEKSI CARA PENANGANAN IKAN<br/>
             YANG BAIK (CPIB) DI ATAS KAPAL
           </h2>
 
           <div className="mt-8 flex flex-col items-center gap-2 tracking-tight">
-            {/* HANYA BAGIAN INI YANG DIUBAH (Memanggil formatNamaPerusahaan) */}
             <p className="font-bold text-[14pt] uppercase">{formatNamaPerusahaan(data.namaPerusahaan)}</p>
             <p className="font-bold text-[14pt] uppercase">{tanggalIndo}</p>
           </div>
@@ -82,10 +80,12 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
         </div>
       </div>
       
-            {/* HALAMAN 2: ISI LAPORAN */}
+      {/* ========================================= */}
+      {/* HALAMAN 2: ISI LAPORAN                    */}
+      {/* ========================================= */}
       <div className="mt-10">
         
-        {/* JUDUL DI HALAMAN 2  */}
+        {/* JUDUL DI HALAMAN 2 */}
         <div className="w-full text-center mb-8">
           <h3 className="font-bold uppercase text-[12pt] leading-tight">
             LAPORAN PERJALANAN DINAS<br/>
@@ -208,9 +208,30 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
           </p>
         </div>
 
-        {/* VII. PENUTUP */}
+        {/* ======================================================== */}
+        {/* VII. HASIL KEGIATAN DAN KENDALA (TAMBAHAN DARI PAK ADAM) */}
+        {/* ======================================================== */}
         <div className="mb-4">
-          <h4 className="font-bold">VII. Penutup</h4>
+          <h4 className="font-bold">VII. Hasil Kegiatan dan Kendala</h4>
+          
+          <div className="mt-2">
+            <p className="font-semibold">A. Hasil Kegiatan</p>
+            <p className="indent-8 mt-1 text-justify">
+              {data.hasilKegiatan || "-"}
+            </p>
+          </div>
+
+          <div className="mt-2">
+            <p className="font-semibold">B. Kendala</p>
+            <p className="indent-8 mt-1 text-justify">
+              {data.kendala || "-"}
+            </p>
+          </div>
+        </div>
+
+        {/* VIII. PENUTUP */}
+        <div className="mb-4">
+          <h4 className="font-bold">VIII. Penutup</h4>
           <p className="indent-8 mt-1">
             Demikian laporan ini dibuat dari hasil kegiatan yang dilaksanakan dengan sebaik-baiknya dengan harapan dapat memberikan jaminan keamanan hasil perikanan yang diekspor ataupun yang dikonsumsi lokal oleh masyarakat Indonesia. Pelaksanaan kegiatan ini lebih baik dengan adanya peralatan dan perlengkapan yang disediakan oleh kantor Balai PPMHKP Denpasar sehingga hasil yang didapat lebih sempurna.
           </p>
