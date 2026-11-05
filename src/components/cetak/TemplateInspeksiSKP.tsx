@@ -121,7 +121,7 @@ export default function TemplateInspeksiSKP({ data }: { data: any }) {
           </p>
         </div>
 
-        {/* TANDA TANGAN */}
+        {/* TANDA TANGAN (TRICK CSS) */}
         <div className="mt-8 mb-8 ml-32">
           <p>Petugas Pelaksana :</p>
           <div className="mt-4 space-y-4">
@@ -135,15 +135,10 @@ export default function TemplateInspeksiSKP({ data }: { data: any }) {
                     <span className="w-[280px] shrink-0">{namaLengkap}</span>
                     <div className="flex items-center">
                       <span className="text-gray-600">(</span>
-                      <div className="w-[80px] h-10 flex items-center justify-center relative">
-                        <img 
-                          src={getTtdUrl(namaLengkap)} 
-                          alt="TTD" 
-                          className="absolute h-14 object-contain z-10" 
-                          loading="eager" // <-- Tambahan
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      </div>
+                      <div 
+                        className="w-[80px] h-10 bg-no-repeat bg-contain bg-center"
+                        style={{ backgroundImage: `url(${getTtdUrl(namaLengkap)})` }}
+                      ></div>
                       <span className="text-gray-600">)</span>
                     </div>
                   </div>
@@ -159,19 +154,17 @@ export default function TemplateInspeksiSKP({ data }: { data: any }) {
           </div>
         </div>
 
-        {/* DOKUMENTASI */}
+        {/* DOKUMENTASI (TRICK CSS) */}
         <div className="page-break-before-always mt-10 pt-10">
           <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
           <div className="grid grid-cols-2 gap-4">
             {data.fotoKegiatan && data.fotoKegiatan !== "[]" ? (
                JSON.parse(data.fotoKegiatan).map((key: string, i: number) => (
                   <div key={i} className="mb-4">
-                    <img 
-                      src={`/api/r2/${key}`} 
-                      alt={`Dokumentasi ${i}`} 
-                      className="w-full h-auto object-cover border border-gray-300" 
-                      loading="eager" // <-- Tambahan
-                    />
+                    <div 
+                      className="w-full h-64 bg-slate-100 border border-gray-300 bg-no-repeat bg-contain bg-center"
+                      style={{ backgroundImage: `url(/api/r2/${key})` }}
+                    ></div>
                   </div>
                ))
             ) : (
