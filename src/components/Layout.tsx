@@ -57,11 +57,9 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   // --- EFEK SAAT PINDAH HALAMAN ---
   useEffect(() => {
-    // Jika masuk ke dashboard dan ada prompt tersimpan, tampilkan
     if (pathname === '/dashboard' && deferredPrompt) {
       setShowInstallBtn(true);
     } else {
-      // Jika pindah ke halaman lain, sembunyikan
       setShowInstallBtn(false);
     }
   }, [pathname, deferredPrompt]);
@@ -70,9 +68,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     await deferredPrompt.userChoice;
-    
     setShowInstallBtn(false);
-    // deferredPrompt tidak di-null-kan agar bisa muncul lagi saat ke dashboard
   };
 
   const handleDismissInstall = () => {
@@ -85,10 +81,12 @@ export default function Layout({ children }: { children: ReactNode }) {
     router.refresh();
   };
 
+  // MENU ITEMS (DITAMBAHKAN MONITORING)
   const menuItems = [
     { name: 'Dashboard Utama', path: '/dashboard', icon: '🏠' },
     { name: 'Upload Laporan', path: '/upload', icon: '📤' },
     { name: 'Arsip Laporan', path: '/arsip', icon: '📁' },
+    { name: 'Monitoring Sertifikasi', path: '/monitoring', icon: '📊' }, // <-- Menu Baru
   ];
 
   return (
@@ -108,10 +106,8 @@ export default function Layout({ children }: { children: ReactNode }) {
         md:relative md:translate-x-0
       `}>
         
-        {/* Area Logo (Berbentuk Lingkaran) */}
+        {/* Area Logo */}
         <div className="h-44 flex flex-col items-center justify-center border-b border-slate-600/50 bg-[#1a252f] p-3">
-          
-          {/* Pembungkus Logo Berbentuk Lingkaran */}
           <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-slate-600/50 shadow-lg mb-3 bg-[#0f172a]">
             <img 
               src="/logo.png" 
@@ -119,7 +115,6 @@ export default function Layout({ children }: { children: ReactNode }) {
               className="w-full h-full object-cover scale-110" 
             />
           </div>
-
           <h1 className="text-lg font-bold tracking-widest text-slate-100">LAPORAN DINAS</h1>
           <p className="text-[10px] text-slate-400 mt-1 uppercase">BPPMHKP DENPASAR</p>
         </div>
@@ -156,7 +151,6 @@ export default function Layout({ children }: { children: ReactNode }) {
         
         {/* TOP BAR */}
         <header className="h-14 bg-[#2c3e50] border-b border-slate-700 flex items-center justify-between px-4 md:px-6 shadow-md shrink-0 relative overflow-hidden">
-          
           <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-blue-500 via-emerald-400 to-blue-500 opacity-80"></div>
 
           <div className="flex items-center gap-3 relative z-10">
@@ -167,12 +161,10 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
           
           <div className="flex items-center gap-3 md:gap-5 relative z-10">
-            
             <div className="text-right hidden md:block border-r border-slate-600 pr-4">
               <p className="text-sm font-mono font-bold text-white tracking-widest">{currentTime || '...'}</p>
               <p className="text-[10px] text-slate-400">{currentDate}</p>
             </div>
-
             <div className="text-right hidden md:block">
               <p className="text-xs font-bold text-white">ADMIN</p>
               <p className="text-[10px] text-slate-400">admin.id</p>
@@ -203,8 +195,6 @@ export default function Layout({ children }: { children: ReactNode }) {
       {/* --- POPUP INSTALL PWA --- */}
       {showInstallBtn && (
         <div className="fixed bottom-4 right-4 z-50 bg-white p-3 rounded-xl shadow-2xl border border-slate-200 flex items-center gap-3 animate-bounce-slow">
-          
-          {/* Logo di Pop-up PWA */}
           <div className="w-12 h-12 bg-[#1a252f] rounded-full flex items-center justify-center shrink-0 overflow-hidden p-1.5">
             <img 
               src="/logo.png" 
@@ -212,21 +202,14 @@ export default function Layout({ children }: { children: ReactNode }) {
               className="w-full h-full object-contain scale-110" 
             />
           </div>
-
           <div>
             <p className="text-xs font-bold text-slate-800">Install Aplikasi</p>
             <p className="text-[10px] text-slate-500 mb-1.5">Akses lebih cepat dari layar utama.</p>
             <div className="flex gap-2">
-              <button 
-                onClick={handleInstallClick}
-                className="bg-blue-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded hover:bg-blue-700 transition-colors cursor-pointer"
-              >
+              <button onClick={handleInstallClick} className="bg-blue-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded hover:bg-blue-700 transition-colors cursor-pointer">
                 Install
               </button>
-              <button 
-                onClick={handleDismissInstall}
-                className="bg-slate-100 text-slate-600 text-[10px] font-semibold px-2.5 py-1 rounded hover:bg-slate-200 transition-colors cursor-pointer"
-              >
+              <button onClick={handleDismissInstall} className="bg-slate-100 text-slate-600 text-[10px] font-semibold px-2.5 py-1 rounded hover:bg-slate-200 transition-colors cursor-pointer">
                 Nanti
               </button>
             </div>

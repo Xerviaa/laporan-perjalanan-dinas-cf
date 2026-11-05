@@ -50,17 +50,36 @@ export default function UploadPage() {
   const [hasilKegiatan, setHasilKegiatan] = useState('');
   const [kendala, setKendala] = useState('');
 
-  // State untuk Petugas (TAMBAHAN: customPeran)
+  // State untuk Petugas
   const [petugasList, setPetugasList] = useState([{ nama: '', peran: '', customPeran: '', ttd: '' }]);
   
   // State untuk Pencarian Pegawai (Custom Dropdown)
   const [searchQuery, setSearchQuery] = useState<{ [key: number]: string }>({});
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
 
-  // State untuk Foto
+  // State untuk Foto & Berkas
   const [fotoFiles, setFotoFiles] = useState<File[]>([]);
+  const [berkasKegiatan, setBerkasKegiatan] = useState<File[]>([]);
+  const [berkasPerbaikan, setBerkasPerbaikan] = useState<File[]>([]);
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ==========================================
+  // STATE UNTUK NOTIFIKASI KUSTOM (TOAST)
+  // ==========================================
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
+    show: false,
+    message: '',
+    type: 'success',
+  });
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 4000); // Notifikasi hilang setelah 4 detik
+  };
 
   // Efek untuk mengisi alamat otomatis berdasarkan nama perusahaan
   useEffect(() => {
@@ -82,7 +101,6 @@ export default function UploadPage() {
 
   const addPetugas = () => {
     if (petugasList.length < 10) {
-      // Pastikan menambahkan customPeran saat tambah baris
       setPetugasList([...petugasList, { nama: '', peran: '', customPeran: '', ttd: '' }]);
     }
   };
@@ -102,12 +120,11 @@ export default function UploadPage() {
     const isDetailRequired = jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Survailen';
     
     if (!jenisKegiatan || (isDetailRequired && !detailKegiatan) || !namaPerusahaan || !tanggal) {
-      alert('Mohon lengkapi data wajib.');
+      showToast('Mohon lengkapi data wajib (Jenis, Detail, Perusahaan, Tanggal).', 'error');
       setIsSubmitting(false);
       return;
     }
 
-    // LOGIKA BARU: Handle customPeran jika memilih 'Lainnya'
     const petugasString = petugasList
       .filter(p => p.nama.trim() !== '')
       .map(p => {
@@ -139,6 +156,13 @@ export default function UploadPage() {
       formData.append('foto', file); 
     });
 
+    berkasKegiatan.forEach(file => {
+      formData.append('berkasKegiatan', file);
+    });
+    berkasPerbaikan.forEach(file => {
+      formData.append('berkasPerbaikan', file);
+    });
+
     try {
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -146,7 +170,9 @@ export default function UploadPage() {
       });
 
       if (res.ok) {
-        alert('Laporan berhasil diunggah!');
+        showToast('Laporan berhasil diunggah!', 'success');
+        
+        // Reset form
         setJenisKegiatan('');
         setDetailKegiatan('');
         setNamaPerusahaan('');
@@ -154,14 +180,15 @@ export default function UploadPage() {
         setNoSurat('');
         setHasilKegiatan('');
         setKendala('');
-        // Reset form petugas dengan customPeran
         setPetugasList([{ nama: '', peran: '', customPeran: '', ttd: '' }]);
         setFotoFiles([]);
+        setBerkasKegiatan([]);
+        setBerkasPerbaikan([]);
       } else {
-        alert('Gagal mengunggah laporan.');
+        showToast('Gagal mengunggah laporan. Silakan coba lagi.', 'error');
       }
     } catch (error) {
-      alert('Terjadi kesalahan jaringan.');
+      showToast('Terjadi kesalahan jaringan.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -178,6 +205,32 @@ export default function UploadPage() {
 
   return (
     <Layout>
+      {/* ========================================= */}
+      {/* KOMPONEN TOAST NOTIFIKASI KUSTOM          */}
+      {/* ========================================= */}
+      {toast.show && (
+        <div className={`fixed top-24 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border-l-4 animate-in slide-in-from-top-4 fade-in duration-300 ${
+          toast.type === 'success' ? 'bg-white border-emerald-500 text-slate-800' : 'bg-white border-red-500 text-slate-800'
+        }`}>
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+            toast.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
+          }`}>
+            {toast.type === 'success' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            )}
+          </div>
+          <div>
+            <p className="font-bold text-sm">{toast.type === 'success' ? 'Berhasil!' : 'Gagal!'}</p>
+            <p className="text-xs text-slate-500">{toast.message}</p>
+          </div>
+          <button onClick={() => setToast({ ...toast, show: false })} className="ml-4 text-slate-400 hover:text-slate-600 cursor-pointer">
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Upload Laporan</h1>
         <p className="text-slate-500 mt-1 text-sm md:text-base">Unggah data perjalanan dinas beserta dokumentasi.</p>
@@ -192,7 +245,6 @@ export default function UploadPage() {
             {petugasList.map((petugas, index) => (
               <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 p-3 border border-slate-100 rounded-lg bg-slate-50 relative">
                 
-                {/* Tombol Hapus Petugas */}
                 {petugasList.length > 1 && (
                   <button 
                     type="button"
@@ -204,10 +256,8 @@ export default function UploadPage() {
                   </button>
                 )}
 
-                {/* CUSTOM DROPDOWN NAMA PETUGAS */}
                 <div className="relative">
                   <label className="text-xs text-slate-500">Nama Petugas</label>
-                  
                   <div className="relative mt-1">
                     <input 
                       type="text"
@@ -233,7 +283,6 @@ export default function UploadPage() {
                     </div>
                   </div>
 
-                  {/* List Dropdown */}
                   {activeDropdown === index && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                       {daftarPegawai
@@ -242,7 +291,7 @@ export default function UploadPage() {
                           <div 
                             key={idx}
                             onMouseDown={(e) => {
-                              e.preventDefault();
+                              e.preventDefault(); 
                               handlePetugasChange(index, 'nama', namaPegawai);
                               setActiveDropdown(null); 
                             }}
@@ -258,7 +307,6 @@ export default function UploadPage() {
                   )}
                 </div>
 
-                {/* Preview TTD Otomatis */}
                 <div>
                   <label className="text-xs text-slate-500">Tanda Tangan</label>
                   <div className="w-full h-[38px] mt-1 border border-slate-200 rounded bg-white flex items-center justify-center overflow-hidden">
@@ -266,24 +314,22 @@ export default function UploadPage() {
                   </div>
                 </div>
 
-                {/* Pilihan Peran (TAMBAHAN: Opsi Lainnya) */}
                 <div>
                   <label className="text-xs text-slate-500">Peran / Tugas</label>
-                                  <select 
-                  value={petugas.peran}
-                  onChange={(e) => {
-                    const newValue = e.target.value;
-                    // Kita update kedua field sekaligus dalam satu kali proses
-                    const newList = [...petugasList];
-                    newList[index] = { 
-                      ...newList[index], 
-                      peran: newValue,
-                      customPeran: newValue === 'Lainnya' ? newList[index].customPeran : '' 
-                    };
-                    setPetugasList(newList);
-                  }}
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm mt-1 bg-white"
-                >
+                  <select 
+                    value={petugas.peran}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      const newList = [...petugasList];
+                      newList[index] = { 
+                        ...newList[index], 
+                        peran: newValue,
+                        customPeran: newValue === 'Lainnya' ? newList[index].customPeran : '' 
+                      };
+                      setPetugasList(newList);
+                    }}
+                    className="w-full border border-slate-300 rounded px-3 py-2 text-sm mt-1 bg-white"
+                  >
                     <option value="">-- Pilih Peran --</option>
                     <option value="Ketua">Ketua</option>
                     <option value="Anggota">Anggota</option>
@@ -291,7 +337,6 @@ export default function UploadPage() {
                     <option value="Lainnya">Lainnya...</option>
                   </select>
 
-                  {/* Input Manual Jika Pilih 'Lainnya' */}
                   {petugas.peran === 'Lainnya' && (
                     <input 
                       type="text"
@@ -423,7 +468,7 @@ export default function UploadPage() {
             </div>
           </div>
 
-          {/* 4. BAGIAN FOTO DOKUMENTASI (TAMBAHAN: PREVIEW) */}
+          {/* 4. BAGIAN FOTO DOKUMENTASI */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Foto Kegiatan (Maks. 5 file, 5MB/file)</label>
             
@@ -448,7 +493,7 @@ export default function UploadPage() {
                   const validFiles = files.filter(f => f.size <= 5 * 1024 * 1024);
                   
                   if (validFiles.length !== files.length) {
-                    alert("Beberapa file melebihi 5MB dan tidak akan diunggah.");
+                    showToast("Beberapa file melebihi 5MB dan tidak akan diunggah.", 'error');
                   }
                   
                   const combinedFiles = [...fotoFiles, ...validFiles].slice(0, 5);
@@ -458,7 +503,6 @@ export default function UploadPage() {
               }}
             />
 
-            {/* PREVIEW FOTO */}
             {fotoFiles.length > 0 && (
               <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
                 {fotoFiles.map((file, idx) => (
@@ -486,6 +530,43 @@ export default function UploadPage() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* 5. BAGIAN BERKAS KEGIATAN & PERBAIKAN */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+            <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Berkas Kegiatan (Surat Tugas, dll)</label>
+              <input 
+                type="file" 
+                multiple
+                onChange={(e) => {
+                  if (e.target.files) {
+                    setBerkasKegiatan(Array.from(e.target.files));
+                  }
+                }}
+                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-lg cursor-pointer bg-white" 
+              />
+              {berkasKegiatan.length > 0 && (
+                <p className="text-xs text-emerald-600 mt-2">{berkasKegiatan.length} file dipilih</p>
+              )}
+            </div>
+
+            <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Berkas Tindakan Perbaikan</label>
+              <input 
+                type="file" 
+                multiple
+                onChange={(e) => {
+                  if (e.target.files) {
+                    setBerkasPerbaikan(Array.from(e.target.files));
+                  }
+                }}
+                className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-lg cursor-pointer bg-white" 
+              />
+              {berkasPerbaikan.length > 0 && (
+                <p className="text-xs text-emerald-600 mt-2">{berkasPerbaikan.length} file dipilih</p>
+              )}
+            </div>
           </div>
 
           <div className="pt-4 border-t border-slate-200">

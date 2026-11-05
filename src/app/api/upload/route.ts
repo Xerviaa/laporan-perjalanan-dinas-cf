@@ -6,10 +6,12 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     
-    // Ambil foto kegiatan (DIPERBAIKI: 'foto' sesuai yang dikirim frontend)
+    // 1. Ambil semua file
     const filesKegiatan = formData.getAll('foto') as File[];
+    const filesBerkasKegiatan = formData.getAll('berkasKegiatan') as File[];
+    const filesBerkasPerbaikan = formData.getAll('berkasPerbaikan') as File[];
 
-    // Ambil data teks & pastikan tidak ada yang undefined
+    // 2. Ambil data teks & pastikan tidak ada yang undefined
     const pembuatLaporan = (formData.get('pembuatLaporan') as string) || "";
     const jenisKegiatan = (formData.get('jenisKegiatan') as string) || "";
     const noSurat = (formData.get('noSurat') as string) || "";
@@ -17,8 +19,6 @@ export async function POST(request: Request) {
     const alamatPerusahaan = (formData.get('alamatPerusahaan') as string) || "";
     const tanggal = (formData.get('tanggal') as string) || "";
     const petugasPelaksana = (formData.get('petugasPelaksana') as string) || "";
-    
-    // AMBIL DATA BARU: HASIL KEGIATAN & KENDALA
     const hasilKegiatan = (formData.get('hasilKegiatan') as string) || "";
     const kendala = (formData.get('kendala') as string) || "";
 
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       return key;
     };
 
-    // Upload Foto Kegiatan
+    // 3. Upload Foto Kegiatan
     const keysKegiatan: string[] = [];
     for (const file of filesKegiatan) {
       if (file.size > 0) {
@@ -47,10 +47,28 @@ export async function POST(request: Request) {
       }
     }
 
+    // 4. Upload Berkas Kegiatan (TAMBAHAN)
+    const keysBerkasKegiatan: string[] = [];
+    for (const file of filesBerkasKegiatan) {
+      if (file.size > 0) {
+        const key = await uploadToR2(file, 'berkas-kegiatan');
+        keysBerkasKegiatan.push(key);
+      }
+    }
+
+    // 5. Upload Berkas Perbaikan (TAMBAHAN)
+    const keysBerkasPerbaikan: string[] = [];
+    for (const file of filesBerkasPerbaikan) {
+      if (file.size > 0) {
+        const key = await uploadToR2(file, 'berkas-perbaikan');
+        keysBerkasPerbaikan.push(key);
+      }
+    }
+
     const deadlineDate = new Date();
     deadlineDate.setDate(deadlineDate.getDate() + 3);
 
-    // Simpan ke Database
+    // 6. Simpan ke Database
     const db = getDb();
     await db.insert(reports).values({
       title: `${jenisKegiatan} - ${namaPerusahaan}`,
@@ -66,9 +84,12 @@ export async function POST(request: Request) {
       isRewarded: false,
       fotoKegiatan: JSON.stringify(keysKegiatan),
       fotoLokasi: JSON.stringify([]), 
-      // SIMPAN DATA BARU DI SINI
       hasilKegiatan: hasilKegiatan,
       kendala: kendala,
+      // SIMPAN BERKAS & STATUS DI SINI
+      berkasKegiatan: JSON.stringify(keysBerkasKegiatan),
+      berkasPerbaikan: JSON.stringify(keysBerkasPerbaikan),
+      statusMonitoring: 'Berkas belum upload',
     });
 
     return Response.json({ status: "success", message: "Berhasil diunggah" });

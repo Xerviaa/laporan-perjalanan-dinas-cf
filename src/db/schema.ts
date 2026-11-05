@@ -35,6 +35,13 @@ export const reports = pgTable("reports", {
   // ==========================================
   hasilKegiatan: text("hasil_kegiatan"),
   kendala: text("kendala"),
+
+  // ==========================================
+  // TAMBAHAN BARU: BERKAS & STATUS MONITORING
+  // ==========================================
+  berkasKegiatan: text("berkas_kegiatan"),
+  berkasPerbaikan: text("berkas_perbaikan"),
+  statusMonitoring: varchar("status_monitoring", { length: 50 }).default('Berkas belum upload'),
 });
 
 export const settings = pgTable("settings", {
