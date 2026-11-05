@@ -224,23 +224,30 @@ export default function UploadPage() {
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
             <label className="block text-sm font-semibold text-slate-700 mb-3">Jenis Kegiatan</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+              {/* Dropdown Jenis (Bisa Diketik) */}
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">Jenis</label>
-                <select 
+                <input 
+                  type="text"
+                  list="jenis-kegiatan-list"
                   value={jenisKegiatan}
                   onChange={(e) => {
                     setJenisKegiatan(e.target.value);
                     setDetailKegiatan(''); 
                   }}
-                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white" 
+                  placeholder="-- Pilih Jenis --"
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white"
                   required
-                >
-                  <option value="">-- Pilih Jenis --</option>
+                />
+                <datalist id="jenis-kegiatan-list">
                   {opsiJenisKegiatan.map(jenis => (
-                    <option key={jenis} value={jenis}>{jenis}</option>
+                    <option key={jenis} value={jenis} />
                   ))}
-                </select>
+                </datalist>
               </div>
+
+              {/* Dropdown Detail (Tetap Select) */}
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">Detail Kegiatan</label>
                 <select 
@@ -260,6 +267,7 @@ export default function UploadPage() {
                   ))}
                 </select>
               </div>
+
             </div>
           </div>
 
