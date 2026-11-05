@@ -6,7 +6,7 @@ import { perusahaanHACCP, perusahaanSKP } from '@/data/perusahaan';
 import { daftarPegawai } from '@/data/pegawai'; 
 
 // ==========================================
-// KOMPONEN KHUSUS UNTUK MENAMPILKAN TTD
+// KOMPONEN KHUSUS UNTUK MENAMPILKAN TTD (DIPERBAIKI)
 // ==========================================
 const TtdPreview = ({ nama }: { nama: string }) => {
   const [imgError, setImgError] = useState(false);
@@ -19,8 +19,12 @@ const TtdPreview = ({ nama }: { nama: string }) => {
     return <span className="text-xs text-slate-400 italic">Pilih nama dulu</span>;
   }
 
-  const namaTanpaGelar = nama.split(',')[0];
-  const namaFile = namaTanpaGelar.toLowerCase().replace(/[.]/g, '').trim().replace(/\s+/g, '-');
+  // LOGIKA BARU: Membuang gelar "drh." di depan agar cocok dengan nama file
+  let namaBersih = nama.split(',')[0].trim().toLowerCase(); // Ambil sebelum koma
+  namaBersih = namaBersih.replace(/^drh\.\s*/i, ''); // Hapus "drh. " di depan
+  namaBersih = namaBersih.replace(/[^a-z0-9\s-]/g, ''); // Hapus karakter aneh
+  const namaFile = namaBersih.replace(/\s+/g, '-'); // Ganti spasi jadi strip
+
   const ttdUrl = `/tanda-tangan/${namaFile}.png`;
 
   if (imgError) {
