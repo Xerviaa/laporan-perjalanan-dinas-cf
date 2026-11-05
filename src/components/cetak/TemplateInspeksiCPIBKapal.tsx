@@ -24,7 +24,7 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
     // Menggunakan font Times New Roman (menggantikan font-serif biasa)
     <div className="text-[11pt] leading-relaxed text-justify text-black" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
       
-      {/* ========================================= */}
+            {/* ========================================= */}
       {/* HALAMAN 1: COVER                          */}
       {/* ========================================= */}
       <div className="w-full h-[25.7cm] relative print:break-after-page flex flex-col items-center">
@@ -32,11 +32,12 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
         {/* BAGIAN ATAS: JUDUL, PERUSAHAAN, TANGGAL */}
         <div className="mt-16 w-full flex flex-col items-center gap-4">
           
-          <h1 className="text-[16pt] font-bold uppercase leading-tight">
+          <h1 className="w-full text-center text-[16pt] font-bold uppercase leading-tight">
             PELAPORAN PERJALANAN DINAS
           </h1>
           
-          <h2 className="text-[14pt] font-bold uppercase leading-snug">
+          {/* TAMBAHKAN w-full DAN text-center DI SINI */}
+          <h2 className="w-full text-center text-[14pt] font-bold uppercase leading-snug">
             KEGIATAN INSPEKSI CARA PENANGANAN IKAN<br/>
             YANG BAIK (CPIB) DI ATAS KAPAL
           </h2>
@@ -64,7 +65,7 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
           </h3>
         </div>
       </div>
-
+      
       {/* ========================================= */}
       {/* HALAMAN 2: ISI LAPORAN                    */}
       {/* ========================================= */}

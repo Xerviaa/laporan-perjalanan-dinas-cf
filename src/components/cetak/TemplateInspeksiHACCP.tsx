@@ -45,7 +45,7 @@ export default function TemplateInspeksiHACCP({ data }: { data: any }) {
             LAPORAN PERJALANAN DINAS
           </h1>
           
-          <h2 className="text-[14pt] font-bold uppercase leading-snug">
+          <h2 className="w-full text-center text-[14pt] font-bold uppercase leading-snug">
             KEGIATAN INSPEKSI PENERAPAN HACCP<br/>
             UNIT PENGOLAHAN IKAN
           </h2>

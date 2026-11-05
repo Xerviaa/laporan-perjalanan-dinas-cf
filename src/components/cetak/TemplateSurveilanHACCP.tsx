@@ -45,7 +45,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
             PELAPORAN PERJALANAN DINAS
           </h1>
           
-          <h2 className="text-[14pt] font-bold uppercase leading-snug">
+          <h2 className="w-full text-center text-[14pt] font-bold uppercase leading-snug">
             KEGIATAN SURVAILEN DAN PENGAMBILAN SAMPEL<br/>
             DI UNIT PENGOLAHAN IKAN
           </h2>

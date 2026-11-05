@@ -45,7 +45,7 @@ export default function TemplateInspeksiSKP({ data }: { data: any }) {
             LAPORAN PERJALANAN DINAS
           </h1>
           
-          <h2 className="text-[14pt] font-bold uppercase leading-snug">
+          <h2 className="w-full text-center text-[14pt] font-bold uppercase leading-snug">
             KEGIATAN INSPEKSI PENERBITAN<br/>
             SERTIFIKAT KELAYAKAN PENGOLAHAN<br/>
             UNIT PENGOLAHAN IKAN
