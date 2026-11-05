@@ -25,7 +25,8 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        router.push('/dashboard');
+        // MENGARAHKAN LANGSUNG KE DASHBOARD MONITORING SETELAH LOGIN BERHASIL
+        router.push('/monitoring-dashboard');
         router.refresh();
       } else {
         setError(data.message || 'Login gagal');

@@ -18,8 +18,6 @@ export default function MonitoringPage() {
 
   // STATE UNTUK MODAL VIEW DETAIL
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [showReportPreview, setShowReportPreview] = useState(false);
-  const [previewFileUrl, setPreviewFileUrl] = useState<string | null>(null);
 
   // STATE UNTUK MODAL HAPUS
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -97,15 +95,7 @@ export default function MonitoringPage() {
 
   const handleViewClick = (report: any) => {
     setSelectedReport(report);
-    setShowReportPreview(false);
-    setPreviewFileUrl(null);
     setIsViewModalOpen(true);
-  };
-
-  const handleCloseViewModal = () => {
-    setIsViewModalOpen(false);
-    setShowReportPreview(false);
-    setPreviewFileUrl(null);
   };
 
   const handleDeleteClick = (report: any) => {
@@ -164,6 +154,17 @@ export default function MonitoringPage() {
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  // Fungsi untuk memisahkan nama dan jabatan dari string pelaksana
+  const parsePetugas = (petugasString: string) => {
+    if (!petugasString) return [];
+    return petugasString.split('|').map((p) => {
+      const parts = p.split('(');
+      const nama = parts[0].trim();
+      const jabatan = parts[1] ? parts[1].replace(')', '').trim() : 'Anggota Tim';
+      return { nama, jabatan };
+    });
   };
 
   return (
@@ -410,173 +411,162 @@ export default function MonitoringPage() {
       {/* MODAL VIEW DETAIL */}
       {isViewModalOpen && selectedReport && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col h-[90vh]">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <h3 className="text-lg font-bold text-slate-800">Detail Laporan</h3>
-              <button onClick={handleCloseViewModal} className="text-slate-400 hover:text-slate-700 cursor-pointer">
+              <button onClick={() => setIsViewModalOpen(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
 
-            {showReportPreview ? (
-              // TAMPILAN JIKA TOMBOL BUKA LAPORAN DIKLIK
-              <div className="flex-1 w-full bg-slate-100 relative flex flex-col">
-                {/* Jika ada file, tampilkan di iframe. Jika tidak, tampilkan pesan. */}
-                {selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]' ? (
-                  (() => {
-                    const key = JSON.parse(selectedReport.berkasPerbaikan)[0];
-                    const fileName = key.split('-').pop() || key;
-                    // Logika preview persis seperti di halaman print
-                    const fileUrl = `/api/r2/${key}`;
-                    const isDocument = fileName.match(/\.(docx|doc|pdf|xlsx|xls)$/i);
-                    const urlToPreview = isDocument 
-                      ? `https://docs.google.com/gview?url=${encodeURIComponent(window.location.origin + fileUrl)}&embedded=true`
-                      : fileUrl;
+            <div className="p-4 overflow-y-auto flex-1 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <div>
+                  <p className="text-slate-500 text-xs uppercase font-semibold">Nama Perusahaan</p>
+                  <p className="font-bold text-slate-800 text-base">{selectedReport.namaPerusahaan || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-xs uppercase font-semibold">Jenis Kegiatan</p>
+                  <p className="font-bold text-slate-800 text-base">{selectedReport.jenisKegiatan || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-xs uppercase font-semibold">Tanggal Pelaksanaan</p>
+                  <p className="font-medium text-slate-800">
+                    {selectedReport.tanggal ? new Date(selectedReport.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-xs uppercase font-semibold">Status Berkas</p>
+                  <div className="mt-1">
+                    <span className={`inline-block whitespace-nowrap text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-md ${getAutoStatus(selectedReport).warna}`}>
+                      {getAutoStatus(selectedReport).teks}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-slate-100" />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="font-semibold text-slate-700 mb-1">Hasil Kegiatan</p>
+                  <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200 whitespace-pre-wrap h-24 overflow-y-auto">
+                    {selectedReport.hasilKegiatan || '-'}
+                  </div>
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-700 mb-1">Kendala</p>
+                  <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200 whitespace-pre-wrap h-24 overflow-y-auto">
+                    {selectedReport.kendala || '-'}
+                  </div>
+                </div>
+              </div>
+
+              <hr className="border-slate-100" />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    Berkas Kegiatan
+                  </p>
+                  {selectedReport.berkasKegiatan && selectedReport.berkasKegiatan !== '[]' ? (
+                    <div className="flex flex-col gap-2">
+                      {JSON.parse(selectedReport.berkasKegiatan).map((key: string, idx: number) => {
+                        const fileName = key.split('-').pop() || key;
+                        return (
+                          <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:underline bg-white p-2 rounded border border-slate-200 hover:border-blue-300 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                            <span className="truncate">{fileName}</span>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-400 italic bg-slate-50 p-2 rounded border border-dashed">Belum ada berkas.</p>
+                  )}
+                </div>
+
+                <div>
+                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    Berkas Perbaikan
+                  </p>
+                  {selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]' ? (
+                    <div className="flex flex-col gap-2">
+                      {JSON.parse(selectedReport.berkasPerbaikan).map((key: string, idx: number) => {
+                        const fileName = key.split('-').pop() || key;
+                        return (
+                          <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:underline bg-white p-2 rounded border border-slate-200 hover:border-blue-300 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                            <span className="truncate">{fileName}</span>
+                          </a>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-400 italic bg-slate-50 p-2 rounded border border-dashed">Belum ada berkas perbaikan.</p>
+                  )}
+                </div>
+              </div>
+
+              <hr className="border-slate-100" />
+
+              {/* BAGIAN TANDA TANGAN PELAKSANA */}
+              <div className="mt-6">
+                <p className="font-bold text-slate-800 mb-6 uppercase tracking-wide border-l-4 border-slate-800 pl-3">
+                  V. Tanda Tangan Pelaksana
+                </p>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  {parsePetugas(selectedReport.petugasPelaksana).map((petugas: any, idx: number) => {
+                    // Mengubah nama menjadi format nama file gambar
+                    // Contoh: "Siti Nurlatifah, S.St.Pi., M.Si" -> "siti-nurlatifah.png"
+                    const namaFileTtd = petugas.nama
+                      .split(',')[0] // Ambil nama depan sebelum koma (jika ada gelar)
+                      .trim()
+                      .toLowerCase()
+                      .replace(/\s+/g, '-') + '.png';
 
                     return (
-                      <iframe 
-                        src={urlToPreview} 
-                        className="w-full h-full border-0"
-                        title="Preview Laporan"
-                      />
+                      <div key={idx} className="flex flex-col items-center justify-end text-center h-40">
+                        {/* Area Gambar TTD */}
+                        <div className="h-20 w-full flex items-end justify-center mb-2">
+                          {/* Cek jika file gambar ada, tag <img> akan memuatnya. 
+                              Jika tidak ada, gambarnya akan error dan kita sembunyikan dengan onError */}
+                          <img 
+                            src={`/tanda-tangan/${namaFileTtd}`} 
+                            alt={`TTD ${petugas.nama}`}
+                            className="max-h-20 object-contain"
+                            onError={(e) => {
+                              // Jika gambar tidak ditemukan, sembunyikan tag img
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                        
+                        {/* Garis TTD */}
+                        <div className="w-full border-t-2 border-slate-800 mb-2"></div>
+                        
+                        {/* Nama & Jabatan */}
+                        <p className="font-bold text-sm text-slate-800">{petugas.nama}</p>
+                        <p className="text-xs text-slate-600">{petugas.jabatan}</p>
+                      </div>
                     );
-                  })()
-                ) : (
-                  <div className="flex items-center justify-center h-full text-slate-500 font-medium text-lg">
-                    Belum ada file laporan perjalanan dinas yang di-upload.
-                  </div>
-                )}
-
-                <button 
-                  onClick={() => setShowReportPreview(false)}
-                  className="absolute bottom-6 right-6 bg-slate-800 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-slate-900 text-sm font-semibold cursor-pointer"
-                >
-                  Kembali ke Detail
-                </button>
+                  })}
+                </div>
               </div>
-            ) : (
-              // TAMPILAN DETAIL BIASA
-              <>
-                <div className="p-4 overflow-y-auto flex-1 space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <div>
-                      <p className="text-slate-500 text-xs uppercase font-semibold">Nama Perusahaan</p>
-                      <p className="font-bold text-slate-800 text-base">{selectedReport.namaPerusahaan || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500 text-xs uppercase font-semibold">Jenis Kegiatan</p>
-                      <p className="font-bold text-slate-800 text-base">{selectedReport.jenisKegiatan || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500 text-xs uppercase font-semibold">Tanggal Pelaksanaan</p>
-                      <p className="font-medium text-slate-800">
-                        {selectedReport.tanggal ? new Date(selectedReport.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500 text-xs uppercase font-semibold">Status Berkas</p>
-                      <div className="mt-1">
-                        <span className={`inline-block whitespace-nowrap text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-md ${getAutoStatus(selectedReport).warna}`}>
-                          {getAutoStatus(selectedReport).teks}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
 
-                  <hr className="border-slate-100" />
+            </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="font-semibold text-slate-700 mb-1">Hasil Kegiatan</p>
-                      <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200 whitespace-pre-wrap h-24 overflow-y-auto">
-                        {selectedReport.hasilKegiatan || '-'}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-700 mb-1">Kendala</p>
-                      <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200 whitespace-pre-wrap h-24 overflow-y-auto">
-                        {selectedReport.kendala || '-'}
-                      </div>
-                    </div>
-                  </div>
-
-                  <hr className="border-slate-100" />
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                        Berkas Kegiatan
-                      </p>
-                      {selectedReport.berkasKegiatan && selectedReport.berkasKegiatan !== '[]' ? (
-                        <div className="flex flex-col gap-2">
-                          {JSON.parse(selectedReport.berkasKegiatan).map((key: string, idx: number) => {
-                            const fileName = key.split('-').pop() || key;
-                            return (
-                              <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:underline bg-white p-2 rounded border border-slate-200 hover:border-blue-300 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
-                                <span className="truncate">{fileName}</span>
-                              </a>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-slate-400 italic bg-slate-50 p-2 rounded border border-dashed">Belum ada berkas.</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                        Berkas Perbaikan
-                      </p>
-                      {selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]' ? (
-                        <div className="flex flex-col gap-2">
-                          {JSON.parse(selectedReport.berkasPerbaikan).map((key: string, idx: number) => {
-                            const fileName = key.split('-').pop() || key;
-                            return (
-                              <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:underline bg-white p-2 rounded border border-slate-200 hover:border-blue-300 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
-                                <span className="truncate">{fileName}</span>
-                              </a>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-slate-400 italic bg-slate-50 p-2 rounded border border-dashed">Belum ada berkas perbaikan.</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* TOMBOL BUKA LAPORAN */}
-                  <div className="mt-4 border-t border-slate-100 pt-4">
-                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center gap-3">
-                      <div>
-                        <p className="text-sm font-semibold text-blue-800">Laporan Perjalanan Dinas</p>
-                        <p className="text-xs text-blue-600">Lihat format file (Cover, Isi, TTD, Foto) yang di-upload.</p>
-                      </div>
-                      
-                      <button 
-                        onClick={() => setShowReportPreview(true)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-blue-700 transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                        Buka Laporan
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-4 border-t border-slate-200 bg-slate-50 text-right">
-                  <button 
-                    onClick={handleCloseViewModal} 
-                    className="px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-700 rounded-lg cursor-pointer"
-                  >
-                    Tutup
-                  </button>
-                </div>
-              </>
-            )}
+            <div className="p-4 border-t border-slate-200 bg-slate-50 text-right">
+              <button 
+                onClick={() => setIsViewModalOpen(false)} 
+                className="px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-700 rounded-lg cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
         </div>
       )}

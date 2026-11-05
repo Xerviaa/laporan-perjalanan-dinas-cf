@@ -13,9 +13,12 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {
+    "@cyntler/react-doc-viewer": "^1.17.1",
+    "docx-preview": "^0.4.1",
     "drizzle-orm": "^0.45.4",
     "fflate": "^0.8.3",
     "jose": "^6.2.13",
+    "mammoth": "^1.13.0",
     "next": "^15.5.28",
     "pg": "^8.23.1",
     "postgres": "^4.0.0",

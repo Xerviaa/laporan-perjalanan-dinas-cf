@@ -55,9 +55,10 @@ export default function Layout({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // --- EFEK SAAT PINDAH HALAMAN ---
+  // --- EFEK SAAT PINDAH HALAMAN (PWA) ---
   useEffect(() => {
-    if (pathname === '/dashboard' && deferredPrompt) {
+    // PWA install button bisa muncul di halaman arsip atau dashboard monitoring
+    if ((pathname === '/arsip' || pathname === '/monitoring-dashboard') && deferredPrompt) {
       setShowInstallBtn(true);
     } else {
       setShowInstallBtn(false);
@@ -81,12 +82,12 @@ export default function Layout({ children }: { children: ReactNode }) {
     router.refresh();
   };
 
-  // MENU ITEMS (DITAMBAHKAN MONITORING)
+  // MENU ITEMS (URUTAN DISESUAIKAN)
   const menuItems = [
-    { name: 'Dashboard Utama', path: '/dashboard', icon: '🏠' },
+    { name: 'Dashboard Monitoring', path: '/monitoring-dashboard', icon: '📈' },
     { name: 'Upload Laporan', path: '/upload', icon: '📤' },
-    { name: 'Arsip Laporan', path: '/arsip', icon: '📁' },
-    { name: 'Monitoring Sertifikasi', path: '/monitoring', icon: '📊' }, // <-- Menu Baru
+    { name: 'Arsip Laporan', path: '/arsip', icon: '📁' }, 
+    { name: 'Monitoring Sertifikasi', path: '/monitoring', icon: '📊' },
   ];
 
   return (
@@ -121,7 +122,9 @@ export default function Layout({ children }: { children: ReactNode }) {
 
         <nav className="flex-1 py-3 overflow-y-auto">
           {menuItems.map((item) => {
-            const isActive = pathname.startsWith(item.path);
+            // LOGIKA BARU: Hanya aktif jika URL persis sama
+            const isActive = pathname === item.path;
+            
             return (
               <Link
                 key={item.path}
