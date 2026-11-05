@@ -21,21 +21,27 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
   }
 
   // Render template berdasarkan jenis kegiatan
+  // Menggunakan .includes() agar lebih aman jika ada variasi teks (Primer/Pasca dihapus)
   let kontenLaporan = null;
-  if (data.jenisKegiatan === "Primer - Inspeksi - Inspeksi CPIB Kapal") {
+  
+  if (data.jenisKegiatan?.includes("CPIB")) {
+    // Mengarah ke Template CPIB Kapal
     kontenLaporan = <TemplateInspeksiCPIBKapal data={data} />;
   } 
-  else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi HACCP") {
-    kontenLaporan = <TemplateInspeksiHACCP data={data} />;
-  }
-  else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi SKP") {
-    kontenLaporan = <TemplateInspeksiSKP data={data} />;
-  }
-  else if (data.jenisKegiatan === "Pasca - Survailen - Survailen HACCP") {
+  else if (data.jenisKegiatan?.includes("HACCP") && data.jenisKegiatan?.includes("Survailen")) {
+    // Mengarah ke Template Survailen HACCP
     kontenLaporan = <TemplateSurveilanHACCP data={data} />;
   }
+  else if (data.jenisKegiatan?.includes("HACCP")) {
+    // Mengarah ke Template Inspeksi HACCP
+    kontenLaporan = <TemplateInspeksiHACCP data={data} />;
+  }
+  else if (data.jenisKegiatan?.includes("SKP")) {
+    // Mengarah ke Template Inspeksi SKP
+    kontenLaporan = <TemplateInspeksiSKP data={data} />;
+  }
   else {
-    kontenLaporan = <div>Template belum tersedia.</div>;
+    kontenLaporan = <div className="text-center p-10">Template untuk "{data.jenisKegiatan}" belum tersedia.</div>;
   }
 
   return (
@@ -43,7 +49,6 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
       <TombolCetak />
       
       {/* CONTAINER UTAMA UNTUK KERTAS A4 */}
-      {/* Tambahan print:w-full print:mx-0 agar saat print tidak menabrak margin browser */}
       <div className="mx-auto w-[21cm] bg-white shadow-xl print:shadow-none print:w-full print:mx-0">
         
         {/* LANGSUNG TAMPILKAN ISI LAPORAN (COVER SUDAH ADA DI DALAM TEMPLATE) */}
