@@ -21,28 +21,14 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
   return (
     <div className="font-serif text-[11pt] leading-relaxed text-justify text-black">
       
-      {/* ========================================= */}
-      {/* BAGIAN COVER YANG SUDAH DIPERBAIKI        */}
-      {/* ========================================= */}
-      <div className="text-center mt-12 mb-16 space-y-6">
-        <h1 className="font-bold uppercase text-[14pt] tracking-wide">
-          PELAPORAN PERJALANAN DINAS
-        </h1>
-        
-        <h2 className="font-bold uppercase text-[13pt] leading-snug">
-          KEGIATAN INSPEKSI CARA PENANGANAN IKAN<br/>
-          YANG BAIK (CPIB) DI ATAS KAPAL
-        </h2>
-        
-        <h3 className="font-bold uppercase text-[13pt] pt-4">
-          {data.namaPerusahaan || "-"}
+      {/* JUDUL LAPORAN */}
+      <div className="text-center mb-8">
+        <h3 className="font-bold uppercase text-[12pt] leading-tight">
+          LAPORAN PERJALANAN DINAS<br/>
+          KEGIATAN INSPEKSI CARA PENANGANAN IKAN YANG BAIK (CPIB)<br/>
+          DI ATAS KAPAL
         </h3>
-        
-        <p className="font-bold text-[12pt]">
-          {tanggalIndo}
-        </p>
       </div>
-      {/* ========================================= */}
 
       {/* I. DASAR PELAKSANAAN */}
       <div className="mb-4">

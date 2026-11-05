@@ -33,29 +33,13 @@ export default function TemplateInspeksiSKP({ data }: { data: any }) {
   return (
     <div className="font-serif text-[11pt] leading-relaxed text-justify text-black">
       
-      {/* ========================================= */}
-      {/* BAGIAN COVER YANG SUDAH DIPERBAIKI        */}
-      {/* ========================================= */}
-      <div className="text-center mt-12 mb-16 space-y-6">
-        <h1 className="font-bold uppercase text-[14pt] tracking-wide">
-          LAPORAN PERJALANAN DINAS
-        </h1>
-        
-        <h2 className="font-bold uppercase text-[13pt] leading-snug">
-          KEGIATAN INSPEKSI PENERBITAN<br/>
-          SERTIFIKAT KELAYAKAN PENGOLAHAN<br/>
+      <div className="text-center mb-8">
+        <h3 className="font-bold uppercase text-[12pt] leading-tight">
+          LAPORAN PERJALANAN DINAS<br/>
+          KEGIATAN INSPEKSI PENERBITAN SERTIFIKAT KELAYAKAN PENGOLAHAN<br/>
           UNIT PENGOLAHAN IKAN
-        </h2>
-        
-        <h3 className="font-bold uppercase text-[13pt] pt-4">
-          {data.namaPerusahaan || "-"}
         </h3>
-        
-        <p className="font-bold text-[12pt]">
-          {tanggalIndo}
-        </p>
       </div>
-      {/* ========================================= */}
 
       <div className="mb-4">
         <h4 className="font-bold">I. Dasar Pelaksanaan</h4>
