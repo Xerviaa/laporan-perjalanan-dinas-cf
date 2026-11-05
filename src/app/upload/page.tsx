@@ -6,37 +6,86 @@ import { perusahaanHACCP, perusahaanSKP } from '@/data/perusahaan';
 import { daftarPegawai } from '@/data/pegawai'; 
 
 // ==========================================
-// KOMPONEN KHUSUS UNTUK MENAMPILKAN TTD (DIPERBAIKI)
+// KOMPONEN TTD PREVIEW YANG LEBIH PINTAR
 // ==========================================
 const TtdPreview = ({ nama }: { nama: string }) => {
-  const [imgError, setImgError] = useState(false);
+  const [imgSrc, setImgSrc] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
-    setImgError(false);
+    if (!nama) {
+      setImgSrc(null);
+      setHasError(false);
+      return;
+    }
+
+    // 1. Bersihkan nama dari gelar di belakang (S.Si, M.Si, dll)
+    let namaDasar = nama.split(',')[0].trim().toLowerCase();
+    
+    // 2. Hapus karakter aneh (titik, dll)
+    namaDasar = namaDasar.replace(/[^a-z0-9\s-]/g, '');
+
+    // 3. Buat dua kemungkinan nama file
+    // Opsi A: Tanpa "drh-" (misal: adam-saba-anggara)
+    const namaTanpaGelar = namaDasar.replace(/^drh\s+/, '').replace(/\s+/g, '-');
+    const urlTanpaGelar = `/tanda-tangan/${namaTanpaGelar}.png`;
+
+    // Opsi B: Dengan "drh-" (misal: drh-adam-saba-anggara)
+    const namaDenganGelar = namaDasar.replace(/\s+/g, '-');
+    const urlDenganGelar = `/tanda-tangan/${namaDenganGelar}.png`;
+
+    // 4. Coba cek file mana yang ada
+    const checkImage = (url: string) => {
+      return new Promise<string>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(url);
+        img.onerror = () => reject();
+        img.src = url;
+      });
+    };
+
+    // Prioritaskan file dengan "drh-" jika nama aslinya ada "drh", 
+    // tapi cek juga yang tanpa "drh-"
+    const primaryUrl = nama.toLowerCase().includes('drh') ? urlDenganGelar : urlTanpaGelar;
+    const fallbackUrl = nama.toLowerCase().includes('drh') ? urlTanpaGelar : urlDenganGelar;
+
+    checkImage(primaryUrl)
+      .then((validUrl) => {
+        setImgSrc(validUrl);
+        setHasError(false);
+      })
+      .catch(() => {
+        // Jika gagal, coba opsi cadangan
+        checkImage(fallbackUrl)
+          .then((validUrl) => {
+            setImgSrc(validUrl);
+            setHasError(false);
+          })
+          .catch(() => {
+            setImgSrc(null);
+            setHasError(true);
+          });
+      });
+
   }, [nama]);
 
   if (!nama) {
     return <span className="text-xs text-slate-400 italic">Pilih nama dulu</span>;
   }
 
-  // LOGIKA BARU: Membuang gelar "drh." di depan agar cocok dengan nama file
-  let namaBersih = nama.split(',')[0].trim().toLowerCase(); // Ambil sebelum koma
-  namaBersih = namaBersih.replace(/^drh\.\s*/i, ''); // Hapus "drh. " di depan
-  namaBersih = namaBersih.replace(/[^a-z0-9\s-]/g, ''); // Hapus karakter aneh
-  const namaFile = namaBersih.replace(/\s+/g, '-'); // Ganti spasi jadi strip
-
-  const ttdUrl = `/tanda-tangan/${namaFile}.png`;
-
-  if (imgError) {
+  if (hasError) {
     return <span className="text-xs text-slate-400 italic">TTD belum ada</span>;
+  }
+
+  if (!imgSrc) {
+    return <span className="text-xs text-slate-400 italic">Memuat...</span>;
   }
 
   return (
     <img 
-      src={ttdUrl} 
+      src={imgSrc} 
       alt="TTD" 
       className="h-10 object-contain"
-      onError={() => setImgError(true)}
     />
   );
 };
