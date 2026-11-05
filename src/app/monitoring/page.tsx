@@ -1,11 +1,5 @@
 'use client';
 
-// Trigger redeploy untuk monitoring page
-import { useEffect, useState } from 'react';
-
-// ... sisa kode ...
-'use client';
-
 import { useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
 
