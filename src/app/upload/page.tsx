@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
-import { perusahaanHACCP, perusahaanSKP } from '@/data/perusahaan'; // Sesuaikan path jika berbeda
+import { perusahaanHACCP, perusahaanSKP } from '@/data/perusahaan'; 
+import { daftarPegawai } from '@/data/pegawai'; 
 
 export default function UploadPage() {
   // State
@@ -68,13 +69,13 @@ export default function UploadPage() {
     let fullJenisKegiatan = '';
     
     if (jenisKegiatan === 'Inspeksi') {
-      fullJenisKegiatan = `Inspeksi ${detailKegiatan}`; // Hasil: "Inspeksi CPIB Kapal"
+      fullJenisKegiatan = `Inspeksi ${detailKegiatan}`; 
     } 
     else if (jenisKegiatan === 'Survailen') {
-      fullJenisKegiatan = `Survailen ${detailKegiatan}`; // Hasil: "Survailen CPIB Kapal"
+      fullJenisKegiatan = `Survailen ${detailKegiatan}`; 
     }
     else {
-      fullJenisKegiatan = jenisKegiatan; // Hasil: "Inpres" atau "Selfdeclare Kapal"
+      fullJenisKegiatan = jenisKegiatan; 
     }
 
     const formData = new FormData();
@@ -120,7 +121,7 @@ export default function UploadPage() {
   // Opsi Jenis Kegiatan
   const opsiJenisKegiatan = ['Inspeksi', 'Survailen', 'Inpres', 'Selfdeclare Kapal'];
   
-  // Opsi Detail Kegiatan (Sesuai Catatan)
+  // Opsi Detail Kegiatan
   const getOpsiDetail = () => {
     if (jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Survailen') {
       return [
@@ -148,41 +149,70 @@ export default function UploadPage() {
           {/* 1. BAGIAN PETUGAS PELAKSANA */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Petugas Pelaksana (Maks. 10 Orang)</label>
-            {petugasList.map((petugas, index) => (
-              <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 p-3 border border-slate-100 rounded-lg bg-slate-50">
-                <div>
-                  <label className="text-xs text-slate-500">Nama Petugas</label>
-                  <input 
-                    type="text" 
-                    value={petugas.nama}
-                    onChange={(e) => handlePetugasChange(index, 'nama', e.target.value)}
-                    className="w-full border border-slate-300 rounded px-3 py-1.5 text-sm mt-1" 
-                    placeholder="Nama Petugas"
-                  />
+            {petugasList.map((petugas, index) => {
+              // Fungsi untuk mendapatkan URL TTD
+              const getTtdUrl = (nama: string) => {
+                if (!nama) return "";
+                const namaTanpaGelar = nama.split(',')[0];
+                const namaFile = namaTanpaGelar.toLowerCase().replace(/[.]/g, '').trim().replace(/\s+/g, '-');
+                return `/tanda-tangan/${namaFile}.png`;
+              };
+
+              return (
+                <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 p-3 border border-slate-100 rounded-lg bg-slate-50">
+                  
+                  {/* Dropdown Nama Petugas */}
+                  <div>
+                    <label className="text-xs text-slate-500">Nama Petugas</label>
+                    <select 
+                      value={petugas.nama}
+                      onChange={(e) => handlePetugasChange(index, 'nama', e.target.value)}
+                      className="w-full border border-slate-300 rounded px-3 py-2 text-sm mt-1 bg-white"
+                    >
+                      <option value="">-- Pilih Nama --</option>
+                      {daftarPegawai.map((namaPegawai: string, idx: number) => (
+                        <option key={idx} value={namaPegawai}>{namaPegawai}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Preview Tanda Tangan Otomatis */}
+                  <div>
+                    <label className="text-xs text-slate-500">Tanda Tangan</label>
+                    <div className="w-full h-[38px] mt-1 border border-slate-200 rounded bg-white flex items-center justify-center overflow-hidden">
+                      {petugas.nama ? (
+                        <img 
+                          src={getTtdUrl(petugas.nama)} 
+                          alt="TTD" 
+                          className="h-10 object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                            (e.target as HTMLImageElement).parentElement!.innerHTML = '<span class="text-xs text-slate-400 italic">TTD belum ada</span>';
+                          }}
+                        />
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">Pilih nama dulu</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pilihan Peran */}
+                  <div>
+                    <label className="text-xs text-slate-500">Peran / Tugas</label>
+                    <select 
+                      value={petugas.peran}
+                      onChange={(e) => handlePetugasChange(index, 'peran', e.target.value)}
+                      className="w-full border border-slate-300 rounded px-3 py-2 text-sm mt-1 bg-white"
+                    >
+                      <option value="">-- Pilih Peran --</option>
+                      <option value="Ketua">Ketua</option>
+                      <option value="Anggota">Anggota</option>
+                      <option value="Observer">Observer</option>
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="text-xs text-slate-500">Tanda Tangan (File)</label>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    className="w-full border border-slate-300 rounded px-3 py-1 text-sm mt-1" 
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-500">Peran / Tugas</label>
-                  <select 
-                    value={petugas.peran}
-                    onChange={(e) => handlePetugasChange(index, 'peran', e.target.value)}
-                    className="w-full border border-slate-300 rounded px-3 py-2 text-sm mt-1"
-                  >
-                    <option value="">-- Pilih Peran --</option>
-                    <option value="Ketua">Ketua</option>
-                    <option value="Anggota">Anggota</option>
-                    <option value="Observer">Observer</option>
-                  </select>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             <button type="button" onClick={addPetugas} className="text-sm text-blue-600 hover:underline font-semibold">
               + Tambah Petugas
             </button>
