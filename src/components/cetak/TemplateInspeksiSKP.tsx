@@ -30,28 +30,40 @@ export default function TemplateInspeksiSKP({ data }: { data: any }) {
   }
 
   return (
-    <div className="font-serif text-[11pt] leading-relaxed text-justify text-black">
+    <div className="text-[11pt] leading-relaxed text-justify text-black" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
       
+            {/* ========================================= */}
+      {/* HALAMAN 1: COVER (SKP)                    */}
       {/* ========================================= */}
-      {/* HALAMAN 1: COVER                          */}
-      {/* ========================================= */}
-      <div className="w-full h-[25.7cm] flex flex-col justify-between items-center text-center font-serif print:break-after-page relative">
-        <div className="mt-10 w-full">
-          <h1 className="text-[16pt] font-bold uppercase leading-tight mb-8">
-            LAPORAN PERJALANAN DINAS<br/>
+      <div className="w-full h-[25.7cm] flex flex-col justify-between items-center text-center print:break-after-page relative">
+        
+        {/* BAGIAN ATAS: JUDUL, PERUSAHAAN, TANGGAL */}
+        <div className="mt-16 w-full flex flex-col items-center">
+          
+          <h1 className="text-[16pt] font-bold uppercase leading-tight">
+            LAPORAN PERJALANAN DINAS
+          </h1>
+          
+          <h2 className="text-[14pt] font-bold uppercase leading-tight mt-4">
             KEGIATAN INSPEKSI PENERBITAN<br/>
             SERTIFIKAT KELAYAKAN PENGOLAHAN<br/>
             UNIT PENGOLAHAN IKAN
-          </h1>
+          </h2>
 
-          <div className="mt-12 space-y-2">
+          {/* Jarak rapi dengan tracking-tight, dan tanggal tanpa uppercase */}
+          <div className="mt-8 space-y-2 tracking-tight">
             <p className="font-bold text-[14pt] uppercase">{data.namaPerusahaan || "-"}</p>
-            <p className="font-bold text-[14pt] uppercase">{tanggalIndo}</p>
+            <p className="font-bold text-[14pt]">{tanggalIndo}</p>
           </div>
+
         </div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+
+        {/* BAGIAN TENGAH: LOGO KKP */}
+        <div className="absolute top-[60%] left-1/2 transform -translate-x-1/2 -translate-y-1/2">
           <img src="/logo-kkp.png" alt="Logo KKP" className="w-40 h-40 object-contain mx-auto" />
         </div>
+
+        {/* BAGIAN BAWAH: FOOTER KEMENTERIAN */}
         <div className="mb-10 w-full">
           <h3 className="text-[14pt] font-bold uppercase leading-tight">
             KEMENTERIAN KELAUTAN DAN PERIKANAN<br/>
