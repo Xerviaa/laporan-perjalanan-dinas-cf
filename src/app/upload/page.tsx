@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Layout from '@/components/Layout';
 import { perusahaanHACCP, perusahaanSKP } from '@/data/perusahaan'; 
 import { daftarPegawai } from '@/data/pegawai'; 
@@ -14,12 +14,19 @@ export default function UploadPage() {
   const [tanggal, setTanggal] = useState('');
   const [noSurat, setNoSurat] = useState('');
   
+  // STATE BARU UNTUK HASIL & KENDALA
+  const [hasilKegiatan, setHasilKegiatan] = useState('');
+  const [kendala, setKendala] = useState('');
+
   // State untuk Petugas
   const [petugasList, setPetugasList] = useState([{ nama: '', peran: '', ttd: '' }]);
   
   // State untuk Foto
   const [fotoFiles, setFotoFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Ref untuk input file tersembunyi
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Efek untuk mengisi alamat otomatis berdasarkan nama perusahaan
   useEffect(() => {
@@ -86,6 +93,10 @@ export default function UploadPage() {
     formData.append('noSurat', noSurat);
     formData.append('petugasPelaksana', petugasString);
     
+    // KIRIM HASIL & KENDALA KE SERVER
+    formData.append('hasilKegiatan', hasilKegiatan);
+    formData.append('kendala', kendala);
+    
     fotoFiles.forEach(file => {
       formData.append('foto', file); 
     });
@@ -104,6 +115,8 @@ export default function UploadPage() {
         setNamaPerusahaan('');
         setTanggal('');
         setNoSurat('');
+        setHasilKegiatan(''); // Reset hasil
+        setKendala('');       // Reset kendala
         setPetugasList([{ nama: '', peran: '', ttd: '' }]);
         setFotoFiles([]);
       } else {
@@ -117,21 +130,11 @@ export default function UploadPage() {
   };
 
   // --- OPSI DROPDOWN ---
-  
-  // Opsi Jenis Kegiatan
   const opsiJenisKegiatan = ['Inspeksi', 'Survailen', 'Inpres', 'Selfdeclare Kapal'];
   
-  // Opsi Detail Kegiatan
   const getOpsiDetail = () => {
     if (jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Survailen') {
-      return [
-        'CPIB Kapal',
-        'CBIB',
-        'CPIB',
-        'HACCP',
-        'SKP',
-        'SPDI'
-      ];
+      return ['CPIB Kapal', 'CBIB', 'CPIB', 'HACCP', 'SKP', 'SPDI'];
     }
     return [];
   };
@@ -150,7 +153,6 @@ export default function UploadPage() {
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Petugas Pelaksana (Maks. 10 Orang)</label>
             {petugasList.map((petugas, index) => {
-              // Fungsi untuk mendapatkan URL TTD
               const getTtdUrl = (nama: string) => {
                 if (!nama) return "";
                 const namaTanpaGelar = nama.split(',')[0];
@@ -160,8 +162,6 @@ export default function UploadPage() {
 
               return (
                 <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 p-3 border border-slate-100 rounded-lg bg-slate-50">
-                  
-                  {/* Dropdown Nama Petugas */}
                   <div>
                     <label className="text-xs text-slate-500">Nama Petugas</label>
                     <select 
@@ -175,8 +175,6 @@ export default function UploadPage() {
                       ))}
                     </select>
                   </div>
-
-                  {/* Preview Tanda Tangan Otomatis */}
                   <div>
                     <label className="text-xs text-slate-500">Tanda Tangan</label>
                     <div className="w-full h-[38px] mt-1 border border-slate-200 rounded bg-white flex items-center justify-center overflow-hidden">
@@ -195,8 +193,6 @@ export default function UploadPage() {
                       )}
                     </div>
                   </div>
-
-                  {/* Pilihan Peran */}
                   <div>
                     <label className="text-xs text-slate-500">Peran / Tugas</label>
                     <select 
@@ -222,8 +218,6 @@ export default function UploadPage() {
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
             <label className="block text-sm font-semibold text-slate-700 mb-3">Jenis Kegiatan</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              {/* Dropdown Jenis */}
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">Jenis</label>
                 <select 
@@ -241,8 +235,6 @@ export default function UploadPage() {
                   ))}
                 </select>
               </div>
-
-              {/* Dropdown Detail */}
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">Detail Kegiatan</label>
                 <select 
@@ -262,7 +254,6 @@ export default function UploadPage() {
                   ))}
                 </select>
               </div>
-
             </div>
           </div>
 
@@ -314,25 +305,85 @@ export default function UploadPage() {
             </div>
           </div>
 
+          {/* ======================================================== */}
+          {/* TAMBAHAN BARU: HASIL KEGIATAN & KENDALA */}
+          {/* ======================================================== */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Hasil Kegiatan</label>
+              <textarea 
+                value={hasilKegiatan}
+                onChange={(e) => setHasilKegiatan(e.target.value)}
+                placeholder="Jelaskan hasil kegiatan yang telah dilaksanakan..."
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"
+              ></textarea>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Kendala</label>
+              <textarea 
+                value={kendala}
+                onChange={(e) => setKendala(e.target.value)}
+                placeholder="Jelaskan kendala yang dihadapi (jika ada)..."
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"
+              ></textarea>
+            </div>
+          </div>
+          {/* ======================================================== */}
+
           {/* 4. BAGIAN FOTO DOKUMENTASI */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Foto Kegiatan (Maks. 5 file, 5MB/file)</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Foto Kegiatan (Maks. 5 file, 5MB/file)</label>
+            
+            <div 
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors"
+            >
+              <span className="text-3xl mb-2">📸</span>
+              <p className="text-sm font-semibold text-slate-700">Klik untuk tambah foto kegiatan ({fotoFiles.length}/5)</p>
+              <p className="text-xs text-slate-500 mt-1">Bisa pilih satu per satu</p>
+            </div>
+
             <input 
               type="file" 
               multiple 
               accept="image/*"
+              ref={fileInputRef}
+              style={{ display: 'none' }} 
               onChange={(e) => {
                 if (e.target.files) {
                   const files = Array.from(e.target.files);
                   const validFiles = files.filter(f => f.size <= 5 * 1024 * 1024);
+                  
                   if (validFiles.length !== files.length) {
                     alert("Beberapa file melebihi 5MB dan tidak akan diunggah.");
                   }
-                  setFotoFiles(validFiles.slice(0, 5));
+                  
+                  const combinedFiles = [...fotoFiles, ...validFiles].slice(0, 5);
+                  setFotoFiles(combinedFiles);
+                  e.target.value = ''; 
                 }
               }}
-              className="w-full border border-slate-300 rounded px-3 py-2 text-sm" 
             />
+
+            {fotoFiles.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {fotoFiles.map((file, idx) => (
+                  <div key={idx} className="text-xs text-slate-600 bg-slate-100 px-3 py-2 rounded-lg flex justify-between items-center border border-slate-200">
+                    <span className="truncate max-w-[80%] font-medium">{file.name}</span>
+                    <button 
+                      type="button" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFotoFiles(fotoFiles.filter((_, i) => i !== idx));
+                      }}
+                      className="text-red-500 hover:text-red-700 font-bold ml-2 bg-red-50 px-2 py-0.5 rounded"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="pt-4 border-t border-slate-200">

@@ -17,9 +17,13 @@ export async function POST(request: Request) {
     const alamatPerusahaan = (formData.get('alamatPerusahaan') as string) || "";
     const tanggal = (formData.get('tanggal') as string) || "";
     const petugasPelaksana = (formData.get('petugasPelaksana') as string) || "";
+    
+    // AMBIL DATA BARU: HASIL KEGIATAN & KENDALA
+    const hasilKegiatan = (formData.get('hasilKegiatan') as string) || "";
+    const kendala = (formData.get('kendala') as string) || "";
 
     // VALIDASI
-    if (!pembuatLaporan || !jenisKegiatan || !namaPerusahaan) {
+    if (!jenisKegiatan || !namaPerusahaan) {
       return Response.json({ status: "error", message: "Data wajib belum lengkap" }, { status: 400 });
     }
 
@@ -62,6 +66,9 @@ export async function POST(request: Request) {
       isRewarded: false,
       fotoKegiatan: JSON.stringify(keysKegiatan),
       fotoLokasi: JSON.stringify([]), 
+      // SIMPAN DATA BARU DI SINI
+      hasilKegiatan: hasilKegiatan,
+      kendala: kendala,
     });
 
     return Response.json({ status: "success", message: "Berhasil diunggah" });

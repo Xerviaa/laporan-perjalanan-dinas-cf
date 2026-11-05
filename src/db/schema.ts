@@ -29,6 +29,12 @@ export const reports = pgTable("reports", {
   tanggal: varchar("tanggal", { length: 50 }),
   deadline: timestamp("deadline"),
   isRewarded: boolean("is_rewarded").default(false),
+
+  // ==========================================
+  // TAMBAHAN BARU: HASIL KEGIATAN & KENDALA
+  // ==========================================
+  hasilKegiatan: text("hasil_kegiatan"),
+  kendala: text("kendala"),
 });
 
 export const settings = pgTable("settings", {
