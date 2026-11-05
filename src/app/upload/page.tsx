@@ -115,8 +115,8 @@ export default function UploadPage() {
         setNamaPerusahaan('');
         setTanggal('');
         setNoSurat('');
-        setHasilKegiatan(''); // Reset hasil
-        setKendala('');       // Reset kendala
+        setHasilKegiatan('');
+        setKendala('');
         setPetugasList([{ nama: '', peran: '', ttd: '' }]);
         setFotoFiles([]);
       } else {
@@ -162,19 +162,25 @@ export default function UploadPage() {
 
               return (
                 <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 p-3 border border-slate-100 rounded-lg bg-slate-50">
+                  
+                  {/* Dropdown Nama Petugas (Bisa Diketik) */}
                   <div>
                     <label className="text-xs text-slate-500">Nama Petugas</label>
-                    <select 
+                    <input 
+                      type="text"
+                      list={`pegawai-list-${index}`}
                       value={petugas.nama}
                       onChange={(e) => handlePetugasChange(index, 'nama', e.target.value)}
+                      placeholder="Ketik nama atau pilih..."
                       className="w-full border border-slate-300 rounded px-3 py-2 text-sm mt-1 bg-white"
-                    >
-                      <option value="">-- Pilih Nama --</option>
+                    />
+                    <datalist id={`pegawai-list-${index}`}>
                       {daftarPegawai.map((namaPegawai: string, idx: number) => (
-                        <option key={idx} value={namaPegawai}>{namaPegawai}</option>
+                        <option key={idx} value={namaPegawai} />
                       ))}
-                    </select>
+                    </datalist>
                   </div>
+                  
                   <div>
                     <label className="text-xs text-slate-500">Tanda Tangan</label>
                     <div className="w-full h-[38px] mt-1 border border-slate-200 rounded bg-white flex items-center justify-center overflow-hidden">
