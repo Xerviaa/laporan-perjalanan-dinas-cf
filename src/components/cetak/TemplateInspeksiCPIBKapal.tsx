@@ -20,6 +20,21 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
     return `/tanda-tangan/${namaFile}.png`;
   };
 
+  // TAMBAHAN: Fungsi untuk memindahkan ", PT" atau ", CV" ke depan
+  const formatNamaPerusahaan = (nama: string) => {
+    if (!nama) return "-";
+    const namaUpper = nama.toUpperCase();
+    
+    if (namaUpper.endsWith(', PT')) {
+      return 'PT. ' + nama.slice(0, -4).trim();
+    }
+    if (namaUpper.endsWith(', CV')) {
+      return 'CV. ' + nama.slice(0, -4).trim();
+    }
+    
+    return nama;
+  };
+
   return (
     // Menggunakan font Times New Roman (menggantikan font-serif biasa)
     <div className="text-[11pt] leading-relaxed text-justify text-black" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
@@ -43,7 +58,8 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
           </h2>
 
           <div className="mt-8 flex flex-col items-center gap-2 tracking-tight">
-            <p className="font-bold text-[14pt] uppercase">{data.namaPerusahaan || "-"}</p>
+            {/* HANYA BAGIAN INI YANG DIUBAH (Memanggil formatNamaPerusahaan) */}
+            <p className="font-bold text-[14pt] uppercase">{formatNamaPerusahaan(data.namaPerusahaan)}</p>
             <p className="font-bold text-[14pt] uppercase">{tanggalIndo}</p>
           </div>
 

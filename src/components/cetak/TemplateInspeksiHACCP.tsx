@@ -20,6 +20,21 @@ export default function TemplateInspeksiHACCP({ data }: { data: any }) {
     return `/tanda-tangan/${namaFile}.png`;
   };
 
+  // TAMBAHAN: Fungsi untuk memindahkan ", PT" atau ", CV" ke depan
+  const formatNamaPerusahaan = (nama: string) => {
+    if (!nama) return "-";
+    const namaUpper = nama.toUpperCase();
+    
+    if (namaUpper.endsWith(', PT')) {
+      return 'PT. ' + nama.slice(0, -4).trim();
+    }
+    if (namaUpper.endsWith(', CV')) {
+      return 'CV. ' + nama.slice(0, -4).trim();
+    }
+    
+    return nama;
+  };
+
   let fotoArray: string[] = [];
   try {
     if (data.fotoKegiatan && data.fotoKegiatan !== "[]") {
@@ -51,7 +66,8 @@ export default function TemplateInspeksiHACCP({ data }: { data: any }) {
           </h2>
 
           <div className="mt-8 flex flex-col items-center gap-2 tracking-tight">
-            <p className="font-bold text-[14pt] uppercase">{data.namaPerusahaan || "-"}</p>
+            {/* HANYA BAGIAN INI YANG DIUBAH (Memanggil formatNamaPerusahaan) */}
+            <p className="font-bold text-[14pt] uppercase">{formatNamaPerusahaan(data.namaPerusahaan)}</p>
             <p className="font-bold text-[14pt] uppercase">{tanggalIndo}</p>
           </div>
 
