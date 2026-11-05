@@ -32,13 +32,28 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
   return (
     <div className="font-serif text-[11pt] leading-relaxed text-justify text-black">
       
-      <div className="text-center mb-8">
-        <h3 className="font-bold uppercase text-[12pt] leading-tight">
-          LAPORAN PERJALANAN DINAS<br/>
+      {/* ========================================= */}
+      {/* BAGIAN COVER YANG SUDAH DIPERBAIKI        */}
+      {/* ========================================= */}
+      <div className="text-center mt-12 mb-16 space-y-6">
+        <h1 className="font-bold uppercase text-[14pt] tracking-wide">
+          PELAPORAN PERJALANAN DINAS
+        </h1>
+        
+        <h2 className="font-bold uppercase text-[13pt] leading-snug">
           KEGIATAN SURVAILEN DAN PENGAMBILAN SAMPEL<br/>
           DI UNIT PENGOLAHAN IKAN
+        </h2>
+        
+        <h3 className="font-bold uppercase text-[13pt] pt-4">
+          {data.namaPerusahaan || "-"}
         </h3>
+        
+        <p className="font-bold text-[12pt]">
+          {tanggalIndo}
+        </p>
       </div>
+      {/* ========================================= */}
 
       <div className="mb-4">
         <h4 className="font-bold">I. Dasar Pelaksanaan</h4>

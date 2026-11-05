@@ -1,6 +1,7 @@
 import TombolCetak from "@/components/TombolCetak";
-import TemplateCPIB from "@/components/cetak/TemplateCPIB";
-import TemplateHACCP from "@/components/cetak/TemplateHACCP";
+// 1. UBAH NAMA VARIABEL IMPORT DI SINI
+import TemplateInspeksiCPIBKapal from "@/components/cetak/TemplateInspeksiCPIBKapal";
+import TemplateInspeksiHACCP from "@/components/cetak/TemplateInspeksiHACCP";
 import TemplateInspeksiSKP from "@/components/cetak/TemplateInspeksiSKP";
 import TemplateSurveilanHACCP from "@/components/cetak/TemplateSurveilanHACCP";
 import { getDb } from "@/db";
@@ -35,10 +36,12 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
   // Render template berdasarkan jenis kegiatan
   let kontenLaporan = null;
   if (data.jenisKegiatan === "Primer - Inspeksi - Inspeksi CPIB Kapal") {
-    kontenLaporan = <TemplateCPIB data={data} />;
+    // 2. UBAH NAMA KOMPONEN YANG DIPANGGIL DI SINI
+    kontenLaporan = <TemplateInspeksiCPIBKapal data={data} />;
   } 
   else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi HACCP") {
-    kontenLaporan = <TemplateHACCP data={data} />;
+    // 3. UBAH NAMA KOMPONEN YANG DIPANGGIL DI SINI
+    kontenLaporan = <TemplateInspeksiHACCP data={data} />;
   }
   else if (data.jenisKegiatan === "Pasca - Inspeksi - Inspeksi SKP") {
     kontenLaporan = <TemplateInspeksiSKP data={data} />;
