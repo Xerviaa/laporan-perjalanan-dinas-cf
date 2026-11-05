@@ -4,7 +4,8 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
     try {
       const date = new Date(tgl);
       if (isNaN(date.getTime())) return "-";
-      return date.toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' });
+      // Tanggal langsung kapital
+      return date.toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase();
     } catch (e) {
       return "-";
     }
@@ -32,27 +33,26 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
   return (
     <div className="text-[11pt] leading-relaxed text-justify text-black" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
       
-            {/* ========================================= */}
+      {/* ========================================= */}
       {/* HALAMAN 1: COVER (SURVEILAN HACCP)        */}
       {/* ========================================= */}
-      <div className="w-full h-[25.7cm] flex flex-col justify-between items-center text-center print:break-after-page relative">
+      <div className="w-full h-[25.7cm] relative print:break-after-page flex flex-col items-center">
         
         {/* BAGIAN ATAS: JUDUL, PERUSAHAAN, TANGGAL */}
-        <div className="mt-16 w-full flex flex-col items-center">
+        <div className="mt-16 w-full flex flex-col items-center gap-4">
           
           <h1 className="text-[16pt] font-bold uppercase leading-tight">
             PELAPORAN PERJALANAN DINAS
           </h1>
           
-          <h2 className="text-[14pt] font-bold uppercase leading-tight mt-4">
+          <h2 className="text-[14pt] font-bold uppercase leading-snug">
             KEGIATAN SURVAILEN DAN PENGAMBILAN SAMPEL<br/>
             DI UNIT PENGOLAHAN IKAN
           </h2>
 
-          {/* Jarak rapi dengan tracking-tight, dan tanggal tanpa uppercase */}
-          <div className="mt-8 space-y-2 tracking-tight">
+          <div className="mt-8 flex flex-col items-center gap-2 tracking-tight">
             <p className="font-bold text-[14pt] uppercase">{data.namaPerusahaan || "-"}</p>
-            <p className="font-bold text-[14pt]">{tanggalIndo}</p>
+            <p className="font-bold text-[14pt] uppercase">{tanggalIndo}</p>
           </div>
 
         </div>
@@ -63,7 +63,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </div>
 
         {/* BAGIAN BAWAH: FOOTER KEMENTERIAN */}
-        <div className="mb-10 w-full">
+        <div className="absolute bottom-10 w-full text-center">
           <h3 className="text-[14pt] font-bold uppercase leading-tight">
             KEMENTERIAN KELAUTAN DAN PERIKANAN<br/>
             BADAN PENGENDALIAN DAN PENGAWASAN MUTU<br/>
@@ -169,40 +169,60 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
           </p>
         </div>
 
-        {/* TANDA TANGAN PETUGAS */}
-        <div className="mt-8 mb-8 ml-32">
-          <p>Petugas Pelaksana :</p>
-          <div className="mt-4 space-y-4">
-            {data.petugasPelaksana ? (
-              data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
-                const match = petugas.trim().match(/(.*)\((.*)\)/);
-                const namaLengkap = match ? match[1].trim() : petugas.trim();
-                return (
-                  <div key={index} className="flex items-center">
-                    <span className="w-6 shrink-0">{index + 1}.</span>
-                    <span className="w-[280px] shrink-0">{namaLengkap}</span>
-                    <div className="flex items-center">
-                      <span className="text-gray-600">(</span>
-                      <div 
-                        className="w-[80px] h-10 bg-no-repeat bg-contain bg-center"
-                        style={{ backgroundImage: `url(${getTtdUrl(namaLengkap)})` }}
-                      ></div>
-                      <span className="text-gray-600">)</span>
+                {/* TANDA TANGAN PETUGAS (MENJOROK KE KANAN) */}
+        <div className="mt-8 mb-8">
+          {/* Menggunakan ml-[35%] agar menjorok ke kanan (tengah halaman) */}
+          <div className="ml-[35%] inline-block text-left">
+            <p className="mb-3">Petugas Pelaksana :</p>
+            
+            <div className="space-y-2">
+              {data.petugasPelaksana ? (
+                data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
+                  const match = petugas.trim().match(/(.*)\((.*)\)/);
+                  const namaLengkap = match ? match[1].trim() : petugas.trim();
+
+                  return (
+                    <div key={index} className="flex items-center">
+                      {/* Huruf a, b, c */}
+                      <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
+                      
+                      {/* Nama Petugas (Lebar pas agar kurung dekat) */}
+                      <span className="w-[230px] shrink-0">{namaLengkap}</span>
+                      
+                      {/* Area Tanda Tangan */}
+                      <div className="flex items-center ml-2">
+                        <span className="text-gray-600">(</span>
+                        <div className="w-[70px] h-8 flex items-center justify-center relative">
+                          <img 
+                            src={getTtdUrl(namaLengkap)} 
+                            alt="TTD" 
+                            className="absolute h-12 object-contain z-10" 
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        </div>
+                        <span className="text-gray-600">)</span>
+                      </div>
                     </div>
+                  );
+                })
+              ) : (
+                <div className="flex items-center">
+                  <span className="w-6 shrink-0">a.</span>
+                  <span className="w-[230px] shrink-0">-</span>
+                  <div className="flex items-center ml-2">
+                    <span className="text-gray-600">(</span>
+                    <div className="w-[70px] h-8"></div>
+                    <span className="text-gray-600">)</span>
                   </div>
-                );
-              })
-            ) : (
-              <div className="flex items-center">
-                <span className="w-6 shrink-0">1.</span>
-                <span className="w-[280px] shrink-0">-</span>
-                <span className="text-gray-600">(......)</span>
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* DOKUMENTASI KEGIATAN */}
+        {/* DOKUMENTASI */}
         <div className="page-break-before-always mt-10 pt-10">
           <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
           <div className="grid grid-cols-2 gap-4">
@@ -212,7 +232,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
                     <div 
                       className="w-full h-64 bg-slate-100 border border-gray-300 bg-no-repeat bg-contain bg-center"
                       style={{ backgroundImage: `url(/api/r2/${key})` }}
-                    ></div>
+                    />
                   </div>
                ))
             ) : (

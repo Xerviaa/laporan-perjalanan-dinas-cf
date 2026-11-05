@@ -43,10 +43,11 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
       <TombolCetak />
       
       {/* CONTAINER UTAMA UNTUK KERTAS A4 */}
-      <div className="mx-auto w-[21cm] bg-white shadow-xl print:shadow-none">
+      {/* Tambahan print:w-full print:mx-0 agar saat print tidak menabrak margin browser */}
+      <div className="mx-auto w-[21cm] bg-white shadow-xl print:shadow-none print:w-full print:mx-0">
         
         {/* LANGSUNG TAMPILKAN ISI LAPORAN (COVER SUDAH ADA DI DALAM TEMPLATE) */}
-        <div className="w-[21cm] min-h-[29.7cm] p-[2cm]">
+        <div className="w-[21cm] min-h-[29.7cm] p-[2cm] print:w-full print:min-h-0 print:p-0">
           {kontenLaporan}
         </div>
 
