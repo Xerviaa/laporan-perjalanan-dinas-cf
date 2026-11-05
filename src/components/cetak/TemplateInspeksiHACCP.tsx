@@ -79,6 +79,15 @@ export default function TemplateInspeksiHACCP({ data }: { data: any }) {
       {/* ========================================= */}
       <div className="mt-10">
         
+        {/* JUDUL DI HALAMAN 2 */}
+        <div className="w-full text-center mb-8">
+          <h3 className="font-bold uppercase text-[12pt] leading-tight">
+            LAPORAN PERJALANAN DINAS<br/>
+            KEGIATAN INSPEKSI PENERAPAN HACCP<br/>
+            UNIT PENGOLAHAN IKAN
+          </h3>
+        </div>
+        
         {/* I. DASAR PELAKSANAAN */}
         <div className="mb-4">
           <h4 className="font-bold">I. Dasar Pelaksanaan</h4>

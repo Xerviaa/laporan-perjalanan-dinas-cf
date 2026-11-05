@@ -79,6 +79,15 @@ export default function TemplateInspeksiSKP({ data }: { data: any }) {
       {/* HALAMAN 2: ISI LAPORAN                    */}
       {/* ========================================= */}
       <div className="mt-10">
+
+        {/* JUDUL DI HALAMAN 2 */}
+        <div className="w-full text-center mb-8">
+          <h3 className="font-bold uppercase text-[12pt] leading-tight">
+            LAPORAN PERJALANAN DINAS<br/>
+            KEGIATAN INSPEKSI PENERAPAN SERTIFIKAT KELAYAKAN PENGOLAHAN<br/>
+            UNIT PENGOLAHAN IKAN
+          </h3>
+        </div>
         
         {/* I. DASAR PELAKSANAAN */}
         <div className="mb-4">

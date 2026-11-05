@@ -66,11 +66,18 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
         </div>
       </div>
       
-      {/* ========================================= */}
-      {/* HALAMAN 2: ISI LAPORAN                    */}
-      {/* ========================================= */}
+            {/* HALAMAN 2: ISI LAPORAN */}
       <div className="mt-10">
         
+        {/* JUDUL DI HALAMAN 2  */}
+        <div className="w-full text-center mb-8">
+          <h3 className="font-bold uppercase text-[12pt] leading-tight">
+            LAPORAN PERJALANAN DINAS<br/>
+            KEGIATAN INSPEKSI CARA PENANGANAN IKAN YANG BAIK (CPIB)<br/>
+            DI ATAS KAPAL
+          </h3>
+        </div>
+
         {/* I. DASAR PELAKSANAAN */}
         <div className="mb-4">
           <h4 className="font-bold">I. Dasar Pelaksanaan</h4>
