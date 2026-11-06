@@ -2,14 +2,14 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Layout from '@/components/Layout';
-import * as XLSX from 'xlsx';
+import EditForm from '@/components/EditForm';
 
 export default function ArsipPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // State untuk Accordion: Menyimpan Tahun yang sedang terbuka, dan Bulan yang terbuka di dalamnya
+  // State untuk Accordion
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [openMonths, setOpenMonths] = useState<string[]>([]);
   
@@ -18,6 +18,9 @@ export default function ArsipPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
+  // --- STATE UNTUK MODAL EDIT ---
+  const [editId, setEditId] = useState<number | null>(null);
+
   // --- STATE UNTUK SCROLL TO TOP ---
   const [showScrollTop, setShowScrollTop] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
@@ -25,20 +28,6 @@ export default function ArsipPage() {
   // --- STATE UNTUK FILTER TANGGAL ---
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
-
-  // --- STATE UNTUK MODAL EKSPOR & CETAK ---
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [exportStep, setExportStep] = useState<1 | 2>(1);
-  const [selectedExportMonth, setSelectedExportMonth] = useState<string>('');
-  const [selectedExportIds, setSelectedExportIds] = useState<number[]>([]);
-
-  const [showPrintModal, setShowPrintModal] = useState(false);
-  const [printStep, setPrintStep] = useState<1 | 2>(1);
-  const [selectedPrintMonth, setSelectedPrintMonth] = useState<string>('');
-  const [selectedPrintIds, setSelectedPrintIds] = useState<number[]>([]);
-
-  const [openExportDropdown, setOpenExportDropdown] = useState(false);
-  const [openPrintDropdown, setOpenPrintDropdown] = useState(false);
 
   const fetchReports = () => {
     setLoading(true);
@@ -119,21 +108,12 @@ export default function ArsipPage() {
   // Urutkan Tahun dari terbaru ke terlama
   const sortedYears = Object.keys(dataByYear).sort((a, b) => parseInt(b) - parseInt(a));
 
-  // Daftar semua bulan (untuk keperluan dropdown ekspor/cetak) - DIPERBAIKI
-  const availableMonths: string[] = Object.values(dataByYear).flatMap((months: any) => 
-    Object.values(months).map((m: any) => m.fullMonth)
-  );
-
-  const getReportsByMonth = (monthYear: string) => {
-    return reports.filter(r => getReportDate(r).fullMonth === monthYear);
-  };
-
   const toggleYear = (year: string) => {
     if (selectedYear === year) {
-      setSelectedYear(null); // Tutup jika diklik lagi
-      setOpenMonths([]); // Reset bulan yang terbuka
+      setSelectedYear(null);
+      setOpenMonths([]);
     } else {
-      setSelectedYear(year); // Buka tahun baru
+      setSelectedYear(year);
       setOpenMonths([]);
     }
   };
@@ -146,29 +126,22 @@ export default function ArsipPage() {
     }
   };
 
-  // --- FUNGSI HAPUS (DIPERBAIKI DENGAN OPTIMISTIC UI) ---
+  // --- FUNGSI HAPUS ---
   const confirmDelete = async () => {
     if (!deleteId) return;
     
-    // Simpan data lama untuk jaga-jaga jika gagal
     const previousReports = [...reports];
-    
-    // 1. Langsung hapus dari tampilan (Optimistic Update)
     setReports(reports.filter(r => r.id !== deleteId));
-    setDeleteId(null); // Tutup modal konfirmasi
+    setDeleteId(null);
     setIsDeleting(true);
 
     try {
-      // 2. Kirim permintaan hapus ke server
       const res = await fetch(`/api/reports/${deleteId}`, { method: 'DELETE' });
-      
       if (!res.ok) {
-        // Jika gagal, kembalikan data
         setReports(previousReports);
         alert('Gagal menghapus laporan dari server');
       }
     } catch (error) {
-      // Jika error jaringan, kembalikan data
       setReports(previousReports);
       alert('Terjadi kesalahan jaringan saat menghapus');
     } finally {
@@ -184,70 +157,11 @@ export default function ArsipPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // --- FUNGSI EKSPOR EXCEL ---
-  const handleExportExcel = () => {
-    let dataToExport = filteredReports;
-    if (selectedExportMonth !== 'semua') {
-      dataToExport = dataToExport.filter(r => getReportDate(r).fullMonth === selectedExportMonth);
-      if (selectedExportIds.length > 0) {
-        dataToExport = dataToExport.filter(r => selectedExportIds.includes(r.id));
-      }
-    }
-
-    if (dataToExport.length === 0) return alert('Tidak ada data untuk diekspor');
-
-    const excelData = dataToExport.map((report, index) => ({
-      'No': index + 1,
-      'Nama Perusahaan': report.namaPerusahaan || '-',
-      'Jenis Kegiatan': report.jenisKegiatan || '-',
-      'Pembuat Laporan': report.uploadedBy || '-',
-      'Tanggal Dinas': report.tanggal || '-',
-      'Tanggal Upload': new Date(report.createdAt).toLocaleDateString('id-ID'),
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Laporan Dinas');
-    worksheet['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 30 }, { wch: 30 }, { wch: 15 }, { wch: 15 }];
-    
-    const fileName = selectedExportMonth === 'semua' 
-      ? `Semua_Laporan_${new Date().toISOString().split('T')[0]}.xlsx`
-      : `Laporan_${selectedExportMonth.replace(' ', '_')}.xlsx`;
-      
-    XLSX.writeFile(workbook, fileName);
-    closeExportModal();
-  };
-
-  // --- FUNGSI CETAK ---
-  const handlePrint = () => {
-    let dataToPrint = getReportsByMonth(selectedPrintMonth);
-    if (selectedPrintIds.length > 0) {
-      dataToPrint = dataToPrint.filter(r => selectedPrintIds.includes(r.id));
-    }
-
-    if (dataToPrint.length === 0) return alert('Tidak ada file yang dipilih untuk dicetak');
-
-    dataToPrint.forEach((report) => {
-      window.open(`/cetak/${report.id}`, '_blank');
-    });
-
-    closePrintModal();
-  };
-
-  const closeExportModal = () => {
-    setShowExportModal(false);
-    setExportStep(1);
-    setSelectedExportMonth('');
-    setSelectedExportIds([]);
-    setOpenExportDropdown(false);
-  };
-
-  const closePrintModal = () => {
-    setShowPrintModal(false);
-    setPrintStep(1);
-    setSelectedPrintMonth('');
-    setSelectedPrintIds([]);
-    setOpenPrintDropdown(false);
+  // --- FUNGSI DOWNLOAD (BUKA HALAMAN CETAK MODE PDF) ---
+  const handleDownload = (id: number) => {
+    // Buka halaman cetak dengan parameter ?mode=pdf
+    // Ini akan otomatis memicu dialog Print di browser
+    window.open(`/cetak/${id}?mode=pdf`, '_blank');
   };
 
   return (
@@ -258,15 +172,6 @@ export default function ArsipPage() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-800">ARSIP LAPORAN</h1>
           <p className="text-slate-500 mt-1 text-sm md:text-base">Seluruh riwayat perjalanan dinas</p>
-        </div>
-        
-        <div className="flex gap-2 w-full md:w-auto">
-          <button onClick={() => setShowExportModal(true)} className="flex-1 md:flex-none bg-emerald-600 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-emerald-700 text-xs md:text-sm font-semibold shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer">
-            <span>📊</span> Ekspor
-          </button>
-          <button onClick={() => setShowPrintModal(true)} className="flex-1 md:flex-none bg-slate-600 text-white px-3 md:px-4 py-2 rounded-lg hover:bg-slate-700 text-xs md:text-sm font-semibold shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer">
-            <span>🖨️</span> Cetak Masal
-          </button>
         </div>
       </div>
 
@@ -309,7 +214,6 @@ export default function ArsipPage() {
             const monthsInYear = dataByYear[year];
             const totalReportsInYear = Object.values(monthsInYear).reduce((sum: number, m: any) => sum + m.reports.length, 0);
             
-            // Urutkan bulan (Januari - Desember) - DIPERBAIKI
             const monthOrder = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
             const sortedMonthsInYear: string[] = Object.keys(monthsInYear).sort((a: string, b: string) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
 
@@ -330,7 +234,7 @@ export default function ArsipPage() {
                   </div>
                 </button>
 
-                {/* DAFTAR BULAN (Jika Tahun Dibuka) */}
+                {/* DAFTAR BULAN */}
                 {isYearOpen && (
                   <div className="bg-slate-50 border-t border-slate-200 p-3 space-y-2">
                     {sortedMonthsInYear.map((month: string) => {
@@ -354,22 +258,26 @@ export default function ArsipPage() {
                             </div>
                           </button>
 
-                          {/* TABEL LAPORAN (Jika Bulan Dibuka) */}
+                          {/* TABEL LAPORAN */}
                           {isMonthOpen && (
                             <div className="border-t border-slate-100 overflow-x-auto">
                               <table className="w-full text-sm text-left whitespace-nowrap md:whitespace-normal">
                                 <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-xs">
                                   <tr>
-                                    <th className="px-4 py-3">Nama Perusahaan</th>
-                                    <th className="px-4 py-3 hidden md:table-cell">Jenis Kegiatan</th>
-                                    <th className="px-4 py-3 hidden md:table-cell">Pembuat Laporan</th>
-                                    <th className="px-4 py-3 hidden lg:table-cell">Tanggal Dinas</th>
+                                    <th className="px-4 py-3">Nama Kegiatan</th>
+                                    <th className="px-4 py-3">Tanggal</th>
+                                    <th className="px-4 py-3">Pelaksana</th>
+                                    <th className="px-4 py-3">Jenis</th>
                                     <th className="px-4 py-3 text-center">Aksi</th>
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
-                                  {/* DIPERBAIKI: Tambahkan (as any[]) */}
                                   {(monthData.reports as any[]).map((report: any) => {
+                                    // LOGIKA MEMISAHKAN NAMA KEGIATAN & JENIS
+                                    const parts = (report.jenisKegiatan || '').split(' ');
+                                    const namaKegiatan = parts[0] || '-';
+                                    const jenis = parts.slice(1).join(' ') || '-';
+
                                     // LOGIKA HITUNG KETERLAMBATAN
                                     let statusTeks = "Tepat Waktu";
                                     let statusWarna = "text-emerald-600 bg-emerald-50 border-emerald-200";
@@ -377,8 +285,6 @@ export default function ArsipPage() {
                                     if (report.tanggal && report.createdAt) {
                                       const tglDinas = new Date(report.tanggal);
                                       const tglUpload = new Date(report.createdAt);
-                                      
-                                      // Hitung selisih hari (dibulatkan ke bawah)
                                       const selisihWaktu = tglUpload.getTime() - tglDinas.getTime();
                                       const selisihHari = Math.floor(selisihWaktu / (1000 * 3600 * 24));
                                       
@@ -391,44 +297,72 @@ export default function ArsipPage() {
                                     return (
                                       <tr key={report.id} className="hover:bg-slate-50 transition-colors">
                                         
-                                        {/* KOLOM 1: NAMA PERUSAHAAN SAJA */}
-                                        <td className="px-4 py-3">
-                                          <p className="font-semibold text-blue-600 line-clamp-1">{report.namaPerusahaan}</p>
+                                        {/* KOLOM 1: NAMA KEGIATAN */}
+                                        <td className="px-4 py-3 text-slate-700 font-medium capitalize">
+                                          {namaKegiatan}
                                         </td>
 
-                                        {/* KOLOM 2: JENIS KEGIATAN SAJA */}
-                                        <td className="px-4 py-3 text-slate-600 hidden md:table-cell">
-                                          <p className="line-clamp-2 text-xs">{report.jenisKegiatan}</p>
-                                        </td>
-                                        
-                                        <td className="px-4 py-3 text-slate-700 hidden md:table-cell">
-                                          {/* TAMPILKAN NAMA + GELAR & TANGGAL UPLOAD */}
-                                          <p className="font-medium text-slate-800">{report.uploadedBy}</p>
-                                          <p className="text-[10px] text-slate-400 mt-1">
-                                            Diunggah: {new Date(report.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })} 
-                                            {' '}pukul{' '}
-                                            {new Date(report.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                                          </p>
-                                        </td>
-                                        <td className="px-4 py-3 text-slate-500 font-medium hidden lg:table-cell">
-                                          {report.tanggal ? new Date(report.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-'}
+                                        {/* KOLOM 2: TANGGAL */}
+                                        <td className="px-4 py-3 text-slate-500 font-medium">
+                                          {report.tanggal ? new Date(report.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
                                           
-                                          {/* BADGE STATUS TEPAT WAKTU / TERLAMBAT */}
+                                          {/* BADGE STATUS */}
                                           <div className={`mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full inline-block border ${statusWarna}`}>
                                             {statusTeks}
                                           </div>
                                         </td>
+
+                                        {/* KOLOM 3: PELAKSANA */}
+                                        <td className="px-4 py-3 text-slate-600 align-top">
+                                          <div className="flex flex-col gap-1 min-w-[150px]">
+                                            {report.petugasPelaksana ? (
+                                              report.petugasPelaksana.split('|').map((petugas: string, idx: number) => {
+                                                const namaSaja = petugas.split('(')[0].trim();
+                                                return (
+                                                  <span key={idx} className="text-xs md:text-sm leading-tight block border-b border-slate-100 last:border-0 pb-1 last:pb-0">
+                                                    {namaSaja}
+                                                  </span>
+                                                );
+                                              })
+                                            ) : (
+                                              <span className="text-xs md:text-sm">-</span>
+                                            )}
+                                          </div>
+                                        </td>
+
+                                        {/* KOLOM 4: JENIS */}
+                                        <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
+                                          {jenis}
+                                        </td>
+
+                                        {/* KOLOM 5: AKSI */}
                                         <td className="px-4 py-3">
                                           <div className="flex items-center justify-center gap-1 md:gap-2">
+                                            
+                                            {/* Tombol Hapus */}
                                             <button onClick={() => setDeleteId(report.id)} title="Hapus" className="p-1.5 bg-slate-100 text-slate-500 rounded-md hover:bg-red-50 hover:text-red-600 cursor-pointer">
                                               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                                             </button>
-                                            <button onClick={() => handleCopyLink(report.id)} title="Salin Link Cetak" className={`p-1.5 rounded-md cursor-pointer ${copiedId === report.id ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+
+                                            {/* Tombol Copy Link */}
+                                            <button onClick={() => handleCopyLink(report.id)} title="Salin Link" className={`p-1.5 rounded-md cursor-pointer ${copiedId === report.id ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                                               {copiedId === report.id ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>}
                                             </button>
+
+                                            {/* TOMBOL EDIT (BUKA MODAL) */}
+                                            <button onClick={() => setEditId(report.id)} title="Edit Laporan" className="p-1.5 bg-yellow-100 text-yellow-600 rounded-md hover:bg-yellow-200 cursor-pointer">
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                            </button>
+
+                                            {/* TOMBOL DOWNLOAD (PRINT PDF) */}
+                                            <button onClick={() => handleDownload(report.id)} title="Download PDF" className="p-1.5 bg-emerald-100 text-emerald-600 rounded-md hover:bg-emerald-200 cursor-pointer">
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                            </button>
+
+                                            {/* TOMBOL CETAK (PRINTER) */}
                                             <a href={`/cetak/${report.id}`} target="_blank" title="Cetak Laporan" className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 font-medium text-xs transition-colors flex items-center gap-1 cursor-pointer">
                                               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-                                              <span className="hidden md:inline">Cetak PDF</span>
+                                              <span className="hidden md:inline">Cetak</span>
                                             </a>
                                           </div>
                                         </td>
@@ -461,120 +395,6 @@ export default function ArsipPage() {
         </button>
       )}
 
-      {/* --- MODAL EKSPOR EXCEL --- */}
-      {showExportModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-4 md:p-6 rounded-xl shadow-2xl w-full max-w-lg">
-            <h3 className="text-lg md:text-xl font-bold text-slate-800 mb-4">
-              {exportStep === 1 ? 'Pilih Bulan Ekspor' : 'Pilih Laporan'}
-            </h3>
-            
-            {exportStep === 1 ? (
-              <>
-                <div className="relative mb-6">
-                  <button onClick={() => setOpenExportDropdown(!openExportDropdown)} className="w-full border border-slate-300 p-3 rounded-lg text-left flex justify-between items-center bg-white hover:border-emerald-500 cursor-pointer">
-                    <span className={selectedExportMonth ? 'text-slate-800' : 'text-slate-500'}>{selectedExportMonth || '-- Pilih Bulan --'}</span>
-                    <span className="text-slate-400">▼</span>
-                  </button>
-                  
-                  {openExportDropdown && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                      <div onClick={() => { setSelectedExportMonth('semua'); setOpenExportDropdown(false); }} className="p-3 hover:bg-emerald-50 cursor-pointer text-sm font-semibold text-slate-700 border-b">Semua Bulan</div>
-                      {availableMonths.map((m: string) => (
-                        <div key={m} onClick={() => { setSelectedExportMonth(m); setOpenExportDropdown(false); }} className="p-3 hover:bg-emerald-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0">{m}</div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex justify-end gap-3">
-                  <button onClick={closeExportModal} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Batal</button>
-                  <button onClick={() => { if (!selectedExportMonth) return alert('Pilih bulan dulu!'); if (selectedExportMonth === 'semua') { handleExportExcel(); } else { setExportStep(2); } }} className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg cursor-pointer">Lanjut</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="max-h-60 overflow-y-auto border border-slate-200 rounded-lg mb-4 p-2">
-                  <label className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer border-b">
-                    <input type="checkbox" className="w-4 h-4 cursor-pointer" checked={selectedExportIds.length === getReportsByMonth(selectedExportMonth).length} onChange={(e) => { if (e.target.checked) { setSelectedExportIds(getReportsByMonth(selectedExportMonth).map(r => r.id)); } else { setSelectedExportIds([]); } }} />
-                    <span className="font-bold text-slate-700">Pilih Semua</span>
-                  </label>
-                  {getReportsByMonth(selectedExportMonth).map(r => (
-                    <label key={r.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
-                      <input type="checkbox" className="w-4 h-4 cursor-pointer" checked={selectedExportIds.includes(r.id)} onChange={(e) => { if (e.target.checked) { setSelectedExportIds([...selectedExportIds, r.id]); } else { setSelectedExportIds(selectedExportIds.filter(id => id !== r.id)); } }} />
-                      <span className="text-sm text-slate-600 truncate">{r.namaPerusahaan} - {r.uploadedBy}</span>
-                    </label>
-                  ))}
-                </div>
-                <div className="flex justify-between gap-3">
-                  <button onClick={() => setExportStep(1)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Kembali</button>
-                  <div className="flex gap-3">
-                    <button onClick={closeExportModal} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Batal</button>
-                    <button onClick={handleExportExcel} className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg cursor-pointer">Ekspor</button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* --- MODAL CETAK MASAL --- */}
-      {showPrintModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-4 md:p-6 rounded-xl shadow-2xl w-full max-w-lg">
-            <h3 className="text-lg md:text-xl font-bold text-slate-800 mb-4">
-              {printStep === 1 ? 'Pilih Bulan Cetak' : 'Pilih Laporan'}
-            </h3>
-            
-            {printStep === 1 ? (
-              <>
-                <div className="relative mb-6">
-                  <button onClick={() => setOpenPrintDropdown(!openPrintDropdown)} className="w-full border border-slate-300 p-3 rounded-lg text-left flex justify-between items-center bg-white hover:border-blue-500 cursor-pointer">
-                    <span className={selectedPrintMonth ? 'text-slate-800' : 'text-slate-500'}>{selectedPrintMonth || '-- Pilih Bulan --'}</span>
-                    <span className="text-slate-400">▼</span>
-                  </button>
-                  
-                  {openPrintDropdown && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-xl max-h-60 overflow-y-auto">
-                      <div onClick={() => { setSelectedPrintMonth('semua'); setOpenPrintDropdown(false); }} className="p-3 hover:bg-blue-50 cursor-pointer text-sm font-semibold text-slate-700 border-b">Semua Bulan</div>
-                      {availableMonths.map((m: string) => (
-                        <div key={m} onClick={() => { setSelectedPrintMonth(m); setOpenPrintDropdown(false); }} className="p-3 hover:bg-blue-50 cursor-pointer text-sm text-slate-700 border-b border-slate-50 last:border-0">{m}</div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex justify-end gap-3">
-                  <button onClick={closePrintModal} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Batal</button>
-                  <button onClick={() => { if (!selectedPrintMonth) return alert('Pilih bulan dulu!'); if (selectedPrintMonth === 'semua') { handlePrint(); } else { setPrintStep(2); } }} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg cursor-pointer">Lanjut</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="max-h-60 overflow-y-auto border border-slate-200 rounded-lg mb-4 p-2">
-                  <label className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer border-b">
-                    <input type="checkbox" className="w-4 h-4 cursor-pointer" checked={selectedPrintIds.length === getReportsByMonth(selectedPrintMonth).length} onChange={(e) => { if (e.target.checked) { setSelectedPrintIds(getReportsByMonth(selectedPrintMonth).map(r => r.id)); } else { setSelectedPrintIds([]); } }} />
-                    <span className="font-bold text-slate-700">Pilih Semua</span>
-                  </label>
-                  {getReportsByMonth(selectedPrintMonth).map(r => (
-                    <label key={r.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer">
-                      <input type="checkbox" className="w-4 h-4 cursor-pointer" checked={selectedPrintIds.includes(r.id)} onChange={(e) => { if (e.target.checked) { setSelectedPrintIds([...selectedPrintIds, r.id]); } else { setSelectedPrintIds(selectedPrintIds.filter(id => id !== r.id)); } }} />
-                      <span className="text-sm text-slate-600 truncate">{r.namaPerusahaan} - {r.uploadedBy}</span>
-                    </label>
-                  ))}
-                </div>
-                <div className="flex justify-between gap-3">
-                  <button onClick={() => setPrintStep(1)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Kembali</button>
-                  <div className="flex gap-3">
-                    <button onClick={closePrintModal} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Batal</button>
-                    <button onClick={handlePrint} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg cursor-pointer">Cetak</button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* MODAL KONFIRMASI HAPUS */}
       {deleteId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -588,6 +408,29 @@ export default function ArsipPage() {
           </div>
         </div>
       )}
+
+      {/* MODAL EDIT (FORM EDIT) */}
+      {editId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="text-lg font-bold text-slate-800">Edit Laporan</h3>
+              <button onClick={() => setEditId(null)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+            {/* PANGGIL KOMPONEN EDITFORM */}
+            <EditForm 
+              id={editId} 
+              onSuccess={() => {
+                setEditId(null); // Tutup modal
+                fetchReports(); // Refresh data
+              }} 
+            />
+          </div>
+        </div>
+      )}
+
     </Layout>
   );
 }

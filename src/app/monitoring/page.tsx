@@ -12,9 +12,16 @@ export default function MonitoringPage() {
   // STATE UNTUK MODAL EDIT
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
-  const [berkasKegiatan, setBerkasKegiatan] = useState<File[]>([]);
-  const [berkasPerbaikan, setBerkasPerbaikan] = useState<File[]>([]);
+  
+  // STATE UNTUK FILE BARU YANG DIUPLOAD
+  const [fileSuratTugas, setFileSuratTugas] = useState<File[]>([]);
+  const [fileBerkasKegiatan, setFileBerkasKegiatan] = useState<File[]>([]);
+  const [fileBerkasPerbaikan, setFileBerkasPerbaikan] = useState<File[]>([]);
+  const [filePemeriksaan, setFilePemeriksaan] = useState<File[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // STATE UNTUK FILE LAMA YANG DIHAPUS
+  const [filesToDelete, setFilesToDelete] = useState<string[]>([]);
 
   // STATE UNTUK MODAL VIEW DETAIL
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -45,7 +52,7 @@ export default function MonitoringPage() {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/reports');
+      const res = await fetch('/api/reports', { cache: 'no-store' }); 
       const data = await res.json();
       if (data.status === 'success') {
         setReports(data.data);
@@ -57,7 +64,6 @@ export default function MonitoringPage() {
     }
   };
 
-  // Fungsi menentukan status otomatis
   const getAutoStatus = (report: any) => {
     const hasBerkasKegiatan = report.berkasKegiatan && report.berkasKegiatan !== '[]';
     const hasBerkasPerbaikan = report.berkasPerbaikan && report.berkasPerbaikan !== '[]';
@@ -88,8 +94,14 @@ export default function MonitoringPage() {
 
   const handleEditClick = (report: any) => {
     setSelectedReport(report);
-    setBerkasKegiatan([]);
-    setBerkasPerbaikan([]);
+    
+    // Reset form state
+    setFileSuratTugas([]);
+    setFileBerkasKegiatan([]);
+    setFileBerkasPerbaikan([]);
+    setFilePemeriksaan([]);
+    setFilesToDelete([]); 
+    
     setIsEditModalOpen(true);
   };
 
@@ -133,8 +145,22 @@ export default function MonitoringPage() {
     setIsUpdating(true);
     const formData = new FormData();
     
-    berkasKegiatan.forEach(file => formData.append('berkasKegiatan', file));
-    berkasPerbaikan.forEach(file => formData.append('berkasPerbaikan', file));
+    // Kirim file baru (jika ada)
+    if (fileSuratTugas.length > 0) fileSuratTugas.forEach(file => formData.append('suratTugas', file));
+    if (fileBerkasKegiatan.length > 0) fileBerkasKegiatan.forEach(file => formData.append('berkasKegiatan', file));
+    if (fileBerkasPerbaikan.length > 0) fileBerkasPerbaikan.forEach(file => formData.append('berkasPerbaikan', file));
+    if (filePemeriksaan.length > 0) filePemeriksaan.forEach(file => formData.append('berkasPemeriksaanTindakanPerbaikan', file));
+
+    // Kirim daftar file lama yang dihapus
+    if (filesToDelete.length > 0) {
+      formData.append('filesToDelete', JSON.stringify(filesToDelete));
+    }
+
+    // Kirim file lama yang tidak dihapus (agar backend bisa menggabungkan)
+    if (selectedReport.suratTugas) formData.append('oldSuratTugas', selectedReport.suratTugas);
+    if (selectedReport.berkasKegiatan && selectedReport.berkasKegiatan !== '[]') formData.append('oldBerkasKegiatan', selectedReport.berkasKegiatan);
+    if (selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]') formData.append('oldBerkasPerbaikan', selectedReport.berkasPerbaikan);
+    if (selectedReport.berkasPemeriksaanTindakanPerbaikan) formData.append('oldBerkasPemeriksaan', selectedReport.berkasPemeriksaanTindakanPerbaikan);
 
     try {
       const res = await fetch(`/api/monitoring/${selectedReport.id}`, {
@@ -145,7 +171,11 @@ export default function MonitoringPage() {
       if (res.ok) {
         setIsEditModalOpen(false);
         showToast('Berkas berhasil di-upload!', 'success');
-        fetchReports();
+        
+        setTimeout(() => {
+          fetchReports();
+        }, 500);
+        
       } else {
         showToast('Gagal meng-upload berkas.', 'error');
       }
@@ -156,7 +186,6 @@ export default function MonitoringPage() {
     }
   };
 
-  // FUNGSI YANG SUDAH DIPERBAIKI (Sama dengan yang di halaman Print)
   const parsePetugas = (petugasString: string) => {
     if (!petugasString) return [];
     return petugasString.split('|').map((p) => {
@@ -164,7 +193,6 @@ export default function MonitoringPage() {
       const namaLengkap = parts[0].trim(); 
       const jabatan = parts[1] ? parts[1].replace(')', '').trim() : 'Anggota Tim';
 
-      // LOGIKA BARU: Menghapus "drh. " di depan
       let namaBersih = namaLengkap.split(',')[0].trim().toLowerCase();
       namaBersih = namaBersih.replace(/^drh\.\s*/i, ''); 
       namaBersih = namaBersih.replace(/[^a-z0-9\s-]/g, '');
@@ -325,96 +353,208 @@ export default function MonitoringPage() {
         </div>
       </div>
 
-      {/* MODAL EDIT (UPLOAD BERKAS) */}
+      {/* ========================================================= */}
+      {/* MODAL EDIT (UPLOAD BERKAS)                                */}
+      {/* ========================================================= */}
       {isEditModalOpen && selectedReport && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+            
+            {/* HEADER MODAL */}
+            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
               <h3 className="text-lg font-bold text-slate-800">Upload Berkas</h3>
               <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
 
-            <form onSubmit={handleUpdateStatus} className="p-4 space-y-4 overflow-y-auto flex-1">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Kegiatan</label>
-                <input type="text" value={selectedReport.jenisKegiatan} disabled className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-slate-100 text-slate-500 cursor-not-allowed" />
-              </div>
+            {/* AREA FORM */}
+            <div className="p-4 overflow-y-auto flex-1">
+              <form id="editForm" onSubmit={handleUpdateStatus} className="space-y-4">
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Kegiatan</label>
+                  <input type="text" value={selectedReport.jenisKegiatan} disabled className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-slate-100 text-slate-500 cursor-not-allowed" />
+                </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Berkas Kegiatan Tersedia</label>
-                {selectedReport.berkasKegiatan && selectedReport.berkasKegiatan !== '[]' ? (
-                  <div className="flex flex-col gap-1 bg-slate-50 p-2 rounded border border-slate-200 max-h-24 overflow-y-auto">
-                    {JSON.parse(selectedReport.berkasKegiatan).map((key: string, idx: number) => (
-                      <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate">
-                        📄 {key.split('-').pop()}
-                      </a>
-                    ))}
+                <hr className="border-slate-200" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
+                  {/* 1. SURAT TUGAS */}
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">
+                      📄 Surat Tugas
+                    </p>
+                    {selectedReport.suratTugas && !filesToDelete.includes(selectedReport.suratTugas) && (
+                      <div className="mb-2 flex items-center justify-between bg-white p-1.5 rounded border border-slate-200">
+                        <a href={`/api/r2/${selectedReport.suratTugas}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate max-w-[80%]">
+                          {selectedReport.suratTugas.split('/').pop()}
+                        </a>
+                        <button type="button" onClick={() => setFilesToDelete([...filesToDelete, selectedReport.suratTugas])} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded" title="Hapus file ini">✕</button>
+                      </div>
+                    )}
+                    {fileSuratTugas.length > 0 && (
+                      <div className="mb-2 space-y-1">
+                        {fileSuratTugas.map((file, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200">
+                            <span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span>
+                            <button type="button" onClick={() => setFileSuratTugas(fileSuratTugas.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          setFileSuratTugas([...fileSuratTugas, e.target.files[0]]);
+                          e.target.value = ''; 
+                        }
+                      }}
+                      className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" 
+                    />
                   </div>
-                ) : (
-                  <p className="text-xs text-slate-400 italic">Belum ada berkas kegiatan.</p>
-                )}
-              </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Berkas Perbaikan Tersedia</label>
-                {selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]' ? (
-                  <div className="flex flex-col gap-1 bg-slate-50 p-2 rounded border border-slate-200 max-h-24 overflow-y-auto">
-                    {JSON.parse(selectedReport.berkasPerbaikan).map((key: string, idx: number) => (
-                      <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate">
-                        📄 {key.split('-').pop()}
-                      </a>
-                    ))}
+                  {/* 2. BERKAS KEGIATAN */}
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">
+                      📄 Berkas Kegiatan
+                    </p>
+                    {selectedReport.berkasKegiatan && selectedReport.berkasKegiatan !== '[]' && (
+                      <div className="flex flex-col gap-1 mb-2 max-h-24 overflow-y-auto">
+                        {JSON.parse(selectedReport.berkasKegiatan).map((key: string, idx: number) => {
+                          if (filesToDelete.includes(key)) return null;
+                          return (
+                            <div key={idx} className="flex items-center justify-between bg-white p-1.5 rounded border border-slate-200">
+                              <a href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate max-w-[80%]">
+                                {key.split('/').pop()}
+                              </a>
+                              <button type="button" onClick={() => setFilesToDelete([...filesToDelete, key])} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {fileBerkasKegiatan.length > 0 && (
+                      <div className="mb-2 space-y-1">
+                        {fileBerkasKegiatan.map((file, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200">
+                            <span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span>
+                            <button type="button" onClick={() => setFileBerkasKegiatan(fileBerkasKegiatan.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      multiple
+                      onChange={(e) => {
+                        if (e.target.files) {
+                          const newFiles = Array.from(e.target.files);
+                          setFileBerkasKegiatan([...fileBerkasKegiatan, ...newFiles]);
+                          e.target.value = ''; 
+                        }
+                      }}
+                      className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" 
+                    />
                   </div>
-                ) : (
-                  <p className="text-xs text-slate-400 italic">Belum ada berkas perbaikan.</p>
-                )}
-              </div>
 
-              <hr className="border-slate-200" />
+                  {/* 3. BERKAS PERBAIKAN */}
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">
+                      📄 Berkas Tindakan Perbaikan
+                    </p>
+                    {selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]' && (
+                      <div className="flex flex-col gap-1 mb-2 max-h-24 overflow-y-auto">
+                        {JSON.parse(selectedReport.berkasPerbaikan).map((key: string, idx: number) => {
+                          if (filesToDelete.includes(key)) return null;
+                          return (
+                            <div key={idx} className="flex items-center justify-between bg-white p-1.5 rounded border border-slate-200">
+                              <a href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate max-w-[80%]">
+                                {key.split('/').pop()}
+                              </a>
+                              <button type="button" onClick={() => setFilesToDelete([...filesToDelete, key])} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {fileBerkasPerbaikan.length > 0 && (
+                      <div className="mb-2 space-y-1">
+                        {fileBerkasPerbaikan.map((file, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200">
+                            <span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span>
+                            <button type="button" onClick={() => setFileBerkasPerbaikan(fileBerkasPerbaikan.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      multiple
+                      onChange={(e) => {
+                        if (e.target.files) {
+                          const newFiles = Array.from(e.target.files);
+                          setFileBerkasPerbaikan([...fileBerkasPerbaikan, ...newFiles]);
+                          e.target.value = ''; 
+                        }
+                      }}
+                      className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" 
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Upload Berkas Kegiatan (Jika belum ada)</label>
-                <input 
-                  type="file" 
-                  multiple
-                  onChange={(e) => {
-                    if (e.target.files) {
-                      setBerkasKegiatan(Array.from(e.target.files));
-                    }
-                  }}
-                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-lg cursor-pointer bg-white" 
-                />
-                {berkasKegiatan.length > 0 && (
-                  <p className="text-xs text-emerald-600 mt-1">{berkasKegiatan.length} file dipilih</p>
-                )}
-              </div>
+                  {/* 4. PEMERIKSAAN TINDAKAN PERBAIKAN */}
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">
+                      📄 Pemeriksaan Tindakan Perbaikan
+                    </p>
+                    {selectedReport.berkasPemeriksaanTindakanPerbaikan && !filesToDelete.includes(selectedReport.berkasPemeriksaanTindakanPerbaikan) && (
+                      <div className="mb-2 flex items-center justify-between bg-white p-1.5 rounded border border-slate-200">
+                        <a href={`/api/r2/${selectedReport.berkasPemeriksaanTindakanPerbaikan}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate max-w-[80%]">
+                          {selectedReport.berkasPemeriksaanTindakanPerbaikan.split('/').pop()}
+                        </a>
+                        <button type="button" onClick={() => setFilesToDelete([...filesToDelete, selectedReport.berkasPemeriksaanTindakanPerbaikan])} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
+                      </div>
+                    )}
+                    {filePemeriksaan.length > 0 && (
+                      <div className="mb-2 space-y-1">
+                        {filePemeriksaan.map((file, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200">
+                            <span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span>
+                            <button type="button" onClick={() => setFilePemeriksaan(filePemeriksaan.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <input 
+                      type="file" 
+                      multiple
+                      onChange={(e) => {
+                        if (e.target.files) {
+                          const newFiles = Array.from(e.target.files);
+                          setFilePemeriksaan([...filePemeriksaan, ...newFiles]);
+                          e.target.value = ''; 
+                        }
+                      }}
+                      className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" 
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">Upload Berkas Perbaikan (Jika belum ada)</label>
-                <input 
-                  type="file" 
-                  multiple
-                  onChange={(e) => {
-                    if (e.target.files) {
-                      setBerkasPerbaikan(Array.from(e.target.files));
-                    }
-                  }}
-                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-300 rounded-lg cursor-pointer bg-white" 
-                />
-                {berkasPerbaikan.length > 0 && (
-                  <p className="text-xs text-emerald-600 mt-1">{berkasPerbaikan.length} file dipilih</p>
-                )}
-              </div>
+                </div>
+              </form>
+            </div>
 
-              <div className="pt-4 border-t border-slate-200 flex justify-end gap-3 sticky bottom-0 bg-white">
-                <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Batal</button>
-                <button type="submit" disabled={isUpdating} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg cursor-pointer disabled:opacity-50">
-                  {isUpdating ? 'Menyimpan...' : 'Upload Berkas'}
-                </button>
-              </div>
-            </form>
+            {/* FOOTER MODAL */}
+            <div className="p-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50 shrink-0">
+              <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg cursor-pointer">
+                Batal
+              </button>
+              <button type="submit" form="editForm" disabled={isUpdating} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg cursor-pointer disabled:opacity-50">
+                {isUpdating ? 'Menyimpan...' : 'Upload Berkas'}
+              </button>
+            </div>
+            
           </div>
         </div>
       )}
@@ -435,6 +575,9 @@ export default function MonitoringPage() {
                 <div>
                   <p className="text-slate-500 text-xs uppercase font-semibold">Nama Perusahaan</p>
                   <p className="font-bold text-slate-800 text-base">{selectedReport.namaPerusahaan || '-'}</p>
+                  <p className="text-xs text-slate-600 mt-1 italic">
+                    {selectedReport.alamatPerusahaan || 'Alamat belum diisi'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-slate-500 text-xs uppercase font-semibold">Jenis Kegiatan</p>
@@ -476,54 +619,71 @@ export default function MonitoringPage() {
               <hr className="border-slate-100" />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                   <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                    Berkas Kegiatan
+                    📄 Surat Tugas
                   </p>
-                  {selectedReport.berkasKegiatan && selectedReport.berkasKegiatan !== '[]' ? (
-                    <div className="flex flex-col gap-2">
-                      {JSON.parse(selectedReport.berkasKegiatan).map((key: string, idx: number) => {
-                        const fileName = key.split('-').pop() || key;
-                        return (
-                          <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:underline bg-white p-2 rounded border border-slate-200 hover:border-blue-300 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
-                            <span className="truncate">{fileName}</span>
-                          </a>
-                        );
-                      })}
-                    </div>
+                  {selectedReport.suratTugas ? (
+                    <a href={`/api/r2/${selectedReport.suratTugas}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
+                      {selectedReport.suratTugas.split('/').pop()}
+                    </a>
                   ) : (
-                    <p className="text-sm text-slate-400 italic bg-slate-50 p-2 rounded border border-dashed">Belum ada berkas.</p>
+                    <p className="text-xs text-slate-400 italic">Tidak ada file.</p>
                   )}
                 </div>
 
-                <div>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                   <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                    Berkas Perbaikan
+                    📄 Berkas Kegiatan
                   </p>
-                  {selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]' ? (
-                    <div className="flex flex-col gap-2">
-                      {JSON.parse(selectedReport.berkasPerbaikan).map((key: string, idx: number) => {
-                        const fileName = key.split('-').pop() || key;
-                        return (
-                          <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-blue-600 hover:underline bg-white p-2 rounded border border-slate-200 hover:border-blue-300 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
-                            <span className="truncate">{fileName}</span>
-                          </a>
-                        );
-                      })}
+                  {selectedReport.berkasKegiatan && selectedReport.berkasKegiatan !== '[]' ? (
+                    <div className="flex flex-col gap-1">
+                      {JSON.parse(selectedReport.berkasKegiatan).map((key: string, idx: number) => (
+                        <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
+                          {key.split('/').pop()}
+                        </a>
+                      ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-400 italic bg-slate-50 p-2 rounded border border-dashed">Belum ada berkas perbaikan.</p>
+                    <p className="text-xs text-slate-400 italic">Tidak ada file.</p>
                   )}
                 </div>
+
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                    📄 Berkas Tindakan Perbaikan
+                  </p>
+                  {selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]' ? (
+                    <div className="flex flex-col gap-1">
+                      {JSON.parse(selectedReport.berkasPerbaikan).map((key: string, idx: number) => (
+                        <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
+                          {key.split('/').pop()}
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">Tidak ada file.</p>
+                  )}
+                </div>
+
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                    📄 Pemeriksaan Tindakan Perbaikan
+                  </p>
+                  {selectedReport.berkasPemeriksaanTindakanPerbaikan ? (
+                    <a href={`/api/r2/${selectedReport.berkasPemeriksaanTindakanPerbaikan}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
+                      {selectedReport.berkasPemeriksaanTindakanPerbaikan.split('/').pop()}
+                    </a>
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">Tidak ada file.</p>
+                  )}
+                </div>
+
               </div>
 
               <hr className="border-slate-100" />
 
-              {/* BAGIAN TANDA TANGAN PELAKSANA (SUDAH DIPERBAIKI) */}
               <div className="mt-6">
                 <p className="font-bold text-slate-800 mb-6 uppercase tracking-wide border-l-4 border-slate-800 pl-3">
                   V. Tanda Tangan Pelaksana
@@ -532,7 +692,6 @@ export default function MonitoringPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   {parsePetugas(selectedReport.petugasPelaksana).map((petugas: any, idx: number) => (
                     <div key={idx} className="flex flex-col items-center justify-end text-center h-40">
-                      {/* Area Gambar TTD */}
                       <div className="h-20 w-full flex items-end justify-center mb-2">
                         <img 
                           src={`/tanda-tangan/${petugas.namaFileTtd}`} 
@@ -543,11 +702,7 @@ export default function MonitoringPage() {
                           }}
                         />
                       </div>
-                      
-                      {/* Garis TTD */}
                       <div className="w-full border-t-2 border-slate-800 mb-2"></div>
-                      
-                      {/* Nama & Jabatan */}
                       <p className="font-bold text-sm text-slate-800">{petugas.nama}</p>
                       <p className="text-xs text-slate-600">{petugas.jabatan}</p>
                     </div>

@@ -36,6 +36,27 @@ export default function PrintMonitoringPage() {
     return new Date(tgl).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
   };
 
+  // FUNGSI UNTUK MEMINDAHKAN "PT" / "CV" KE DEPAN
+  const formatNamaPerusahaan = (nama: string) => {
+    if (!nama) return 'NAMA PERUSAHAAN BELUM DIISI';
+    const namaUpper = nama.toUpperCase();
+    
+    if (namaUpper.endsWith(', PT')) {
+      return 'PT. ' + nama.slice(0, -4).trim();
+    }
+    if (namaUpper.endsWith(' PT')) {
+      return 'PT. ' + nama.slice(0, -3).trim();
+    }
+    if (namaUpper.endsWith(', CV')) {
+      return 'CV. ' + nama.slice(0, -4).trim();
+    }
+    if (namaUpper.endsWith(' CV')) {
+      return 'CV. ' + nama.slice(0, -3).trim();
+    }
+    
+    return nama;
+  };
+
   const parseFiles = (jsonString: string) => {
     try {
       if (!jsonString || jsonString === '[]') return [];
@@ -49,7 +70,7 @@ export default function PrintMonitoringPage() {
   const berkasPerbaikan = parseFiles(report.berkasPerbaikan);
   const fotoKegiatan = parseFiles(report.fotoKegiatan);
 
-  // FUNGSI YANG SAMA PERSIS DENGAN TEMPLATE CETAK (YANG SUDAH BERHASIL)
+  // FUNGSI PARSING PETUGAS
   const parsePetugas = (petugasString: string) => {
     if (!petugasString) return [];
     return petugasString.split('|').map((p) => {
@@ -57,7 +78,6 @@ export default function PrintMonitoringPage() {
       const namaLengkap = parts[0].trim(); 
       const jabatan = parts[1] ? parts[1].replace(')', '').trim() : 'Anggota Tim';
 
-      // LOGIKA BARU: Hapus gelar "drh. " di depan nama
       let namaBersih = namaLengkap.split(',')[0].trim().toLowerCase();
       namaBersih = namaBersih.replace(/^drh\.\s*/i, ''); 
       namaBersih = namaBersih.replace(/[^a-z0-9\s-]/g, '');
@@ -71,48 +91,75 @@ export default function PrintMonitoringPage() {
     });
   };
 
-  const tanggalCetak = new Date().toLocaleDateString('id-ID', { 
-    weekday: 'long', 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-
   return (
     <div className="min-h-screen bg-gray-200 py-10 print:bg-white print:py-0 font-sans text-black">
-      <TombolCetak />
+      
+      {/* Tombol cetak disembunyikan saat print */}
+      <div className="print:hidden">
+        <TombolCetak />
+      </div>
       
       <div className="mx-auto w-[21cm] bg-white shadow-xl print:shadow-none p-[2cm] print:p-0">
         
-        {/* HEADER */}
-        <div className="text-center mb-8 border-b-2 border-black pb-4">
-          <h1 className="text-xl font-bold uppercase">Laporan Monitoring Sertifikasi</h1>
-          <p className="text-sm mt-1">BPPMHKP Denpasar</p>
+        {/* ======================================================== */}
+        {/* HEADER: JUDUL DI ATAS, NAMA PT & ALAMAT DI BAWAH         */}
+        {/* ======================================================== */}
+        <div className="text-center mb-8">
+          <h1 className="text-xl font-bold uppercase tracking-wide text-black">
+            LAPORAN MONITORING SERTIFIKASI
+          </h1>
+          <p className="text-sm text-gray-800 mt-1">
+            BPPMHKP Denpasar
+          </p>
+          <hr className="my-4 border-black w-full" />
+
+          <h2 className="text-2xl font-bold uppercase text-black mt-2">
+            {formatNamaPerusahaan(report.namaPerusahaan)}
+          </h2>
+          
+          <p className="text-sm text-gray-700 mt-1 max-w-2xl mx-auto">
+            {report.alamatPerusahaan || 'Alamat belum diisi'}
+          </p>
         </div>
 
-        {/* INFO LAPORAN */}
-        <table className="w-full text-sm mb-6">
-          <tbody>
-            <tr>
-              <td className="py-1 font-semibold w-40">Nama Perusahaan</td>
-              <td className="py-1">: {report.namaPerusahaan || '-'}</td>
-            </tr>
-            <tr>
-              <td className="py-1 font-semibold">Jenis Kegiatan</td>
-              <td className="py-1">: {report.jenisKegiatan || '-'}</td>
-            </tr>
-            <tr>
-              <td className="py-1 font-semibold">Tanggal Pelaksanaan</td>
-              <td className="py-1">: {formatTanggal(report.tanggal)}</td>
-            </tr>
-            <tr>
-              <td className="py-1 font-semibold">Petugas Pelaksana</td>
-              <td className="py-1">: {report.petugasPelaksana ? report.petugasPelaksana.split('|').map((p: string) => p.split('(')[0].trim()).join(', ') : '-'}</td>
-            </tr>
-          </tbody>
-        </table>
+        {/* ======================================================== */}
+        {/* INFO LAPORAN (PETUGAS TURUN KE BAWAH)                    */}
+        {/* ======================================================== */}
+        <div className="w-full text-sm mb-6 mt-6 space-y-2">
+          
+          {/* Jenis Kegiatan */}
+          <div className="flex">
+            <div className="w-48 font-semibold shrink-0">Jenis Kegiatan</div>
+            <div className="w-4 shrink-0">:</div>
+            <div className="flex-1">{report.jenisKegiatan || '-'}</div>
+          </div>
+
+          {/* Tanggal Pelaksanaan */}
+          <div className="flex">
+            <div className="w-48 font-semibold shrink-0">Tanggal Pelaksanaan</div>
+            <div className="w-4 shrink-0">:</div>
+            <div className="flex-1">{formatTanggal(report.tanggal)}</div>
+          </div>
+
+          {/* Petugas Pelaksana (Daftar Turun ke Bawah) */}
+          <div className="flex">
+            <div className="w-48 font-semibold shrink-0">Petugas Pelaksana</div>
+            <div className="w-4 shrink-0">:</div>
+            <div className="flex-1">
+              {report.petugasPelaksana 
+                ? report.petugasPelaksana.split('|').map((p: string, idx: number) => {
+                    const namaSaja = p.split('(')[0].trim();
+                    return (
+                      <div key={idx} className="mb-1">
+                        {idx + 1}. {namaSaja}
+                      </div>
+                    );
+                  })
+                : '-'}
+            </div>
+          </div>
+
+        </div>
 
         <hr className="my-4 border-gray-300" />
 
@@ -126,36 +173,46 @@ export default function PrintMonitoringPage() {
           <p className="text-sm text-justify whitespace-pre-wrap">{report.kendala || '-'}</p>
         </div>
 
-        {/* BERKAS TERLAMPIR */}
+        {/* ========================================================= */}
+        {/* BERKAS TERLAMPIR - MENGGUNAKAN parseFiles()              */}
+        {/* ========================================================= */}
         <div className="mb-6">
           <h2 className="font-bold bg-gray-100 p-2 mb-3 border-l-4 border-black">C. Berkas Terlampir</h2>
           
-          <div className="mb-4">
-            <h3 className="font-semibold text-sm mb-2">1. Berkas Kegiatan</h3>
-            {berkasKegiatan.length > 0 ? (
-              <ul className="list-disc pl-5 text-sm space-y-1">
-                {berkasKegiatan.map((key: string, idx: number) => {
-                  const fileName = key.split('-').pop() || key;
-                  return <li key={idx}>{fileName}</li>;
-                })}
-              </ul>
-            ) : (
-              <p className="text-sm italic text-gray-500">Tidak ada berkas kegiatan.</p>
-            )}
+          {/* 1. SURAT TUGAS (Array / Multiple) */}
+          <div className="mb-2">
+            <h3 className="font-semibold text-sm">1. Surat Tugas</h3>
+            <p className="text-sm pl-5">
+              {report.suratTugas 
+                ? `✔ Terlampir (${parseFiles(report.suratTugas).length} file)` 
+                : "- Tidak ada"}
+            </p>
           </div>
 
-          <div>
-            <h3 className="font-semibold text-sm mb-2">2. Berkas Perbaikan</h3>
-            {berkasPerbaikan.length > 0 ? (
-              <ul className="list-disc pl-5 text-sm space-y-1">
-                {berkasPerbaikan.map((key: string, idx: number) => {
-                  const fileName = key.split('-').pop() || key;
-                  return <li key={idx}>{fileName}</li>;
-                })}
-              </ul>
-            ) : (
-              <p className="text-sm italic text-gray-500">Tidak ada berkas perbaikan.</p>
-            )}
+          {/* 2. BERKAS KEGIATAN (Multiple file) */}
+          <div className="mb-2">
+            <h3 className="font-semibold text-sm">2. Berkas Kegiatan</h3>
+            <p className="text-sm pl-5">
+              {berkasKegiatan.length > 0 ? `✔ Terlampir (${berkasKegiatan.length} file)` : "- Tidak ada"}
+            </p>
+          </div>
+
+          {/* 3. BERKAS PERBAIKAN (Multiple file) */}
+          <div className="mb-2">
+            <h3 className="font-semibold text-sm">3. Berkas Perbaikan</h3>
+            <p className="text-sm pl-5">
+              {berkasPerbaikan.length > 0 ? `✔ Terlampir (${berkasPerbaikan.length} file)` : "- Tidak ada"}
+            </p>
+          </div>
+
+          {/* 4. PEMERIKSAAN TINDAKAN PERBAIKAN (Array / Multiple) */}
+          <div className="mb-2">
+            <h3 className="font-semibold text-sm">4. Pemeriksaan Tindakan Perbaikan</h3>
+            <p className="text-sm pl-5">
+              {report.berkasPemeriksaanTindakanPerbaikan 
+                ? `✔ Terlampir (${parseFiles(report.berkasPemeriksaanTindakanPerbaikan).length} file)` 
+                : "- Tidak ada"}
+            </p>
           </div>
         </div>
 
@@ -186,9 +243,16 @@ export default function PrintMonitoringPage() {
           )}
         </div>
 
-        {/* BAGIAN TANDA TANGAN PELAKSANA (SUDAH DIPERBAIKI) */}
-        <div className="mb-12 mt-10">
-          <h2 className="font-bold bg-gray-100 p-2 mb-8 border-l-4 border-black uppercase">V. Tanda Tangan Pelaksana</h2>
+        {/* ========================================================= */}
+        {/* BAGIAN TANDA TANGAN PELAKSANA (ANTI TERPOTONG)           */}
+        {/* ========================================================= */}
+        <div 
+          className="mt-10 mb-12 break-inside-avoid page-break-inside-avoid"
+          style={{ pageBreakInside: 'avoid' }}
+        >
+          <h2 className="font-bold bg-gray-100 p-2 mb-8 border-l-4 border-black uppercase">
+            V. Tanda Tangan Pelaksana
+          </h2>
           
           <div className="grid grid-cols-3 gap-8">
             {parsePetugas(report.petugasPelaksana).map((petugas: any, idx: number) => (
@@ -203,20 +267,12 @@ export default function PrintMonitoringPage() {
                     }}
                   />
                 </div>
-                
                 <div className="w-full border-t border-black mb-2"></div>
-                
                 <p className="font-bold text-sm text-black">{petugas.nama}</p>
                 <p className="text-xs text-black">{petugas.jabatan}</p>
               </div>
             ))}
           </div>
-        </div>
-
-        {/* FOOTER / KETERANGAN CETAK */}
-        <div className="mt-16 text-center text-xs text-gray-600 border-t border-gray-300 pt-4">
-          <p>Laporan ini dibuat secara otomatis melalui Sistem MONICA IMUT</p>
-          <p>Tanggal cetak: {tanggalCetak}</p>
         </div>
 
       </div>

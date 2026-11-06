@@ -1,14 +1,19 @@
-import { pgTable, serial, varchar, timestamp, text, boolean } from "drizzle-orm/pg-core";
+import { pgTable, integer, varchar, timestamp, text, boolean } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const keepalive = pgTable("keepalive", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  lastPing: timestamp("last_ping").defaultNow(),
+});
+
 export const reports = pgTable("reports", {
-  id: serial("id").primaryKey(),
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   title: varchar("title", { length: 255 }).notNull(),
   fileKey: text("file_key").notNull(),
   uploadedBy: varchar("uploaded_by", { length: 255 }).notNull(),
@@ -22,8 +27,8 @@ export const reports = pgTable("reports", {
   alamatPerusahaan: text("alamat_perusahaan"),
   
   // --- KOLOM BARU UNTUK FOTO ---
-  fotoKegiatan: text("foto_kegiatan"), // Menyimpan JSON Array of strings
-  fotoLokasi: text("foto_lokasi"),     // Menyimpan JSON Array of strings
+  fotoKegiatan: text("foto_kegiatan"),
+  fotoLokasi: text("foto_lokasi"),
   
   // Kolom lama untuk deadline & reward
   tanggal: varchar("tanggal", { length: 50 }),
@@ -42,9 +47,15 @@ export const reports = pgTable("reports", {
   berkasKegiatan: text("berkas_kegiatan"),
   berkasPerbaikan: text("berkas_perbaikan"),
   statusMonitoring: varchar("status_monitoring", { length: 50 }).default('Berkas belum upload'),
+
+  // ==========================================
+  // TAMBAHAN BARU: SURAT TUGAS & PEMERIKSAAN TINDAKAN PERBAIKAN
+  // ==========================================
+  suratTugas: text("surat_tugas"),
+  berkasPemeriksaanTindakanPerbaikan: text("berkas_pemeriksaan_tindakan_perbaikan"),
 });
 
 export const settings = pgTable("settings", {
-  id: serial("id").primaryKey(),
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   logoUrl: text("logo_url"),
 });

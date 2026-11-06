@@ -7,11 +7,18 @@ import { getDb } from "@/db";
 import { reports } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-export default async function CetakLaporan({ params }: { params: Promise<{ id: string }> }) {
+export default async function CetakLaporan({ 
+  params,
+  searchParams 
+}: { 
+  params: Promise<{ id: string }>,
+  searchParams: Promise<{ mode?: string }>
+}) {
   const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const idLaporan = Number(resolvedParams.id);
+  const isPdfMode = resolvedSearchParams.mode === 'pdf';
 
-  // Ambil data dari database
   const db = getDb(); 
   const result = await db.select().from(reports).where(eq(reports.id, idLaporan));
   let data = result[0];
@@ -20,25 +27,14 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
     return <div className="p-10 text-xl font-bold text-center mt-20">Laporan tidak ditemukan.</div>;
   }
 
-  // =========================================================
-  // TRIK PENTING: Membersihkan nama petugas dari gelar "drh."
-  // agar template lama bisa menemukan gambar TTD.
-  // =========================================================
   if (data.petugasPelaksana) {
     const petugasBersih = data.petugasPelaksana
       .split('|')
-      .map((p: string) => {
-        // Hapus "drh." di awal nama, tapi biarkan format jabatan dalam kurung
-        return p.replace(/^drh\.\s*/i, '');
-      })
+      .map((p: string) => p.replace(/^drh\.\s*/i, ''))
       .join('|');
-    
-    // Timpa data asli dengan data yang sudah bersih
     data = { ...data, petugasPelaksana: petugasBersih };
   }
-  // =========================================================
 
-  // Render template berdasarkan jenis kegiatan
   let kontenLaporan = null;
   
   if (data.jenisKegiatan?.includes("CPIB")) {
@@ -58,14 +54,52 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
   }
 
   return (
-    <div className="min-h-screen bg-gray-200 py-10 print:bg-white print:py-0">
-      <TombolCetak />
+    <div className="min-h-screen bg-gray-200 print:bg-white relative">
       
-      {/* CONTAINER UTAMA UNTUK KERTAS A4 */}
-      <div className="mx-auto w-[21cm] bg-white shadow-xl print:shadow-none print:w-full print:mx-0">
+      {!isPdfMode && (
+        <div className="fixed top-4 right-4 z-[9999] print:hidden">
+          <TombolCetak />
+        </div>
+      )}
+      
+      {/* JIKA MODE PDF, OTOMATIS TRIGGER PRINT SETELAH PDF SELESAI DIMUAT */}
+      {isPdfMode && (
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            window.onload = function() {
+              // Tunggu 2.5 detik agar iframe PDF selesai dimuat
+              setTimeout(function() {
+                window.print();
+              }, 2500);
+            };
+          `
+        }} />
+      )}
+      
+      <div 
+        className="mx-auto w-[21cm] bg-white shadow-xl print:shadow-none print:m-0 print:p-0 print:w-[21cm] print:max-w-none"
+        style={{ overflow: 'visible' }}
+      >
         
-        {/* LANGSUNG TAMPILKAN ISI LAPORAN (COVER SUDAH ADA DI DALAM TEMPLATE) */}
-        <div className="w-[21cm] min-h-[29.7cm] p-[2cm] print:w-full print:min-h-0 print:p-0">
+        {/* ======================================================= */}
+        {/* 1. SURAT TUGAS (HALAMAN PERTAMA)                         */}
+        {/* ======================================================= */}
+        {data.suratTugas && (
+          <div className="w-[21cm] h-[29.7cm] bg-white break-after-page print:block print:w-[21cm] print:h-[29.7cm] print:p-0 print:m-0 print:overflow-hidden">
+            {/* Gunakan iframe dengan parameter untuk menyembunyikan toolbar */}
+            <iframe 
+              src={`/api/r2/${data.suratTugas}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
+              className="w-full h-full border-0 block"
+              style={{ width: '100%', height: '100%' }}
+              title="Surat Tugas"
+            />
+          </div>
+        )}
+
+        {/* ========================================= */}
+        {/* 2. ISI LAPORAN (COVER DLL)                */}
+        {/* ========================================= */}
+        <div className="w-full p-[2cm] print:p-0 print:w-full">
           {kontenLaporan}
         </div>
 
