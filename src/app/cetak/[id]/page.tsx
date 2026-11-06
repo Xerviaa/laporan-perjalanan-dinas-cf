@@ -14,30 +14,43 @@ export default async function CetakLaporan({ params }: { params: Promise<{ id: s
   // Ambil data dari database
   const db = getDb(); 
   const result = await db.select().from(reports).where(eq(reports.id, idLaporan));
-  const data = result[0];
+  let data = result[0];
 
   if (!data) {
     return <div className="p-10 text-xl font-bold text-center mt-20">Laporan tidak ditemukan.</div>;
   }
 
+  // =========================================================
+  // TRIK PENTING: Membersihkan nama petugas dari gelar "drh."
+  // agar template lama bisa menemukan gambar TTD.
+  // =========================================================
+  if (data.petugasPelaksana) {
+    const petugasBersih = data.petugasPelaksana
+      .split('|')
+      .map((p: string) => {
+        // Hapus "drh." di awal nama, tapi biarkan format jabatan dalam kurung
+        return p.replace(/^drh\.\s*/i, '');
+      })
+      .join('|');
+    
+    // Timpa data asli dengan data yang sudah bersih
+    data = { ...data, petugasPelaksana: petugasBersih };
+  }
+  // =========================================================
+
   // Render template berdasarkan jenis kegiatan
-  // Menggunakan .includes() agar lebih aman jika ada variasi teks (Primer/Pasca dihapus)
   let kontenLaporan = null;
   
   if (data.jenisKegiatan?.includes("CPIB")) {
-    // Mengarah ke Template CPIB Kapal
     kontenLaporan = <TemplateInspeksiCPIBKapal data={data} />;
   } 
   else if (data.jenisKegiatan?.includes("HACCP") && data.jenisKegiatan?.includes("Survailen")) {
-    // Mengarah ke Template Survailen HACCP
     kontenLaporan = <TemplateSurveilanHACCP data={data} />;
   }
   else if (data.jenisKegiatan?.includes("HACCP")) {
-    // Mengarah ke Template Inspeksi HACCP
     kontenLaporan = <TemplateInspeksiHACCP data={data} />;
   }
   else if (data.jenisKegiatan?.includes("SKP")) {
-    // Mengarah ke Template Inspeksi SKP
     kontenLaporan = <TemplateInspeksiSKP data={data} />;
   }
   else {

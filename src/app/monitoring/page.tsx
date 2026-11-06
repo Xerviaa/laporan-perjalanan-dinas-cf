@@ -156,14 +156,25 @@ export default function MonitoringPage() {
     }
   };
 
-  // Fungsi untuk memisahkan nama dan jabatan dari string pelaksana
+  // FUNGSI YANG SUDAH DIPERBAIKI (Sama dengan yang di halaman Print)
   const parsePetugas = (petugasString: string) => {
     if (!petugasString) return [];
     return petugasString.split('|').map((p) => {
       const parts = p.split('(');
-      const nama = parts[0].trim();
+      const namaLengkap = parts[0].trim(); 
       const jabatan = parts[1] ? parts[1].replace(')', '').trim() : 'Anggota Tim';
-      return { nama, jabatan };
+
+      // LOGIKA BARU: Menghapus "drh. " di depan
+      let namaBersih = namaLengkap.split(',')[0].trim().toLowerCase();
+      namaBersih = namaBersih.replace(/^drh\.\s*/i, ''); 
+      namaBersih = namaBersih.replace(/[^a-z0-9\s-]/g, '');
+      const namaFile = namaBersih.replace(/\s+/g, '-');
+
+      return { 
+        nama: namaLengkap, 
+        jabatan, 
+        namaFileTtd: `${namaFile}.png` 
+      };
     });
   };
 
@@ -512,48 +523,35 @@ export default function MonitoringPage() {
 
               <hr className="border-slate-100" />
 
-              {/* BAGIAN TANDA TANGAN PELAKSANA */}
+              {/* BAGIAN TANDA TANGAN PELAKSANA (SUDAH DIPERBAIKI) */}
               <div className="mt-6">
                 <p className="font-bold text-slate-800 mb-6 uppercase tracking-wide border-l-4 border-slate-800 pl-3">
                   V. Tanda Tangan Pelaksana
                 </p>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                  {parsePetugas(selectedReport.petugasPelaksana).map((petugas: any, idx: number) => {
-                    // Mengubah nama menjadi format nama file gambar
-                    // Contoh: "Siti Nurlatifah, S.St.Pi., M.Si" -> "siti-nurlatifah.png"
-                    const namaFileTtd = petugas.nama
-                      .split(',')[0] // Ambil nama depan sebelum koma (jika ada gelar)
-                      .trim()
-                      .toLowerCase()
-                      .replace(/\s+/g, '-') + '.png';
-
-                    return (
-                      <div key={idx} className="flex flex-col items-center justify-end text-center h-40">
-                        {/* Area Gambar TTD */}
-                        <div className="h-20 w-full flex items-end justify-center mb-2">
-                          {/* Cek jika file gambar ada, tag <img> akan memuatnya. 
-                              Jika tidak ada, gambarnya akan error dan kita sembunyikan dengan onError */}
-                          <img 
-                            src={`/tanda-tangan/${namaFileTtd}`} 
-                            alt={`TTD ${petugas.nama}`}
-                            className="max-h-20 object-contain"
-                            onError={(e) => {
-                              // Jika gambar tidak ditemukan, sembunyikan tag img
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        </div>
-                        
-                        {/* Garis TTD */}
-                        <div className="w-full border-t-2 border-slate-800 mb-2"></div>
-                        
-                        {/* Nama & Jabatan */}
-                        <p className="font-bold text-sm text-slate-800">{petugas.nama}</p>
-                        <p className="text-xs text-slate-600">{petugas.jabatan}</p>
+                  {parsePetugas(selectedReport.petugasPelaksana).map((petugas: any, idx: number) => (
+                    <div key={idx} className="flex flex-col items-center justify-end text-center h-40">
+                      {/* Area Gambar TTD */}
+                      <div className="h-20 w-full flex items-end justify-center mb-2">
+                        <img 
+                          src={`/tanda-tangan/${petugas.namaFileTtd}`} 
+                          alt={`TTD ${petugas.nama}`}
+                          className="max-h-20 object-contain"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
                       </div>
-                    );
-                  })}
+                      
+                      {/* Garis TTD */}
+                      <div className="w-full border-t-2 border-slate-800 mb-2"></div>
+                      
+                      {/* Nama & Jabatan */}
+                      <p className="font-bold text-sm text-slate-800">{petugas.nama}</p>
+                      <p className="text-xs text-slate-600">{petugas.jabatan}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 

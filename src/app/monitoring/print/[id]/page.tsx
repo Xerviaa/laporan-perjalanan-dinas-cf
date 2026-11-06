@@ -47,18 +47,27 @@ export default function PrintMonitoringPage() {
 
   const berkasKegiatan = parseFiles(report.berkasKegiatan);
   const berkasPerbaikan = parseFiles(report.berkasPerbaikan);
-  
-  // Ambil data foto kegiatan
   const fotoKegiatan = parseFiles(report.fotoKegiatan);
 
-  // Fungsi untuk memisahkan nama dan jabatan dari string pelaksana
+  // FUNGSI YANG SAMA PERSIS DENGAN TEMPLATE CETAK (YANG SUDAH BERHASIL)
   const parsePetugas = (petugasString: string) => {
     if (!petugasString) return [];
     return petugasString.split('|').map((p) => {
       const parts = p.split('(');
-      const nama = parts[0].trim();
+      const namaLengkap = parts[0].trim(); 
       const jabatan = parts[1] ? parts[1].replace(')', '').trim() : 'Anggota Tim';
-      return { nama, jabatan };
+
+      // LOGIKA BARU: Hapus gelar "drh. " di depan nama
+      let namaBersih = namaLengkap.split(',')[0].trim().toLowerCase();
+      namaBersih = namaBersih.replace(/^drh\.\s*/i, ''); 
+      namaBersih = namaBersih.replace(/[^a-z0-9\s-]/g, '');
+      const namaFile = namaBersih.replace(/\s+/g, '-');
+
+      return { 
+        nama: namaLengkap, 
+        jabatan, 
+        namaFileTtd: `${namaFile}.png` 
+      };
     });
   };
 
@@ -177,38 +186,30 @@ export default function PrintMonitoringPage() {
           )}
         </div>
 
-        {/* BAGIAN TANDA TANGAN PELAKSANA */}
+        {/* BAGIAN TANDA TANGAN PELAKSANA (SUDAH DIPERBAIKI) */}
         <div className="mb-12 mt-10">
           <h2 className="font-bold bg-gray-100 p-2 mb-8 border-l-4 border-black uppercase">V. Tanda Tangan Pelaksana</h2>
           
           <div className="grid grid-cols-3 gap-8">
-            {parsePetugas(report.petugasPelaksana).map((petugas: any, idx: number) => {
-              const namaFileTtd = petugas.nama
-                .split(',')[0]
-                .trim()
-                .toLowerCase()
-                .replace(/\s+/g, '-') + '.png';
-
-              return (
-                <div key={idx} className="flex flex-col items-center justify-end text-center h-40">
-                  <div className="h-20 w-full flex items-end justify-center mb-2">
-                    <img 
-                      src={`/tanda-tangan/${namaFileTtd}`} 
-                      alt={`TTD ${petugas.nama}`}
-                      className="max-h-20 object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  </div>
-                  
-                  <div className="w-full border-t border-black mb-2"></div>
-                  
-                  <p className="font-bold text-sm text-black">{petugas.nama}</p>
-                  <p className="text-xs text-black">{petugas.jabatan}</p>
+            {parsePetugas(report.petugasPelaksana).map((petugas: any, idx: number) => (
+              <div key={idx} className="flex flex-col items-center justify-end text-center h-40">
+                <div className="h-20 w-full flex items-end justify-center mb-2">
+                  <img 
+                    src={`/tanda-tangan/${petugas.namaFileTtd}`} 
+                    alt={`TTD ${petugas.nama}`}
+                    className="max-h-20 object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
                 </div>
-              );
-            })}
+                
+                <div className="w-full border-t border-black mb-2"></div>
+                
+                <p className="font-bold text-sm text-black">{petugas.nama}</p>
+                <p className="text-xs text-black">{petugas.jabatan}</p>
+              </div>
+            ))}
           </div>
         </div>
 
