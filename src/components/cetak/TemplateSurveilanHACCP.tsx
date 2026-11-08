@@ -96,29 +96,31 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
           </p>
         </div>
 
-        <div className="mb-4">
+        {/* ========================================= */}
+        {/* V. PETUGAS PELAKSANA (LAYOUT VERTIKAL)    */}
+        {/* ========================================= */}
+        <div className="mb-4 break-inside-avoid page-break-inside-avoid">
           <h4 className="font-bold">V. Petugas Pelaksana</h4>
-          <div className="flex mt-1">
-            <span className="w-40 shrink-0">Petugas Pelaksana</span>
-            <span className="mr-2 shrink-0">:</span>
-            <div className="flex-1">
-              {data.petugasPelaksana ? (
-                data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
-                  const match = petugas.trim().match(/(.*)\((.*)\)/);
-                  const nama = match ? match[1].trim() : petugas.trim();
-                  const peran = match ? match[2].trim() : "";
-                  return (
-                    <div key={index} className="flex items-start mb-1">
-                      <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
-                      <span className="flex-1">{nama}</span>
-                      {peran && <span className="ml-4 shrink-0">({peran})</span>}
+          <div className="mt-2 space-y-2">
+            {data.petugasPelaksana ? (
+              data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
+                const match = petugas.trim().match(/(.*)\((.*)\)/);
+                const nama = match ? match[1].trim() : petugas.trim();
+                const peran = match ? match[2].trim() : 'Anggota';
+                
+                return (
+                  <div key={index} className="flex items-start pl-4">
+                    <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
+                    <div className="flex-1">
+                      <span className="font-semibold block">{nama}</span>
+                      <span className="text-sm italic text-gray-700">({peran})</span>
                     </div>
-                  );
-                })
-              ) : (
-                <p>a. -</p>
-              )}
-            </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="pl-4">-</p>
+            )}
           </div>
         </div>
 
