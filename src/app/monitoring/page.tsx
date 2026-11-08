@@ -68,19 +68,15 @@ export default function MonitoringPage() {
   const getAutoStatus = (report: any) => {
     const missingFiles: string[] = [];
 
-    // Cek Surat Tugas
     if (!report.suratTugas || report.suratTugas === '[]') {
       missingFiles.push('Surat Tugas');
     }
-    // Cek Berkas Kegiatan
     if (!report.berkasKegiatan || report.berkasKegiatan === '[]') {
       missingFiles.push('Berkas Kegiatan');
     }
-    // Cek Berkas Tindakan Perbaikan
     if (!report.berkasPerbaikan || report.berkasPerbaikan === '[]') {
       missingFiles.push('Berkas Tindakan Perbaikan');
     }
-    // Cek Pemeriksaan Tindakan Perbaikan
     if (!report.berkasPemeriksaanTindakanPerbaikan || report.berkasPemeriksaanTindakanPerbaikan === '[]') {
       missingFiles.push('Pemeriksaan Tindakan Perbaikan');
     }
@@ -104,7 +100,6 @@ export default function MonitoringPage() {
     
     let matchStatus = true;
     if (statusFilter !== 'Semua Status') {
-      // Filter disesuaikan dengan logika baru
       if (statusFilter === 'Berkas Lengkap') {
         matchStatus = getAutoStatus(report).teks === 'Berkas Lengkap';
       } else if (statusFilter === 'Belum upload berkas') {
@@ -117,14 +112,11 @@ export default function MonitoringPage() {
 
   const handleEditClick = (report: any) => {
     setSelectedReport(report);
-    
-    // Reset form state
     setFileSuratTugas([]);
     setFileBerkasKegiatan([]);
     setFileBerkasPerbaikan([]);
     setFilePemeriksaan([]);
     setFilesToDelete([]); 
-    
     setIsEditModalOpen(true);
   };
 
@@ -138,6 +130,7 @@ export default function MonitoringPage() {
     setIsDeleteModalOpen(true);
   };
 
+  // --- FUNGSI HAPUS YANG SUDAH DIPERBAIKI (MENAMPILKAN ERROR ASLI) ---
   const confirmDelete = async () => {
     if (!reportToDelete) return;
     
@@ -152,7 +145,10 @@ export default function MonitoringPage() {
         showToast('Laporan berhasil dihapus!', 'success');
         fetchReports();
       } else {
-        showToast('Gagal menghapus laporan.', 'error');
+        // Menangkap pesan error asli dari API
+        const errorData = await res.json();
+        console.error("Pesan dari API:", errorData);
+        showToast(errorData.message || errorData.error || 'Gagal menghapus laporan.', 'error');
       }
     } catch (error) {
       showToast('Terjadi kesalahan jaringan.', 'error');
@@ -168,18 +164,15 @@ export default function MonitoringPage() {
     setIsUpdating(true);
     const formData = new FormData();
     
-    // Kirim file baru (jika ada)
     if (fileSuratTugas.length > 0) fileSuratTugas.forEach(file => formData.append('suratTugas', file));
     if (fileBerkasKegiatan.length > 0) fileBerkasKegiatan.forEach(file => formData.append('berkasKegiatan', file));
     if (fileBerkasPerbaikan.length > 0) fileBerkasPerbaikan.forEach(file => formData.append('berkasPerbaikan', file));
     if (filePemeriksaan.length > 0) filePemeriksaan.forEach(file => formData.append('berkasPemeriksaanTindakanPerbaikan', file));
 
-    // Kirim daftar file lama yang dihapus
     if (filesToDelete.length > 0) {
       formData.append('filesToDelete', JSON.stringify(filesToDelete));
     }
 
-    // Kirim file lama yang tidak dihapus (agar backend bisa menggabungkan)
     if (selectedReport.suratTugas) formData.append('oldSuratTugas', selectedReport.suratTugas);
     if (selectedReport.berkasKegiatan && selectedReport.berkasKegiatan !== '[]') formData.append('oldBerkasKegiatan', selectedReport.berkasKegiatan);
     if (selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]') formData.append('oldBerkasPerbaikan', selectedReport.berkasPerbaikan);
@@ -194,11 +187,7 @@ export default function MonitoringPage() {
       if (res.ok) {
         setIsEditModalOpen(false);
         showToast('Berkas berhasil di-upload!', 'success');
-        
-        setTimeout(() => {
-          fetchReports();
-        }, 500);
-        
+        setTimeout(() => { fetchReports(); }, 500);
       } else {
         showToast('Gagal meng-upload berkas.', 'error');
       }
@@ -331,7 +320,6 @@ export default function MonitoringPage() {
                       </td>
                       <td className="px-4 py-4 text-slate-600 whitespace-nowrap">{jenisSertifikasi}</td>
                       
-                      {/* --- TAMPILAN STATUS BERKAS YANG SUDAH DIPERBAIKI --- */}
                       <td className="px-4 py-4">
                         {autoStatus.isList ? (
                           <div className="flex flex-col gap-1">
@@ -388,14 +376,10 @@ export default function MonitoringPage() {
         </div>
       </div>
 
-      {/* ========================================================= */}
-      {/* MODAL EDIT (UPLOAD BERKAS)                                */}
-      {/* ========================================================= */}
+      {/* MODAL EDIT (UPLOAD BERKAS) */}
       {isEditModalOpen && selectedReport && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
-            
-            {/* HEADER MODAL */}
             <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50 shrink-0">
               <h3 className="text-lg font-bold text-slate-800">Upload Berkas</h3>
               <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
@@ -403,193 +387,100 @@ export default function MonitoringPage() {
               </button>
             </div>
 
-            {/* AREA FORM */}
             <div className="p-4 overflow-y-auto flex-1">
               <form id="editForm" onSubmit={handleUpdateStatus} className="space-y-4">
-                
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Kegiatan</label>
                   <input type="text" value={selectedReport.jenisKegiatan} disabled className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-slate-100 text-slate-500 cursor-not-allowed" />
                 </div>
-
                 <hr className="border-slate-200" />
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  
                   {/* 1. SURAT TUGAS */}
                   <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">
-                      📄 Surat Tugas
-                    </p>
+                    <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">📄 Surat Tugas</p>
                     {selectedReport.suratTugas && !filesToDelete.includes(selectedReport.suratTugas) && (
                       <div className="mb-2 flex items-center justify-between bg-white p-1.5 rounded border border-slate-200">
-                        <a href={`/api/r2/${selectedReport.suratTugas}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate max-w-[80%]">
-                          {selectedReport.suratTugas.split('/').pop()}
-                        </a>
+                        <a href={`/api/r2/${selectedReport.suratTugas}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate max-w-[80%]">{selectedReport.suratTugas.split('/').pop()}</a>
                         <button type="button" onClick={() => setFilesToDelete([...filesToDelete, selectedReport.suratTugas])} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded" title="Hapus file ini">✕</button>
                       </div>
                     )}
-                    {fileSuratTugas.length > 0 && (
-                      <div className="mb-2 space-y-1">
-                        {fileSuratTugas.map((file, idx) => (
-                          <div key={idx} className="flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200">
-                            <span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span>
-                            <button type="button" onClick={() => setFileSuratTugas(fileSuratTugas.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
-                          </div>
-                        ))}
+                    {fileSuratTugas.length > 0 && fileSuratTugas.map((file, idx) => (
+                      <div key={idx} className="mb-2 flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200">
+                        <span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span>
+                        <button type="button" onClick={() => setFileSuratTugas(fileSuratTugas.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
                       </div>
-                    )}
-                    <input 
-                      type="file" 
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                          setFileSuratTugas([...fileSuratTugas, e.target.files[0]]);
-                          e.target.value = ''; 
-                        }
-                      }}
-                      className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" 
-                    />
+                    ))}
+                    <input type="file" onChange={(e) => { if (e.target.files && e.target.files[0]) { setFileSuratTugas([...fileSuratTugas, e.target.files[0]]); e.target.value = ''; } }} className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" />
                   </div>
 
                   {/* 2. BERKAS KEGIATAN */}
                   <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">
-                      📄 Berkas Kegiatan
-                    </p>
-                    {selectedReport.berkasKegiatan && selectedReport.berkasKegiatan !== '[]' && (
-                      <div className="flex flex-col gap-1 mb-2 max-h-24 overflow-y-auto">
-                        {JSON.parse(selectedReport.berkasKegiatan).map((key: string, idx: number) => {
-                          if (filesToDelete.includes(key)) return null;
-                          return (
-                            <div key={idx} className="flex items-center justify-between bg-white p-1.5 rounded border border-slate-200">
-                              <a href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate max-w-[80%]">
-                                {key.split('/').pop()}
-                              </a>
-                              <button type="button" onClick={() => setFilesToDelete([...filesToDelete, key])} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
-                            </div>
-                          );
-                        })}
+                    <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">📄 Berkas Kegiatan</p>
+                    {selectedReport.berkasKegiatan && selectedReport.berkasKegiatan !== '[]' && JSON.parse(selectedReport.berkasKegiatan).map((key: string, idx: number) => {
+                      if (filesToDelete.includes(key)) return null;
+                      return (
+                        <div key={idx} className="mb-2 flex items-center justify-between bg-white p-1.5 rounded border border-slate-200">
+                          <a href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate max-w-[80%]">{key.split('/').pop()}</a>
+                          <button type="button" onClick={() => setFilesToDelete([...filesToDelete, key])} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
+                        </div>
+                      );
+                    })}
+                    {fileBerkasKegiatan.length > 0 && fileBerkasKegiatan.map((file, idx) => (
+                      <div key={idx} className="mb-2 flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200">
+                        <span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span>
+                        <button type="button" onClick={() => setFileBerkasKegiatan(fileBerkasKegiatan.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
                       </div>
-                    )}
-                    {fileBerkasKegiatan.length > 0 && (
-                      <div className="mb-2 space-y-1">
-                        {fileBerkasKegiatan.map((file, idx) => (
-                          <div key={idx} className="flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200">
-                            <span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span>
-                            <button type="button" onClick={() => setFileBerkasKegiatan(fileBerkasKegiatan.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <input 
-                      type="file" 
-                      multiple
-                      onChange={(e) => {
-                        if (e.target.files) {
-                          const newFiles = Array.from(e.target.files);
-                          setFileBerkasKegiatan([...fileBerkasKegiatan, ...newFiles]);
-                          e.target.value = ''; 
-                        }
-                      }}
-                      className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" 
-                    />
+                    ))}
+                    <input type="file" multiple onChange={(e) => { if (e.target.files) { const newFiles = Array.from(e.target.files); setFileBerkasKegiatan([...fileBerkasKegiatan, ...newFiles]); e.target.value = ''; } }} className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" />
                   </div>
 
                   {/* 3. BERKAS PERBAIKAN */}
                   <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">
-                      📄 Berkas Tindakan Perbaikan
-                    </p>
-                    {selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]' && (
-                      <div className="flex flex-col gap-1 mb-2 max-h-24 overflow-y-auto">
-                        {JSON.parse(selectedReport.berkasPerbaikan).map((key: string, idx: number) => {
-                          if (filesToDelete.includes(key)) return null;
-                          return (
-                            <div key={idx} className="flex items-center justify-between bg-white p-1.5 rounded border border-slate-200">
-                              <a href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate max-w-[80%]">
-                                {key.split('/').pop()}
-                              </a>
-                              <button type="button" onClick={() => setFilesToDelete([...filesToDelete, key])} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
-                            </div>
-                          );
-                        })}
+                    <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">📄 Berkas Tindakan Perbaikan</p>
+                    {selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]' && JSON.parse(selectedReport.berkasPerbaikan).map((key: string, idx: number) => {
+                      if (filesToDelete.includes(key)) return null;
+                      return (
+                        <div key={idx} className="mb-2 flex items-center justify-between bg-white p-1.5 rounded border border-slate-200">
+                          <a href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate max-w-[80%]">{key.split('/').pop()}</a>
+                          <button type="button" onClick={() => setFilesToDelete([...filesToDelete, key])} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
+                        </div>
+                      );
+                    })}
+                    {fileBerkasPerbaikan.length > 0 && fileBerkasPerbaikan.map((file, idx) => (
+                      <div key={idx} className="mb-2 flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200">
+                        <span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span>
+                        <button type="button" onClick={() => setFileBerkasPerbaikan(fileBerkasPerbaikan.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
                       </div>
-                    )}
-                    {fileBerkasPerbaikan.length > 0 && (
-                      <div className="mb-2 space-y-1">
-                        {fileBerkasPerbaikan.map((file, idx) => (
-                          <div key={idx} className="flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200">
-                            <span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span>
-                            <button type="button" onClick={() => setFileBerkasPerbaikan(fileBerkasPerbaikan.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <input 
-                      type="file" 
-                      multiple
-                      onChange={(e) => {
-                        if (e.target.files) {
-                          const newFiles = Array.from(e.target.files);
-                          setFileBerkasPerbaikan([...fileBerkasPerbaikan, ...newFiles]);
-                          e.target.value = ''; 
-                        }
-                      }}
-                      className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" 
-                    />
+                    ))}
+                    <input type="file" multiple onChange={(e) => { if (e.target.files) { const newFiles = Array.from(e.target.files); setFileBerkasPerbaikan([...fileBerkasPerbaikan, ...newFiles]); e.target.value = ''; } }} className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" />
                   </div>
 
                   {/* 4. PEMERIKSAAN TINDAKAN PERBAIKAN */}
                   <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">
-                      📄 Pemeriksaan Tindakan Perbaikan
-                    </p>
+                    <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">📄 Pemeriksaan Tindakan Perbaikan</p>
                     {selectedReport.berkasPemeriksaanTindakanPerbaikan && !filesToDelete.includes(selectedReport.berkasPemeriksaanTindakanPerbaikan) && (
                       <div className="mb-2 flex items-center justify-between bg-white p-1.5 rounded border border-slate-200">
-                        <a href={`/api/r2/${selectedReport.berkasPemeriksaanTindakanPerbaikan}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate max-w-[80%]">
-                          {selectedReport.berkasPemeriksaanTindakanPerbaikan.split('/').pop()}
-                        </a>
+                        <a href={`/api/r2/${selectedReport.berkasPemeriksaanTindakanPerbaikan}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline truncate max-w-[80%]">{selectedReport.berkasPemeriksaanTindakanPerbaikan.split('/').pop()}</a>
                         <button type="button" onClick={() => setFilesToDelete([...filesToDelete, selectedReport.berkasPemeriksaanTindakanPerbaikan])} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
                       </div>
                     )}
-                    {filePemeriksaan.length > 0 && (
-                      <div className="mb-2 space-y-1">
-                        {filePemeriksaan.map((file, idx) => (
-                          <div key={idx} className="flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200">
-                            <span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span>
-                            <button type="button" onClick={() => setFilePemeriksaan(filePemeriksaan.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
-                          </div>
-                        ))}
+                    {filePemeriksaan.length > 0 && filePemeriksaan.map((file, idx) => (
+                      <div key={idx} className="mb-2 flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200">
+                        <span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span>
+                        <button type="button" onClick={() => setFilePemeriksaan(filePemeriksaan.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
                       </div>
-                    )}
-                    <input 
-                      type="file" 
-                      multiple
-                      onChange={(e) => {
-                        if (e.target.files) {
-                          const newFiles = Array.from(e.target.files);
-                          setFilePemeriksaan([...filePemeriksaan, ...newFiles]);
-                          e.target.value = ''; 
-                        }
-                      }}
-                      className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" 
-                    />
+                    ))}
+                    <input type="file" multiple onChange={(e) => { if (e.target.files) { const newFiles = Array.from(e.target.files); setFilePemeriksaan([...filePemeriksaan, ...newFiles]); e.target.value = ''; } }} className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" />
                   </div>
 
                 </div>
               </form>
             </div>
-
-            {/* FOOTER MODAL */}
             <div className="p-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50 shrink-0">
-              <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg cursor-pointer">
-                Batal
-              </button>
-              <button type="submit" form="editForm" disabled={isUpdating} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg cursor-pointer disabled:opacity-50">
-                {isUpdating ? 'Menyimpan...' : 'Upload Berkas'}
-              </button>
+              <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg cursor-pointer">Batal</button>
+              <button type="submit" form="editForm" disabled={isUpdating} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg cursor-pointer disabled:opacity-50">{isUpdating ? 'Menyimpan...' : 'Upload Berkas'}</button>
             </div>
-            
           </div>
         </div>
       )}
@@ -610,9 +501,7 @@ export default function MonitoringPage() {
                 <div>
                   <p className="text-slate-500 text-xs uppercase font-semibold">Nama Perusahaan</p>
                   <p className="font-bold text-slate-800 text-base">{selectedReport.namaPerusahaan || '-'}</p>
-                  <p className="text-xs text-slate-600 mt-1 italic">
-                    {selectedReport.alamatPerusahaan || 'Alamat belum diisi'}
-                  </p>
+                  <p className="text-xs text-slate-600 mt-1 italic">{selectedReport.alamatPerusahaan || 'Alamat belum diisi'}</p>
                 </div>
                 <div>
                   <p className="text-slate-500 text-xs uppercase font-semibold">Jenis Kegiatan</p>
@@ -620,30 +509,21 @@ export default function MonitoringPage() {
                 </div>
                 <div>
                   <p className="text-slate-500 text-xs uppercase font-semibold">Tanggal Pelaksanaan</p>
-                  <p className="font-medium text-slate-800">
-                    {selectedReport.tanggal ? new Date(selectedReport.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-'}
-                  </p>
+                  <p className="font-medium text-slate-800">{selectedReport.tanggal ? new Date(selectedReport.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-'}</p>
                 </div>
                 
-                {/* --- STATUS BERKAS DI MODAL DETAIL YANG SUDAH DIPERBAIKI --- */}
                 <div>
                   <p className="text-slate-500 text-xs uppercase font-semibold">Status Berkas</p>
                   <div className="mt-1">
                     {getAutoStatus(selectedReport).isList ? (
                       <div className="flex flex-col gap-1">
-                        <span className={`inline-block whitespace-nowrap text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-md w-max ${getAutoStatus(selectedReport).warna}`}>
-                          Belum upload:
-                        </span>
+                        <span className={`inline-block whitespace-nowrap text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-md w-max ${getAutoStatus(selectedReport).warna}`}>Belum upload:</span>
                         {getAutoStatus(selectedReport).list.map((item: string, i: number) => (
-                          <span key={i} className="text-xs text-red-600 font-medium leading-tight">
-                            • {item}
-                          </span>
+                          <span key={i} className="text-xs text-red-600 font-medium leading-tight">• {item}</span>
                         ))}
                       </div>
                     ) : (
-                      <span className={`inline-block whitespace-nowrap text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-md ${getAutoStatus(selectedReport).warna}`}>
-                        {getAutoStatus(selectedReport).teks}
-                      </span>
+                      <span className={`inline-block whitespace-nowrap text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-md ${getAutoStatus(selectedReport).warna}`}>{getAutoStatus(selectedReport).teks}</span>
                     )}
                   </div>
                 </div>
@@ -654,45 +534,32 @@ export default function MonitoringPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <p className="font-semibold text-slate-700 mb-1">Hasil Kegiatan</p>
-                  <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200 whitespace-pre-wrap h-24 overflow-y-auto">
-                    {selectedReport.hasilKegiatan || '-'}
-                  </div>
+                  <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200 whitespace-pre-wrap h-24 overflow-y-auto">{selectedReport.hasilKegiatan || '-'}</div>
                 </div>
                 <div>
                   <p className="font-semibold text-slate-700 mb-1">Kendala</p>
-                  <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200 whitespace-pre-wrap h-24 overflow-y-auto">
-                    {selectedReport.kendala || '-'}
-                  </div>
+                  <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200 whitespace-pre-wrap h-24 overflow-y-auto">{selectedReport.kendala || '-'}</div>
                 </div>
               </div>
 
               <hr className="border-slate-100" />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                    📄 Surat Tugas
-                  </p>
+                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">📄 Surat Tugas</p>
                   {selectedReport.suratTugas ? (
-                    <a href={`/api/r2/${selectedReport.suratTugas}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
-                      {selectedReport.suratTugas.split('/').pop()}
-                    </a>
+                    <a href={`/api/r2/${selectedReport.suratTugas}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">{selectedReport.suratTugas.split('/').pop()}</a>
                   ) : (
                     <p className="text-xs text-slate-400 italic">Tidak ada file.</p>
                   )}
                 </div>
 
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                    📄 Berkas Kegiatan
-                  </p>
+                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">📄 Berkas Kegiatan</p>
                   {selectedReport.berkasKegiatan && selectedReport.berkasKegiatan !== '[]' ? (
                     <div className="flex flex-col gap-1">
                       {JSON.parse(selectedReport.berkasKegiatan).map((key: string, idx: number) => (
-                        <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
-                          {key.split('/').pop()}
-                        </a>
+                        <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">{key.split('/').pop()}</a>
                       ))}
                     </div>
                   ) : (
@@ -701,15 +568,11 @@ export default function MonitoringPage() {
                 </div>
 
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                    📄 Berkas Tindakan Perbaikan
-                  </p>
+                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">📄 Berkas Tindakan Perbaikan</p>
                   {selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]' ? (
                     <div className="flex flex-col gap-1">
                       {JSON.parse(selectedReport.berkasPerbaikan).map((key: string, idx: number) => (
-                        <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
-                          {key.split('/').pop()}
-                        </a>
+                        <a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">{key.split('/').pop()}</a>
                       ))}
                     </div>
                   ) : (
@@ -718,27 +581,19 @@ export default function MonitoringPage() {
                 </div>
 
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                    📄 Pemeriksaan Tindakan Perbaikan
-                  </p>
+                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">📄 Pemeriksaan Tindakan Perbaikan</p>
                   {selectedReport.berkasPemeriksaanTindakanPerbaikan ? (
-                    <a href={`/api/r2/${selectedReport.berkasPemeriksaanTindakanPerbaikan}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
-                      {selectedReport.berkasPemeriksaanTindakanPerbaikan.split('/').pop()}
-                    </a>
+                    <a href={`/api/r2/${selectedReport.berkasPemeriksaanTindakanPerbaikan}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">{selectedReport.berkasPemeriksaanTindakanPerbaikan.split('/').pop()}</a>
                   ) : (
                     <p className="text-xs text-slate-400 italic">Tidak ada file.</p>
                   )}
                 </div>
-
               </div>
 
               <hr className="border-slate-100" />
 
               <div className="mt-6">
-                <p className="font-bold text-slate-800 mb-6 uppercase tracking-wide border-l-4 border-slate-800 pl-3">
-                  V. Tanda Tangan Pelaksana
-                </p>
-                
+                <p className="font-bold text-slate-800 mb-6 uppercase tracking-wide border-l-4 border-slate-800 pl-3">V. Tanda Tangan Pelaksana</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                   {parsePetugas(selectedReport.petugasPelaksana).map((petugas: any, idx: number) => (
                     <div key={idx} className="flex flex-col items-center justify-end text-center h-40">
@@ -747,9 +602,7 @@ export default function MonitoringPage() {
                           src={`/tanda-tangan/${petugas.namaFileTtd}`} 
                           alt={`TTD ${petugas.nama}`}
                           className="max-h-20 object-contain"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
                       </div>
                       <div className="w-full border-t-2 border-slate-800 mb-2"></div>
@@ -759,16 +612,10 @@ export default function MonitoringPage() {
                   ))}
                 </div>
               </div>
-
             </div>
 
             <div className="p-4 border-t border-slate-200 bg-slate-50 text-right">
-              <button 
-                onClick={() => setIsViewModalOpen(false)} 
-                className="px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-700 rounded-lg cursor-pointer"
-              >
-                Tutup
-              </button>
+              <button onClick={() => setIsViewModalOpen(false)} className="px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-700 rounded-lg cursor-pointer">Tutup</button>
             </div>
           </div>
         </div>
@@ -779,14 +626,10 @@ export default function MonitoringPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm">
             <h3 className="text-lg font-bold text-slate-800 mb-2">Hapus Laporan?</h3>
-            <p className="text-slate-500 text-sm mb-6">
-              Laporan <strong>{reportToDelete.jenisKegiatan}</strong> akan dihapus permanen.
-            </p>
+            <p className="text-slate-500 text-sm mb-6">Laporan <strong>{reportToDelete.jenisKegiatan}</strong> akan dihapus permanen.</p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setIsDeleteModalOpen(false)} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Batal</button>
-              <button onClick={confirmDelete} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg cursor-pointer">
-                {isDeleting ? 'Menghapus...' : 'Hapus'}
-              </button>
+              <button onClick={confirmDelete} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg cursor-pointer">{isDeleting ? 'Menghapus...' : 'Hapus'}</button>
             </div>
           </div>
         </div>

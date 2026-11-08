@@ -26,7 +26,7 @@ export async function GET(
   }
 }
 
-// DELETE: Menghapus data berdasarkan ID
+// DELETE: Menghapus data berdasarkan ID (DIPERBAIKI)
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -37,11 +37,29 @@ export async function DELETE(
     if (!id) return Response.json({ error: "ID tidak valid" }, { status: 400 });
 
     const db = getDb();
-    await db.delete(reports).where(eq(reports.id, Number(id)));
+    
+    // Jalankan delete dan ambil data yang terhapus untuk memastikan berhasil
+    const deletedData = await db
+      .delete(reports)
+      .where(eq(reports.id, Number(id)))
+      .returning({ id: reports.id });
+
+    // Jika array kosong, berarti tidak ada data yang terhapus (ID tidak ditemukan)
+    if (deletedData.length === 0) {
+      return Response.json({ 
+        status: "error", 
+        message: `Gagal menghapus. Data laporan tidak ditemukan di database.` 
+      }, { status: 404 });
+    }
+
     return Response.json({ status: "success", message: "Laporan berhasil dihapus" });
   } catch (error: any) {
     console.error("Gagal menghapus:", error);
-    return Response.json({ error: error.message }, { status: 500 });
+    // Menampilkan pesan error database (misal: FOREIGN KEY constraint)
+    return Response.json({ 
+      status: "error", 
+      message: `Gagal menghapus: ${error.message}` 
+    }, { status: 500 });
   }
 }
 
@@ -57,7 +75,6 @@ export async function PUT(
 
     const formData = await request.formData();
     
-    // Ambil SEMUA data teks, termasuk petugasPelaksana
     const namaPerusahaan = (formData.get('namaPerusahaan') as string) || "";
     const alamatPerusahaan = (formData.get('alamatPerusahaan') as string) || "";
     const jenisKegiatan = (formData.get('jenisKegiatan') as string) || "";
@@ -73,7 +90,7 @@ export async function PUT(
       jenisKegiatan,
       tanggal,
       noSurat,
-      petugasPelaksana, // Pastikan ini masuk
+      petugasPelaksana,
       hasilKegiatan,
       kendala,
     };
@@ -89,7 +106,6 @@ export async function PUT(
       return key;
     };
 
-    // Update file hanya jika ada file baru
     const fileSuratTugas = formData.get('suratTugas') as File | null;
     if (fileSuratTugas && fileSuratTugas.size > 0) {
       updateData.suratTugas = await uploadToR2(fileSuratTugas, 'surat-tugas');
