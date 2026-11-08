@@ -53,8 +53,8 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
       </div>
 
       {/* HALAMAN 2: ISI LAPORAN */}
-      {/* KUNCI: px-[2cm] untuk margin kiri-kanan, pt-8 untuk jarak atas */}
-      <div className="px-[2cm] pt-8">
+      {/* KUNCI: pt-8 untuk jarak atas agar tidak menempel ke batas kertas */}
+      <div className="pt-8">
         <div className="w-full text-center mb-8">
           <h3 className="font-bold uppercase text-[12pt] leading-tight">
             LAPORAN PERJALANAN DINAS<br/>KEGIATAN SURVAILEN DAN PENGAMBILAN SAMPEL<br/>DI UNIT PENGOLAHAN IKAN
@@ -98,6 +98,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </div>
 
         {/* V. PETUGAS PELAKSANA (TABEL SEJAJAR) */}
+        {/* TAMBAHKAN mt-8 agar jika terdorong ke halaman baru, ada jarak atas */}
         <div className="mb-4 mt-8 break-inside-avoid page-break-inside-avoid">
           <h4 className="font-bold">V. Petugas Pelaksana</h4>
           <table className="w-full mt-2 border-collapse">
@@ -133,6 +134,8 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
           </table>
         </div>
 
+        {/* VI. PELAKSANAAN KEGIATAN */}
+        {/* TAMBAHKAN mt-8 agar jika terdorong ke halaman baru, ada jarak atas */}
         <div className="mb-4 mt-8">
           <h4 className="font-bold">VI. Pelaksanaan Kegiatan</h4>
           <p className="indent-8 mt-1">
@@ -141,6 +144,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </div>
 
         {/* HASIL KEGIATAN & KENDALA */}
+        {/* TAMBAHKAN mt-8 agar jika terdorong ke halaman baru, ada jarak atas */}
         <div className="mb-4 mt-8">
           <h4 className="font-bold">VII. Hasil Kegiatan dan Kendala</h4>
           <div className="mt-2">
@@ -153,6 +157,8 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
           </div>
         </div>
 
+        {/* VIII. PENUTUP */}
+        {/* TAMBAHKAN mt-8 agar jika terdorong ke halaman baru, ada jarak atas */}
         <div className="mb-4 mt-8">
           <h4 className="font-bold">VIII. Penutup</h4>
           <p className="indent-8 mt-1">
