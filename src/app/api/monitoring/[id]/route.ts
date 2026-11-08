@@ -27,7 +27,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     const db = getDb();
     
-    // 1. AMBIL DATA LAMA LANGSUNG DARI DATABASE (Anti-Gagal)
+    // 1. AMBIL DATA LAMA DARI DB
     const existingData = await db.select().from(reports).where(eq(reports.id, id)).limit(1);
     if (existingData.length === 0) {
       return Response.json({ status: "error", message: "Laporan tidak ditemukan di DB." }, { status: 404 });
@@ -36,16 +36,15 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     const updateData: any = {};
 
-    // 2. PROSES SURAT TUGAS (Tunggal)
+    // 2. PROSES SURAT TUGAS
     const newSuratTugas = formData.getAll('suratTugas') as File[];
     if (newSuratTugas.length > 0 && newSuratTugas[0].size > 0) {
       updateData.suratTugas = await uploadToR2(newSuratTugas[0], 'surat-tugas');
     } else {
-      // Jika tidak ada file baru, gunakan data lama dari DB
       updateData.suratTugas = currentReport.suratTugas; 
     }
 
-    // 3. PROSES BERKAS KEGIATAN (Array/JSON)
+    // 3. PROSES BERKAS KEGIATAN
     const newBerkasKegiatan = formData.getAll('berkasKegiatan') as File[];
     if (newBerkasKegiatan.length > 0 && newBerkasKegiatan[0].size > 0) {
       const keys = [];
@@ -57,7 +56,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       updateData.berkasKegiatan = currentReport.berkasKegiatan;
     }
 
-    // 4. PROSES BERKAS PERBAIKAN (Array/JSON)
+    // 4. PROSES BERKAS PERBAIKAN
     const newBerkasPerbaikan = formData.getAll('berkasPerbaikan') as File[];
     if (newBerkasPerbaikan.length > 0 && newBerkasPerbaikan[0].size > 0) {
       const keys = [];
@@ -69,7 +68,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       updateData.berkasPerbaikan = currentReport.berkasPerbaikan;
     }
 
-    // 5. PROSES PEMERIKSAAN TINDAKAN PERBAIKAN (Tunggal)
+    // 5. PROSES PEMERIKSAAN TINDAKAN PERBAIKAN
     const newPemeriksaan = formData.getAll('berkasPemeriksaanTindakanPerbaikan') as File[];
     if (newPemeriksaan.length > 0 && newPemeriksaan[0].size > 0) {
       updateData.berkasPemeriksaanTindakanPerbaikan = await uploadToR2(newPemeriksaan[0], 'pemeriksaan-perbaikan');
@@ -77,9 +76,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       updateData.berkasPemeriksaanTindakanPerbaikan = currentReport.berkasPemeriksaanTindakanPerbaikan;
     }
 
-    // 6. UPDATE DATABASE
+    // 6. UPDATE DATABASE (TUNGGU SAMPAI SELESAI)
     await db.update(reports).set(updateData).where(eq(reports.id, id));
 
+    // Baru kirim balasan setelah DB 100% selesai
     return Response.json({ status: "success", message: "Berhasil diperbarui" });
     
   } catch (error: any) {

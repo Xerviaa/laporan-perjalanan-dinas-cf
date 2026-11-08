@@ -51,7 +51,6 @@ export default function MonitoringPage() {
 
   const fetchReports = async () => {
     try {
-      // Jangan set loading true di sini agar tabel tidak berkedip saat update background
       const res = await fetch('/api/reports', { cache: 'no-store' }); 
       const data = await res.json();
       if (data.status === 'success') {
@@ -142,7 +141,7 @@ export default function MonitoringPage() {
         setIsDeleteModalOpen(false);
         showToast('Laporan berhasil dihapus!', 'success');
         
-        // Optimistic Delete: Langsung hapus dari tampilan
+        // Optimistic Delete: Langsung hilangkan dari tabel
         setReports((prev) => prev.filter(r => r.id !== reportToDelete.id));
         
         // Sinkronisasi background
@@ -176,7 +175,7 @@ export default function MonitoringPage() {
       formData.append('filesToDelete', JSON.stringify(filesToDelete));
     }
 
-    // Data lama (sebagai fallback tambahan, walaupun API baru kita sudah pintar)
+    // Data lama (sebagai fallback)
     if (selectedReport.suratTugas) formData.append('oldSuratTugas', selectedReport.suratTugas);
     if (selectedReport.berkasKegiatan && selectedReport.berkasKegiatan !== '[]') formData.append('oldBerkasKegiatan', selectedReport.berkasKegiatan);
     if (selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]') formData.append('oldBerkasPerbaikan', selectedReport.berkasPerbaikan);
@@ -192,25 +191,9 @@ export default function MonitoringPage() {
         setIsEditModalOpen(false);
         showToast('Berkas berhasil di-upload!', 'success');
         
-        // --- OPTIMISTIC UI ---
-        // 1. Buat salinan data laporan
-        const updatedReport = { ...selectedReport };
+        // PERBAIKAN: Tunggu fetchReports selesai sepenuhnya sebelum UI berubah
+        await fetchReports(); 
         
-        // 2. Update state secara lokal berdasarkan file yang baru di-upload
-        // (Cukup isi dengan string dummy agar dianggap "ada file")
-        if (fileSuratTugas.length > 0) updatedReport.suratTugas = 'new-file-uploaded.pdf';
-        if (fileBerkasKegiatan.length > 0) updatedReport.berkasKegiatan = '["new-file-uploaded.pdf"]';
-        if (fileBerkasPerbaikan.length > 0) updatedReport.berkasPerbaikan = '["new-file-uploaded.pdf"]';
-        if (filePemeriksaan.length > 0) updatedReport.berkasPemeriksaanTindakanPerbaikan = 'new-file-uploaded.pdf';
-
-        // 3. Update state utama (tabel langsung berubah saat itu juga!)
-        setReports((prev) => 
-          prev.map((r) => r.id === selectedReport.id ? updatedReport : r)
-        );
-
-        // 4. Ambil data asli dari DB di belakang layar (Sinkronisasi)
-        setTimeout(() => fetchReports(), 1000); 
-
       } else {
         const errorData = await res.json();
         console.error("Pesan dari API:", errorData);
