@@ -187,7 +187,10 @@ export default function MonitoringPage() {
       if (res.ok) {
         setIsEditModalOpen(false);
         showToast('Berkas berhasil di-upload!', 'success');
-        setTimeout(() => { fetchReports(); }, 500);
+        
+        // PERBAIKAN: Panggil fetchReports secara langsung (await) agar real-time
+        await fetchReports(); 
+        
       } else {
         // TAMPILKAN ERROR DARI API
         const errorData = await res.json();
