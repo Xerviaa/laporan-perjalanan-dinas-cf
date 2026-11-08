@@ -13,9 +13,7 @@ export default function ArsipPage() {
   const [selectedYear, setSelectedYear] = useState<string | null>(null);
   const [openMonths, setOpenMonths] = useState<string[]>([]);
   
-  // State Hapus & Copy
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  // State Copy Link
   const [copiedId, setCopiedId] = useState<number | null>(null);
 
   // --- STATE UNTUK MODAL EDIT ---
@@ -126,29 +124,6 @@ export default function ArsipPage() {
     }
   };
 
-  // --- FUNGSI HAPUS ---
-  const confirmDelete = async () => {
-    if (!deleteId) return;
-    
-    const previousReports = [...reports];
-    setReports(reports.filter(r => r.id !== deleteId));
-    setDeleteId(null);
-    setIsDeleting(true);
-
-    try {
-      const res = await fetch(`/api/reports/${deleteId}`, { method: 'DELETE' });
-      if (!res.ok) {
-        setReports(previousReports);
-        alert('Gagal menghapus laporan dari server');
-      }
-    } catch (error) {
-      setReports(previousReports);
-      alert('Terjadi kesalahan jaringan saat menghapus');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
   // --- FUNGSI COPY LINK ---
   const handleCopyLink = (id: number) => {
     const url = `${window.location.origin}/cetak/${id}`;
@@ -159,8 +134,6 @@ export default function ArsipPage() {
 
   // --- FUNGSI DOWNLOAD (BUKA HALAMAN CETAK MODE PDF) ---
   const handleDownload = (id: number) => {
-    // Buka halaman cetak dengan parameter ?mode=pdf
-    // Ini akan otomatis memicu dialog Print di browser
     window.open(`/cetak/${id}?mode=pdf`, '_blank');
   };
 
@@ -335,15 +308,10 @@ export default function ArsipPage() {
                                           {jenis}
                                         </td>
 
-                                        {/* KOLOM 5: AKSI */}
+                                        {/* KOLOM 5: AKSI (TANPA TOMBOL HAPUS) */}
                                         <td className="px-4 py-3">
                                           <div className="flex items-center justify-center gap-1 md:gap-2">
                                             
-                                            {/* Tombol Hapus */}
-                                            <button onClick={() => setDeleteId(report.id)} title="Hapus" className="p-1.5 bg-slate-100 text-slate-500 rounded-md hover:bg-red-50 hover:text-red-600 cursor-pointer">
-                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                                            </button>
-
                                             {/* Tombol Copy Link */}
                                             <button onClick={() => handleCopyLink(report.id)} title="Salin Link" className={`p-1.5 rounded-md cursor-pointer ${copiedId === report.id ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                                               {copiedId === report.id ? <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> : <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>}
@@ -395,21 +363,7 @@ export default function ArsipPage() {
         </button>
       )}
 
-      {/* MODAL KONFIRMASI HAPUS */}
-      {deleteId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm">
-            <h3 className="text-lg font-bold text-slate-800 mb-2">Hapus Laporan?</h3>
-            <p className="text-slate-500 text-sm mb-6">Laporan ini akan dihapus permanen.</p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setDeleteId(null)} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Batal</button>
-              <button onClick={confirmDelete} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg cursor-pointer">{isDeleting ? 'Menghapus...' : 'Hapus'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL EDIT (FORM EDIT) */}
+      {/* MODAL EDIT (FORM EDIT) - TETAP ADA */}
       {editId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
