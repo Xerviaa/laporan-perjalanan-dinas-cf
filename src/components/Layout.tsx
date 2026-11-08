@@ -106,13 +106,13 @@ export default function Layout({ children }: { children: ReactNode }) {
         md:relative md:translate-x-0
       `}>
         
-        {/* Area Logo & Nama Aplikasi */}
+        {/* Area Logo & Nama Aplikasi - DIPERBARUI */}
         <div className="h-56 flex flex-col items-center justify-center border-b border-slate-600/50 bg-[#1a252f] p-3">
-          <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-slate-600/50 shadow-lg mb-3 bg-white p-1">
+          <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-slate-600/50 shadow-lg mb-3 bg-white p-1 flex items-center justify-center">
             <img 
               src="/logo-monica.png" 
               alt="Logo MONICA IMUT" 
-              className="w-full h-full object-contain" 
+              className="w-full h-full object-contain scale-110 rounded-full" 
             />
           </div>
           <h1 className="text-lg font-bold tracking-widest text-slate-100 text-center leading-tight">MONICA IMUT</h1>
@@ -197,14 +197,14 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </main>
 
-      {/* --- POPUP INSTALL PWA --- */}
+      {/* --- POPUP INSTALL PWA - DIPERBARUI --- */}
       {showInstallBtn && (
         <div className="fixed bottom-4 right-4 z-50 bg-white p-3 rounded-xl shadow-2xl border border-slate-200 flex items-center gap-3 animate-bounce-slow">
           <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0 overflow-hidden p-1 border border-slate-200">
             <img 
               src="/logo-monica.png" 
               alt="Logo MONICA IMUT" 
-              className="w-full h-full object-contain" 
+              className="w-full h-full object-contain scale-110 rounded-full" 
             />
           </div>
           <div>
