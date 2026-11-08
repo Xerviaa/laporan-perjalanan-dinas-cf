@@ -47,7 +47,6 @@ export default function MonitoringDashboardPage() {
     setIsRefreshing(true);
     const success = await fetchReports();
     
-    // Beri jeda sedikit agar animasi spin terlihat
     setTimeout(() => {
       setIsRefreshing(false);
       if (success) {
@@ -60,7 +59,7 @@ export default function MonitoringDashboardPage() {
 
   if (loading) return <Layout><div className="p-10 text-center text-slate-500 animate-pulse">Memuat Dashboard...</div></Layout>;
 
-  // --- LOGIKA PERHITUNGAN DATA (DIPERBARUI) ---
+  // --- LOGIKA PERHITUNGAN DATA ---
   const totalKegiatan = reports.length;
 
   let berkasLengkap = 0;
@@ -68,7 +67,6 @@ export default function MonitoringDashboardPage() {
   let belumLengkap = 0;
 
   reports.forEach((report) => {
-    // Cek semua 4 file
     const hasSuratTugas = report.suratTugas && report.suratTugas !== '[]';
     const hasBerkasKegiatan = report.berkasKegiatan && report.berkasKegiatan !== '[]';
     const hasBerkasPerbaikan = report.berkasPerbaikan && report.berkasPerbaikan !== '[]';
@@ -177,10 +175,10 @@ export default function MonitoringDashboardPage() {
           </div>
         </div>
 
-        {/* KARTU RINGKASAN GAYA BARU */}
+        {/* KARTU RINGKASAN (URUTAN & WARNA DIPERBARUI) */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           
-          {/* Total */}
+          {/* 1. Total */}
           <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
             <div>
@@ -192,7 +190,7 @@ export default function MonitoringDashboardPage() {
             </div>
           </div>
 
-          {/* Berkas Lengkap */}
+          {/* 2. Berkas Lengkap */}
           <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
             <div>
@@ -204,24 +202,24 @@ export default function MonitoringDashboardPage() {
             </div>
           </div>
 
-          {/* Belum Ada Berkas */}
+          {/* 3. Belum Lengkap (Warna Kuning - Posisi ke-3) */}
           <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>
             <div>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Belum Ada Berkas</p>
-              <p className="text-4xl font-black text-slate-800">{belumAdaBerkas}</p>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Belum Lengkap</p>
+              <p className="text-4xl font-black text-slate-800">{belumLengkap}</p>
             </div>
             <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center text-2xl">
               ⏳
             </div>
           </div>
 
-          {/* Belum Lengkap */}
+          {/* 4. Belum Ada Berkas (Warna Merah - Posisi Paling Ujung) */}
           <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
             <div>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Belum Lengkap</p>
-              <p className="text-4xl font-black text-slate-800">{belumLengkap}</p>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Belum Ada Berkas</p>
+              <p className="text-4xl font-black text-slate-800">{belumAdaBerkas}</p>
             </div>
             <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center text-2xl">
               ⚠️
@@ -258,7 +256,6 @@ export default function MonitoringDashboardPage() {
             <div className="p-6 border-b border-slate-50 flex justify-between items-center">
               <h2 className="font-extrabold text-slate-800 text-lg flex items-center gap-2">
                 <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center">
-                  {/* Ikon Piala / Penghargaan */}
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
                     <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
@@ -283,9 +280,9 @@ export default function MonitoringDashboardPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {capaianSertifikasi.map((item, idx) => {
-                    let strokeColor = '#ef4444'; // red
-                    if (item.persentase >= 80) strokeColor = '#10b981'; // emerald
-                    else if (item.persentase >= 40) strokeColor = '#f59e0b'; // amber
+                    let strokeColor = '#ef4444'; 
+                    if (item.persentase >= 80) strokeColor = '#10b981'; 
+                    else if (item.persentase >= 40) strokeColor = '#f59e0b'; 
 
                     return (
                       <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
