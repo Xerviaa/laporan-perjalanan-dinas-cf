@@ -6,7 +6,13 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
-    const id = Number(resolvedParams.id);
+    // KEMBALIKAN KE NUMBER KARENA DATABASE ANDA INTEGER
+    const id = Number(resolvedParams.id); 
+    
+    if (isNaN(id)) {
+      return Response.json({ status: "error", message: "ID tidak valid" }, { status: 400 });
+    }
+
     const formData = await request.formData();
 
     const { env } = getCloudflareContext();
@@ -24,15 +30,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const db = getDb();
     const updateData: any = {};
 
-    // =============================================
-    // FUNGSI PEMBERSIH DATA (SUPPORT STRING & ARRAY)
-    // =============================================
     const extractCleanFiles = (data: any): string[] => {
       if (!data) return [];
-      
       let str = String(data).trim();
-      
-      // Jika formatnya JSON Array (mengandung [ dan ])
       if (str.startsWith('[') && str.endsWith(']')) {
         try {
           const parsed = JSON.parse(str);
@@ -41,49 +41,31 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
           }
         } catch (e) { }
       }
-      
-      // Jika formatnya string biasa (hanya 1 file)
-      // Hapus sisa karakter [, ], " jika ada
       str = str.replace(/[\[\]"]/g, '').trim();
-      
-      // Pisahkan berdasarkan koma (jika ada lebih dari 1)
       return str.split(',').map(s => s.trim()).filter(Boolean);
     };
 
-    // =============================================
-    // 1. AMBIL DATA LAMA
-    // =============================================
     const oldSuratTugas = extractCleanFiles(formData.get('oldSuratTugas'));
     const oldBerkasKegiatan = extractCleanFiles(formData.get('oldBerkasKegiatan'));
     const oldBerkasPerbaikan = extractCleanFiles(formData.get('oldBerkasPerbaikan'));
     const oldBerkasPemeriksaan = extractCleanFiles(formData.get('oldBerkasPemeriksaan'));
 
-    // =============================================
-    // 2. AMBIL DAFTAR FILE YANG AKAN DIHAPUS
-    // =============================================
     const filesToDeleteStr = formData.get('filesToDelete') as string;
     const filesToDelete: string[] = filesToDeleteStr ? extractCleanFiles(filesToDeleteStr) : [];
 
-    // =============================================
-    // 3. PROSES SURAT TUGAS
-    // =============================================
+    // 1. SURAT TUGAS
     const filesSuratTugas = formData.getAll('suratTugas') as File[];
     let finalSuratTugas: string[] = oldSuratTugas.filter((key) => !filesToDelete.includes(key));
-    
     for (const file of filesSuratTugas) {
       if (file.size > 0) {
         const key = await uploadToR2(file, 'surat-tugas');
         finalSuratTugas.push(key);
       }
     }
-    // Simpan sebagai JSON Array
     updateData.suratTugas = finalSuratTugas.length > 0 ? JSON.stringify(finalSuratTugas) : null;
 
-    // =============================================
-    // 4. PROSES BERKAS KEGIATAN
-    // =============================================
+    // 2. BERKAS KEGIATAN
     let finalBerkasKegiatan: string[] = oldBerkasKegiatan.filter((key) => !filesToDelete.includes(key));
-    
     const filesBerkasKegiatan = formData.getAll('berkasKegiatan') as File[];
     for (const file of filesBerkasKegiatan) {
       if (file.size > 0) {
@@ -93,11 +75,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
     updateData.berkasKegiatan = finalBerkasKegiatan.length > 0 ? JSON.stringify(finalBerkasKegiatan) : null;
 
-    // =============================================
-    // 5. PROSES BERKAS PERBAIKAN
-    // =============================================
+    // 3. BERKAS PERBAIKAN
     let finalBerkasPerbaikan: string[] = oldBerkasPerbaikan.filter((key) => !filesToDelete.includes(key));
-    
     const filesBerkasPerbaikan = formData.getAll('berkasPerbaikan') as File[];
     for (const file of filesBerkasPerbaikan) {
       if (file.size > 0) {
@@ -107,11 +86,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
     updateData.berkasPerbaikan = finalBerkasPerbaikan.length > 0 ? JSON.stringify(finalBerkasPerbaikan) : null;
 
-    // =============================================
-    // 6. PROSES PEMERIKSAAN TINDAKAN PERBAIKAN
-    // =============================================
+    // 4. PEMERIKSAAN
     let finalBerkasPemeriksaan: string[] = oldBerkasPemeriksaan.filter((key) => !filesToDelete.includes(key));
-    
     const filesPemeriksaan = formData.getAll('berkasPemeriksaanTindakanPerbaikan') as File[];
     for (const file of filesPemeriksaan) {
       if (file.size > 0) {
@@ -121,12 +97,18 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
     updateData.berkasPemeriksaanTindakanPerbaikan = finalBerkasPemeriksaan.length > 0 ? JSON.stringify(finalBerkasPemeriksaan) : null;
 
-    // =============================================
-    // 7. UPDATE DATABASE
-    // =============================================
-    await db.update(reports)
+    // --- PROSES UPDATE DATABASE ---
+    const updatedData = await db.update(reports)
       .set(updateData)
-      .where(eq(reports.id, id));
+      .where(eq(reports.id, id))
+      .returning({ id: reports.id });
+
+    if (updatedData.length === 0) {
+      return Response.json({ 
+        status: "error", 
+        message: `Gagal menyimpan. Laporan dengan ID ${id} tidak ditemukan.` 
+      }, { status: 404 });
+    }
 
     return Response.json({ status: "success", message: "Berhasil diperbarui" });
   } catch (error: any) {

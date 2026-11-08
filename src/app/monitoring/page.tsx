@@ -64,7 +64,6 @@ export default function MonitoringPage() {
     }
   };
 
-  // --- FUNGSI STATUS YANG SUDAH DIPERBAIKI ---
   const getAutoStatus = (report: any) => {
     const missingFiles: string[] = [];
 
@@ -130,7 +129,6 @@ export default function MonitoringPage() {
     setIsDeleteModalOpen(true);
   };
 
-  // --- FUNGSI HAPUS YANG SUDAH DIPERBAIKI (MENAMPILKAN ERROR ASLI) ---
   const confirmDelete = async () => {
     if (!reportToDelete) return;
     
@@ -145,7 +143,6 @@ export default function MonitoringPage() {
         showToast('Laporan berhasil dihapus!', 'success');
         fetchReports();
       } else {
-        // Menangkap pesan error asli dari API
         const errorData = await res.json();
         console.error("Pesan dari API:", errorData);
         showToast(errorData.message || errorData.error || 'Gagal menghapus laporan.', 'error');
@@ -164,15 +161,18 @@ export default function MonitoringPage() {
     setIsUpdating(true);
     const formData = new FormData();
     
+    // Kirim file baru
     if (fileSuratTugas.length > 0) fileSuratTugas.forEach(file => formData.append('suratTugas', file));
     if (fileBerkasKegiatan.length > 0) fileBerkasKegiatan.forEach(file => formData.append('berkasKegiatan', file));
     if (fileBerkasPerbaikan.length > 0) fileBerkasPerbaikan.forEach(file => formData.append('berkasPerbaikan', file));
     if (filePemeriksaan.length > 0) filePemeriksaan.forEach(file => formData.append('berkasPemeriksaanTindakanPerbaikan', file));
 
+    // Kirim file yang akan dihapus
     if (filesToDelete.length > 0) {
       formData.append('filesToDelete', JSON.stringify(filesToDelete));
     }
 
+    // Kirim data file lama (agar backend bisa menggabungkan)
     if (selectedReport.suratTugas) formData.append('oldSuratTugas', selectedReport.suratTugas);
     if (selectedReport.berkasKegiatan && selectedReport.berkasKegiatan !== '[]') formData.append('oldBerkasKegiatan', selectedReport.berkasKegiatan);
     if (selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]') formData.append('oldBerkasPerbaikan', selectedReport.berkasPerbaikan);
@@ -189,7 +189,10 @@ export default function MonitoringPage() {
         showToast('Berkas berhasil di-upload!', 'success');
         setTimeout(() => { fetchReports(); }, 500);
       } else {
-        showToast('Gagal meng-upload berkas.', 'error');
+        // TAMPILKAN ERROR DARI API
+        const errorData = await res.json();
+        console.error("Pesan dari API:", errorData);
+        showToast(errorData.message || errorData.error || 'Gagal meng-upload berkas.', 'error');
       }
     } catch (error) {
       showToast('Terjadi kesalahan jaringan.', 'error');
