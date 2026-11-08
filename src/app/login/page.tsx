@@ -49,12 +49,12 @@ export default function LoginPage() {
         
         <div className="relative z-10 text-center flex flex-col items-center">
           
-          {/* Logo Instansi - DIPERBARUI ZOOMNYA */}
+          {/* Logo Instansi - DIPERBARUI */}
           <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-slate-600/50 shadow-2xl mb-8 bg-white p-2 flex items-center justify-center">
             <img 
               src="/logo-monica.png" 
               alt="Logo MONICA IMUT" 
-              className="w-full h-full object-contain scale-[1.35] rounded-full" 
+              className="w-full h-full object-contain scale-110 rounded-full" 
             />
           </div>
 
