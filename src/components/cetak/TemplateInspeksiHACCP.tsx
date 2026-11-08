@@ -53,7 +53,8 @@ export default function TemplateInspeksiHACCP({ data }: { data: any }) {
       </div>
 
       {/* HALAMAN 2: ISI LAPORAN */}
-      <div className="mt-10">
+      {/* KUNCI: pt-8 untuk jarak atas saat print */}
+      <div className="pt-8">
         <div className="w-full text-center mb-8">
           <h3 className="font-bold uppercase text-[12pt] leading-tight">
             LAPORAN PERJALANAN DINAS<br/>KEGIATAN INSPEKSI PENERAPAN HACCP<br/>UNIT PENGOLAHAN IKAN
@@ -122,9 +123,7 @@ export default function TemplateInspeksiHACCP({ data }: { data: any }) {
           </p>
         </div>
 
-        {/* ========================================= */}
-        {/* TANDA TANGAN (TRICK CSS BACKGROUND)       */}
-        {/* ========================================= */}
+        {/* TANDA TANGAN */}
         <div className="mt-8 mb-8 ml-32">
           <p>Petugas Pelaksana :</p>
           <div className="mt-4 space-y-4">
@@ -157,9 +156,7 @@ export default function TemplateInspeksiHACCP({ data }: { data: any }) {
           </div>
         </div>
 
-        {/* ========================================= */}
-        {/* DOKUMENTASI (TRICK CSS BACKGROUND)        */}
-        {/* ========================================= */}
+        {/* DOKUMENTASI */}
         <div className="page-break-before-always mt-10 pt-10">
           <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
           <div className="grid grid-cols-2 gap-4">

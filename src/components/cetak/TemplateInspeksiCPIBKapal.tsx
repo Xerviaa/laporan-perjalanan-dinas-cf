@@ -36,38 +36,25 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
   return (
     <div className="text-[11pt] leading-relaxed text-justify text-black" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
       
-      {/* ========================================= */}
-      {/* HALAMAN 1: COVER                          */}
-      {/* ========================================= */}
+      {/* HALAMAN 1: COVER */}
       <div className="w-full h-[24cm] relative page-break-after-always block">
-        
-        {/* BAGIAN ATAS: JUDUL */}
         <div className="mt-10 w-full text-center">
           <h1 className="w-full text-center text-[16pt] font-bold uppercase leading-tight">
             PELAPORAN PERJALANAN DINAS
           </h1>
-          
           <h2 className="w-full text-center text-[14pt] font-bold uppercase leading-snug mt-4">
-            KEGIATAN INSPEKSI CARA PENANGANAN IKAN<br/>
-            YANG BAIK (CPIB) DI ATAS KAPAL
+            KEGIATAN INSPEKSI CARA PENANGANAN IKAN<br/>YANG BAIK (CPIB) DI ATAS KAPAL
           </h2>
         </div>
 
-        {/* BAGIAN TENGAH: LOGO, PERUSAHAAN, TANGGAL */}
         <div className="absolute top-[50%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full flex flex-col items-center text-center">
-          
-          {/* Logo KKP */}
           <img src="/logo-kkp.png" alt="Logo KKP" className="w-40 h-40 object-contain mx-auto mb-8" />
-
-          {/* Nama Perusahaan & Tanggal */}
           <div className="flex flex-col items-center gap-1 tracking-tight">
             <p className="font-bold text-[14pt] uppercase">{formatNamaPerusahaan(data.namaPerusahaan)}</p>
             <p className="font-bold text-[14pt] uppercase">{tanggalIndo}</p>
           </div>
-
         </div>
 
-        {/* BAGIAN BAWAH: FOOTER KEMENTERIAN */}
         <div className="absolute bottom-0 w-full text-center pb-4">
           <h3 className="text-[14pt] font-bold uppercase leading-tight">
             KEMENTERIAN KELAUTAN DAN PERIKANAN<br/>
@@ -79,13 +66,10 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
         </div>
       </div>
       
-      {/* ========================================= */}
-      {/* HALAMAN 2: ISI LAPORAN                    */}
-      {/* ========================================= */}
-      {/* PERUBAHAN: pt-8 untuk jarak atas saat print */}
+      {/* HALAMAN 2: ISI LAPORAN */}
+      {/* KUNCI: pt-8 untuk jarak atas saat print */}
       <div className="w-full page-break-before-always pt-8" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
         
-        {/* JUDUL DI HALAMAN 2 */}
         <div className="w-full text-center mb-8">
           <h3 className="font-bold uppercase text-[12pt] leading-tight">
             LAPORAN PERJALANAN DINAS<br/>
@@ -107,9 +91,7 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
           </ol>
         </div>
 
-        {/* ========================================= */}
-        {/* II. PETUGAS PELAKSANA (TABEL SEJAJAR)     */}
-        {/* ========================================= */}
+        {/* II. PETUGAS PELAKSANA (TABEL SEJAJAR) */}
         <div className="mb-4 break-inside-avoid page-break-inside-avoid">
           <h4 className="font-bold">II. Petugas Pelaksana</h4>
           <table className="w-full mt-2 border-collapse">
@@ -119,16 +101,15 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
                   const match = petugas.trim().match(/(.*)\((.*)\)/);
                   const nama = match ? match[1].trim() : petugas.trim();
                   const peran = match ? match[2].trim() : 'Anggota';
-                  
                   return (
                     <tr key={index}>
                       <td className="w-[30px] align-top pb-2">
                         {String.fromCharCode(97 + index)}.
                       </td>
-                      <td className="w-[350px] align-top pb-2 pr-4">
+                      <td className="w-[60%] align-top pb-2">
                         {nama}
                       </td>
-                      <td className="align-top pb-2">
+                      <td className="w-[40%] align-top pb-2">
                         ({peran})
                       </td>
                     </tr>
@@ -137,8 +118,8 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
               ) : (
                 <tr>
                   <td className="w-[30px] align-top pb-2">a.</td>
-                  <td className="w-[350px] align-top pb-2 pr-4">-</td>
-                  <td className="align-top pb-2">-</td>
+                  <td className="w-[60%] align-top pb-2">-</td>
+                  <td className="w-[40%] align-top pb-2">-</td>
                 </tr>
               )}
             </tbody>

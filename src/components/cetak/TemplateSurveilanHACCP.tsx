@@ -53,8 +53,8 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
       </div>
 
       {/* HALAMAN 2: ISI LAPORAN */}
-      {/* TANPA pt-8 karena margin sudah diurus oleh print:p-[2cm] di page.tsx */}
-      <div>
+      {/* KUNCI: pt-8 untuk jarak atas agar tidak menempel ke batas kertas */}
+      <div className="pt-8">
         <div className="w-full text-center mb-8">
           <h3 className="font-bold uppercase text-[12pt] leading-tight">
             LAPORAN PERJALANAN DINAS<br/>KEGIATAN SURVAILEN DAN PENGAMBILAN SAMPEL<br/>DI UNIT PENGOLAHAN IKAN
@@ -97,7 +97,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
           </p>
         </div>
 
-        {/* V. PETUGAS PELAKSANA */}
+        {/* V. PETUGAS PELAKSANA (TABEL SEJAJAR) */}
         <div className="mb-4 break-inside-avoid page-break-inside-avoid">
           <h4 className="font-bold">V. Petugas Pelaksana</h4>
           <table className="w-full mt-2 border-collapse">
