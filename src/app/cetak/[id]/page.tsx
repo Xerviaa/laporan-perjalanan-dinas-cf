@@ -90,8 +90,8 @@ export default async function CetakLaporan({
           </div>
         )}
 
-        {/* KUNCI: Kembalikan print:p-[2cm] agar margin kiri-kanan ada */}
-        <div className="w-full p-[2cm] print:p-[2cm] print:w-full">
+        {/* ISI LAPORAN: HAPUS print:p-[2cm], biarkan template yang atur */}
+        <div className="w-full p-[2cm] print:p-0 print:w-full">
           {kontenLaporan}
         </div>
 
