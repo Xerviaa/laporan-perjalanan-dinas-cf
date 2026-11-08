@@ -64,19 +64,37 @@ export default function MonitoringPage() {
     }
   };
 
+  // --- FUNGSI STATUS YANG SUDAH DIPERBAIKI ---
   const getAutoStatus = (report: any) => {
-    const hasBerkasKegiatan = report.berkasKegiatan && report.berkasKegiatan !== '[]';
-    const hasBerkasPerbaikan = report.berkasPerbaikan && report.berkasPerbaikan !== '[]';
+    const missingFiles: string[] = [];
 
-    if (hasBerkasKegiatan && hasBerkasPerbaikan) {
-      return { teks: 'Berkas Lengkap', warna: 'bg-emerald-500 text-white' };
-    } else if (hasBerkasKegiatan && !hasBerkasPerbaikan) {
-      return { teks: 'Belum upload berkas perbaikan', warna: 'bg-red-500 text-white' };
-    } else if (!hasBerkasKegiatan && hasBerkasPerbaikan) {
-      return { teks: 'Belum upload berkas kegiatan', warna: 'bg-red-500 text-white' };
-    } else {
-      return { teks: 'Belum upload berkas', warna: 'bg-red-500 text-white' };
+    // Cek Surat Tugas
+    if (!report.suratTugas || report.suratTugas === '[]') {
+      missingFiles.push('Surat Tugas');
     }
+    // Cek Berkas Kegiatan
+    if (!report.berkasKegiatan || report.berkasKegiatan === '[]') {
+      missingFiles.push('Berkas Kegiatan');
+    }
+    // Cek Berkas Tindakan Perbaikan
+    if (!report.berkasPerbaikan || report.berkasPerbaikan === '[]') {
+      missingFiles.push('Berkas Tindakan Perbaikan');
+    }
+    // Cek Pemeriksaan Tindakan Perbaikan
+    if (!report.berkasPemeriksaanTindakanPerbaikan || report.berkasPemeriksaanTindakanPerbaikan === '[]') {
+      missingFiles.push('Pemeriksaan Tindakan Perbaikan');
+    }
+
+    if (missingFiles.length === 0) {
+      return { teks: 'Berkas Lengkap', warna: 'bg-emerald-500 text-white', isList: false, list: [] };
+    } 
+    
+    return { 
+      teks: 'Belum upload berkas', 
+      warna: 'bg-red-500 text-white', 
+      isList: true, 
+      list: missingFiles 
+    };
   };
 
   const filteredReports = reports.filter((report) => {
@@ -86,7 +104,12 @@ export default function MonitoringPage() {
     
     let matchStatus = true;
     if (statusFilter !== 'Semua Status') {
-      matchStatus = getAutoStatus(report).teks === statusFilter;
+      // Filter disesuaikan dengan logika baru
+      if (statusFilter === 'Berkas Lengkap') {
+        matchStatus = getAutoStatus(report).teks === 'Berkas Lengkap';
+      } else if (statusFilter === 'Belum upload berkas') {
+        matchStatus = getAutoStatus(report).isList === true;
+      }
     }
 
     return matchSearch && matchStatus;
@@ -252,9 +275,7 @@ export default function MonitoringPage() {
           >
             <option value="Semua Status">Semua Status</option>
             <option value="Berkas Lengkap">Berkas Lengkap</option>
-            <option value="Belum upload berkas">Belum upload berkas</option>
-            <option value="Belum upload berkas kegiatan">Belum upload berkas kegiatan</option>
-            <option value="Belum upload berkas perbaikan">Belum upload berkas perbaikan</option>
+            <option value="Belum upload berkas">Belum upload berkas (Ada yang kosong)</option>
           </select>
         </div>
       </div>
@@ -310,10 +331,24 @@ export default function MonitoringPage() {
                       </td>
                       <td className="px-4 py-4 text-slate-600 whitespace-nowrap">{jenisSertifikasi}</td>
                       
+                      {/* --- TAMPILAN STATUS BERKAS YANG SUDAH DIPERBAIKI --- */}
                       <td className="px-4 py-4">
-                        <span className={`inline-block whitespace-nowrap text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-md ${autoStatus.warna}`}>
-                          {autoStatus.teks}
-                        </span>
+                        {autoStatus.isList ? (
+                          <div className="flex flex-col gap-1">
+                            <span className={`inline-block whitespace-nowrap text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-md w-max ${autoStatus.warna}`}>
+                              Belum upload:
+                            </span>
+                            {autoStatus.list.map((item, i) => (
+                              <span key={i} className="text-[11px] text-red-600 font-medium leading-tight">
+                                • {item}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className={`inline-block whitespace-nowrap text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-md ${autoStatus.warna}`}>
+                            {autoStatus.teks}
+                          </span>
+                        )}
                       </td>
                       
                       <td className="px-4 py-4">
@@ -589,12 +624,27 @@ export default function MonitoringPage() {
                     {selectedReport.tanggal ? new Date(selectedReport.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-'}
                   </p>
                 </div>
+                
+                {/* --- STATUS BERKAS DI MODAL DETAIL YANG SUDAH DIPERBAIKI --- */}
                 <div>
                   <p className="text-slate-500 text-xs uppercase font-semibold">Status Berkas</p>
                   <div className="mt-1">
-                    <span className={`inline-block whitespace-nowrap text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-md ${getAutoStatus(selectedReport).warna}`}>
-                      {getAutoStatus(selectedReport).teks}
-                    </span>
+                    {getAutoStatus(selectedReport).isList ? (
+                      <div className="flex flex-col gap-1">
+                        <span className={`inline-block whitespace-nowrap text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-md w-max ${getAutoStatus(selectedReport).warna}`}>
+                          Belum upload:
+                        </span>
+                        {getAutoStatus(selectedReport).list.map((item: string, i: number) => (
+                          <span key={i} className="text-xs text-red-600 font-medium leading-tight">
+                            • {item}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className={`inline-block whitespace-nowrap text-[10px] md:text-xs font-bold px-3 py-1.5 rounded-md ${getAutoStatus(selectedReport).warna}`}>
+                        {getAutoStatus(selectedReport).teks}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

@@ -60,23 +60,28 @@ export default function MonitoringDashboardPage() {
 
   if (loading) return <Layout><div className="p-10 text-center text-slate-500 animate-pulse">Memuat Dashboard...</div></Layout>;
 
-  // --- LOGIKA PERHITUNGAN DATA ---
+  // --- LOGIKA PERHITUNGAN DATA (DIPERBARUI) ---
   const totalKegiatan = reports.length;
 
-  let selesai = 0;
-  let menungguPerbaikan = 0;
-  let belumUpload = 0;
+  let berkasLengkap = 0;
+  let belumAdaBerkas = 0;
+  let belumLengkap = 0;
 
   reports.forEach((report) => {
+    // Cek semua 4 file
+    const hasSuratTugas = report.suratTugas && report.suratTugas !== '[]';
     const hasBerkasKegiatan = report.berkasKegiatan && report.berkasKegiatan !== '[]';
     const hasBerkasPerbaikan = report.berkasPerbaikan && report.berkasPerbaikan !== '[]';
+    const hasPemeriksaan = report.berkasPemeriksaanTindakanPerbaikan && report.berkasPemeriksaanTindakanPerbaikan !== '[]';
 
-    if (hasBerkasKegiatan && hasBerkasPerbaikan) {
-      selesai++;
-    } else if (hasBerkasKegiatan && !hasBerkasPerbaikan) {
-      menungguPerbaikan++;
+    const totalFileTerisi = [hasSuratTugas, hasBerkasKegiatan, hasBerkasPerbaikan, hasPemeriksaan].filter(Boolean).length;
+
+    if (totalFileTerisi === 4) {
+      berkasLengkap++;
+    } else if (totalFileTerisi === 0) {
+      belumAdaBerkas++;
     } else {
-      belumUpload++;
+      belumLengkap++;
     }
   });
 
@@ -187,36 +192,36 @@ export default function MonitoringDashboardPage() {
             </div>
           </div>
 
-          {/* Selesai */}
+          {/* Berkas Lengkap */}
           <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
             <div>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Selesai</p>
-              <p className="text-4xl font-black text-slate-800">{selesai}</p>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Berkas Lengkap</p>
+              <p className="text-4xl font-black text-slate-800">{berkasLengkap}</p>
             </div>
             <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center text-2xl">
               ✅
             </div>
           </div>
 
-          {/* Menunggu */}
+          {/* Belum Ada Berkas */}
           <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>
             <div>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Menunggu</p>
-              <p className="text-4xl font-black text-slate-800">{menungguPerbaikan}</p>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Belum Ada Berkas</p>
+              <p className="text-4xl font-black text-slate-800">{belumAdaBerkas}</p>
             </div>
             <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center text-2xl">
               ⏳
             </div>
           </div>
 
-          {/* Belum Upload */}
+          {/* Belum Lengkap */}
           <div className="bg-white rounded-2xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
             <div>
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Belum Upload</p>
-              <p className="text-4xl font-black text-slate-800">{belumUpload}</p>
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Belum Lengkap</p>
+              <p className="text-4xl font-black text-slate-800">{belumLengkap}</p>
             </div>
             <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center text-2xl">
               ⚠️
