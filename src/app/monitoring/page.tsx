@@ -191,9 +191,23 @@ export default function MonitoringPage() {
         setIsEditModalOpen(false);
         showToast('Berkas berhasil di-upload!', 'success');
         
-        // PERBAIKAN: Tunggu fetchReports selesai sepenuhnya sebelum UI berubah
-        await fetchReports(); 
-        
+        // --- SOLUSI PAMUNGKAS: OPTIMISTIC UI + JEDA AMAN ---
+        // 1. Langsung ubah state lokal seketika (UI langsung berubah!)
+        const updatedReport = { ...selectedReport };
+        if (fileSuratTugas.length > 0) updatedReport.suratTugas = 'file-baru.pdf';
+        if (fileBerkasKegiatan.length > 0) updatedReport.berkasKegiatan = '["file-baru.pdf"]';
+        if (fileBerkasPerbaikan.length > 0) updatedReport.berkasPerbaikan = '["file-baru.pdf"]';
+        if (filePemeriksaan.length > 0) updatedReport.berkasPemeriksaanTindakanPerbaikan = 'file-baru.pdf';
+
+        setReports((prev) => 
+          prev.map((r) => r.id === selectedReport.id ? updatedReport : r)
+        );
+
+        // 2. Beri jeda 2 detik sebelum sinkronisasi, agar Database D1 selesai menulis
+        setTimeout(() => {
+          fetchReports(); // Ambil data asli setelah jeda
+        }, 2000); 
+
       } else {
         const errorData = await res.json();
         console.error("Pesan dari API:", errorData);
