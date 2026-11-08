@@ -64,22 +64,20 @@
     page-break-before: always !important;
   }
 }
+
 /* ========================================= */
 /* KUSTOMISASI CETAK SURAT TUGAS (IFRAME)    */
 /* ========================================= */
 @media print {
-  /* Hilangkan border iframe saat print */
   .pdf-container iframe {
     border: none !important;
     outline: none !important;
   }
 
-  /* Sembunyikan scrollbar di dalam iframe saat print */
   .pdf-container iframe ::-webkit-scrollbar {
     display: none !important;
   }
   
-  /* Paksa iframe tidak terpotong */
   .pdf-container iframe {
     width: 100% !important;
     height: 100% !important;

@@ -96,8 +96,8 @@ export default async function CetakLaporan({
         {/* ========================================= */}
         {/* 2. ISI LAPORAN (COVER DLL)                */}
         {/* ========================================= */}
-        {/* PERUBAHAN: print:p-0 diganti print:p-[2cm] agar ada margin saat dicetak */}
-        <div className="w-full p-[2cm] print:p-[2cm] print:w-full">
+        {/* PERUBAHAN: print:p-0 agar tidak dobel margin dengan @page */}
+        <div className="w-full p-[2cm] print:p-0 print:w-full">
           {kontenLaporan}
         </div>
 

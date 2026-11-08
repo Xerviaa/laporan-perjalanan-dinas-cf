@@ -97,9 +97,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
           </p>
         </div>
 
-        {/* ========================================= */}
-        {/* V. PETUGAS PELAKSANA (TABEL SEJAJAR)      */}
-        {/* ========================================= */}
+        {/* V. PETUGAS PELAKSANA */}
         <div className="mb-4 break-inside-avoid page-break-inside-avoid">
           <h4 className="font-bold">V. Petugas Pelaksana</h4>
           <table className="w-full mt-2 border-collapse">
@@ -112,18 +110,13 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
                   
                   return (
                     <tr key={index}>
-                      {/* Kolom 1: Abjad */}
                       <td className="w-[30px] align-top pb-2">
                         {String.fromCharCode(97 + index)}.
                       </td>
-                      
-                      {/* Kolom 2: Nama */}
-                      <td className="w-[350px] align-top pb-2 pr-4">
+                      <td className="w-[60%] align-top pb-2">
                         {nama}
                       </td>
-                      
-                      {/* Kolom 3: Peran (di kanan) */}
-                      <td className="align-top pb-2">
+                      <td className="w-[40%] align-top pb-2">
                         ({peran})
                       </td>
                     </tr>
@@ -132,8 +125,8 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
               ) : (
                 <tr>
                   <td className="w-[30px] align-top pb-2">a.</td>
-                  <td className="w-[350px] align-top pb-2 pr-4">-</td>
-                  <td className="align-top pb-2">-</td>
+                  <td className="w-[60%] align-top pb-2">-</td>
+                  <td className="w-[40%] align-top pb-2">-</td>
                 </tr>
               )}
             </tbody>
