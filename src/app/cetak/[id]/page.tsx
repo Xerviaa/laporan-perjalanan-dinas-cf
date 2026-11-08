@@ -79,6 +79,9 @@ export default async function CetakLaporan({
         style={{ overflow: 'visible' }}
       >
         
+        {/* ======================================================= */}
+        {/* 1. SURAT TUGAS (HALAMAN PERTAMA)                         */}
+        {/* ======================================================= */}
         {data.suratTugas && (
           <div className="w-[21cm] h-[29.7cm] bg-white break-after-page print:block print:w-[21cm] print:h-[29.7cm] print:p-0 print:m-0 print:overflow-hidden">
             <iframe 
@@ -90,8 +93,11 @@ export default async function CetakLaporan({
           </div>
         )}
 
-        {/* ISI LAPORAN: HAPUS print:p-[2cm], biarkan template yang atur */}
-        <div className="w-full p-[2cm] print:p-0 print:w-full">
+        {/* ========================================= */}
+        {/* 2. ISI LAPORAN (COVER DLL)                */}
+        {/* ========================================= */}
+        {/* PERUBAHAN: print:p-[2cm] agar margin kiri-kanan dan atas-bawah tetap ada */}
+        <div className="w-full p-[2cm] print:p-[2cm] print:w-full">
           {kontenLaporan}
         </div>
 
