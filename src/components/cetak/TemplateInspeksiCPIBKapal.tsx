@@ -82,8 +82,8 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
       {/* ========================================= */}
       {/* HALAMAN 2: ISI LAPORAN                    */}
       {/* ========================================= */}
-      {/* PERBAIKAN: mt-12 agar judul turun lebih lega dari batas atas kertas */}
-<div className="w-full page-break-before-always mt-12 print:mt-0" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
+      {/* PERUBAHAN: pt-8 untuk jarak atas saat print */}
+      <div className="w-full page-break-before-always pt-8" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
         
         {/* JUDUL DI HALAMAN 2 */}
         <div className="w-full text-center mb-8">
@@ -107,29 +107,42 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
           </ol>
         </div>
 
-        {/* II. PETUGAS PELAKSANA */}
+        {/* ========================================= */}
+        {/* II. PETUGAS PELAKSANA (TABEL SEJAJAR)     */}
+        {/* ========================================= */}
         <div className="mb-4 break-inside-avoid page-break-inside-avoid">
           <h4 className="font-bold">II. Petugas Pelaksana</h4>
-          <div className="mt-2 space-y-2">
-            {data.petugasPelaksana ? (
-              data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
-                const match = petugas.trim().match(/(.*)\((.*)\)/);
-                const nama = match ? match[1].trim() : petugas.trim();
-                const peran = match ? match[2].trim() : 'Anggota';
-                return (
-                  <div key={index} className="flex items-start pl-4">
-                    <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
-                    <div className="flex-1">
-                      <span className="font-semibold block">{nama}</span>
-                      <span className="text-sm italic text-gray-700">({peran})</span>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="pl-4">-</p>
-            )}
-          </div>
+          <table className="w-full mt-2 border-collapse">
+            <tbody>
+              {data.petugasPelaksana ? (
+                data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
+                  const match = petugas.trim().match(/(.*)\((.*)\)/);
+                  const nama = match ? match[1].trim() : petugas.trim();
+                  const peran = match ? match[2].trim() : 'Anggota';
+                  
+                  return (
+                    <tr key={index}>
+                      <td className="w-[30px] align-top pb-2">
+                        {String.fromCharCode(97 + index)}.
+                      </td>
+                      <td className="w-[350px] align-top pb-2 pr-4">
+                        {nama}
+                      </td>
+                      <td className="align-top pb-2">
+                        ({peran})
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td className="w-[30px] align-top pb-2">a.</td>
+                  <td className="w-[350px] align-top pb-2 pr-4">-</td>
+                  <td className="align-top pb-2">-</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
         {/* III. PENDAHULUAN */}
@@ -237,27 +250,19 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
 
                   return (
                     <tr key={index}>
-                      {/* Kolom 1: Abjad */}
                       <td className="w-[30px] align-middle pb-8">
                         {String.fromCharCode(97 + index)}.
                       </td>
-                      
-                      {/* Kolom 2: Nama */}
                       <td className="w-[250px] align-middle pb-8">
                         {namaLengkap}
                       </td>
-                      
-                      {/* Kolom 3: Kurung & TTD */}
                       <td className="align-middle pb-8 text-lg">
                         <div className="flex flex-row items-center justify-start h-[40px] gap-2">
                           <span>(</span>
-                          
-                          {/* TRIK BACKGROUND IMAGE: Gambar tidak akan bisa keluar dari kotak ini */}
                           <div 
                             className="w-[80px] h-full bg-no-repeat bg-center bg-contain"
                             style={{ backgroundImage: `url(${ttdUrl})` }}
                           ></div>
-
                           <span>)</span>
                         </div>
                       </td>

@@ -53,7 +53,8 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
       </div>
 
       {/* HALAMAN 2: ISI LAPORAN */}
-      <div className="mt-10">
+      {/* PERUBAHAN: pt-8 untuk jarak atas saat print */}
+      <div className="pt-8">
         <div className="w-full text-center mb-8">
           <h3 className="font-bold uppercase text-[12pt] leading-tight">
             LAPORAN PERJALANAN DINAS<br/>KEGIATAN SURVAILEN DAN PENGAMBILAN SAMPEL<br/>DI UNIT PENGOLAHAN IKAN
@@ -97,31 +98,46 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </div>
 
         {/* ========================================= */}
-        {/* V. PETUGAS PELAKSANA (LAYOUT VERTIKAL)    */}
+        {/* V. PETUGAS PELAKSANA (TABEL SEJAJAR)      */}
         {/* ========================================= */}
         <div className="mb-4 break-inside-avoid page-break-inside-avoid">
           <h4 className="font-bold">V. Petugas Pelaksana</h4>
-          <div className="mt-2 space-y-2">
-            {data.petugasPelaksana ? (
-              data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
-                const match = petugas.trim().match(/(.*)\((.*)\)/);
-                const nama = match ? match[1].trim() : petugas.trim();
-                const peran = match ? match[2].trim() : 'Anggota';
-                
-                return (
-                  <div key={index} className="flex items-start pl-4">
-                    <span className="w-6 shrink-0">{String.fromCharCode(97 + index)}.</span>
-                    <div className="flex-1">
-                      <span className="font-semibold block">{nama}</span>
-                      <span className="text-sm italic text-gray-700">({peran})</span>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <p className="pl-4">-</p>
-            )}
-          </div>
+          <table className="w-full mt-2 border-collapse">
+            <tbody>
+              {data.petugasPelaksana ? (
+                data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
+                  const match = petugas.trim().match(/(.*)\((.*)\)/);
+                  const nama = match ? match[1].trim() : petugas.trim();
+                  const peran = match ? match[2].trim() : 'Anggota';
+                  
+                  return (
+                    <tr key={index}>
+                      {/* Kolom 1: Abjad */}
+                      <td className="w-[30px] align-top pb-2">
+                        {String.fromCharCode(97 + index)}.
+                      </td>
+                      
+                      {/* Kolom 2: Nama */}
+                      <td className="w-[350px] align-top pb-2 pr-4">
+                        {nama}
+                      </td>
+                      
+                      {/* Kolom 3: Peran (di kanan) */}
+                      <td className="align-top pb-2">
+                        ({peran})
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td className="w-[30px] align-top pb-2">a.</td>
+                  <td className="w-[350px] align-top pb-2 pr-4">-</td>
+                  <td className="align-top pb-2">-</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
         <div className="mb-4">
@@ -151,7 +167,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
           </p>
         </div>
 
-        {/* TANDA TANGAN (TRICK CSS) */}
+        {/* TANDA TANGAN */}
         <div className="mt-8 mb-8 ml-32">
           <p>Petugas Pelaksana :</p>
           <div className="mt-4 space-y-4">
@@ -165,10 +181,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
                     <span className="w-[280px] shrink-0">{namaLengkap}</span>
                     <div className="flex items-center">
                       <span className="text-gray-600">(</span>
-                      <div 
-                        className="w-[80px] h-10 bg-no-repeat bg-contain bg-center"
-                        style={{ backgroundImage: `url(${getTtdUrl(namaLengkap)})` }}
-                      ></div>
+                      <div className="w-[80px] h-10 bg-no-repeat bg-contain bg-center" style={{ backgroundImage: `url(${getTtdUrl(namaLengkap)})` }}></div>
                       <span className="text-gray-600">)</span>
                     </div>
                   </div>
@@ -184,17 +197,14 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
           </div>
         </div>
 
-        {/* DOKUMENTASI (TRICK CSS) */}
+        {/* DOKUMENTASI */}
         <div className="page-break-before-always mt-10 pt-10">
           <h4 className="font-bold text-center mb-6 text-[12pt]">DOKUMENTASI KEGIATAN</h4>
           <div className="grid grid-cols-2 gap-4">
             {data.fotoKegiatan && data.fotoKegiatan !== "[]" ? (
                JSON.parse(data.fotoKegiatan).map((key: string, i: number) => (
                   <div key={i} className="mb-4">
-                    <div 
-                      className="w-full h-64 bg-slate-100 border border-gray-300 bg-no-repeat bg-contain bg-center"
-                      style={{ backgroundImage: `url(/api/r2/${key})` }}
-                    ></div>
+                    <div className="w-full h-64 bg-slate-100 border border-gray-300 bg-no-repeat bg-contain bg-center" style={{ backgroundImage: `url(/api/r2/${key})` }}></div>
                   </div>
                ))
             ) : (
