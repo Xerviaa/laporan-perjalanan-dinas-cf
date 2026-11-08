@@ -50,19 +50,19 @@ export default function LoginPage() {
         <div className="relative z-10 text-center flex flex-col items-center">
           
           {/* Logo Instansi */}
-          <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-600/50 shadow-2xl mb-8 bg-[#0f172a]">
+          <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-slate-600/50 shadow-2xl mb-8 bg-white p-2">
             <img 
-              src="/logo.png" 
-              alt="Logo Instansi" 
-              className="w-full h-full object-cover scale-110" 
+              src="/logo-monica.png" 
+              alt="Logo MONICA IMUT" 
+              className="w-full h-full object-contain" 
             />
           </div>
 
-          <h1 className="text-3xl font-bold mb-3 tracking-wider text-slate-200">SISTEM INFORMASI</h1>
-          <h2 className="text-5xl font-extrabold text-blue-500 mb-6 drop-shadow-md">LAPORAN PERJALANAN DINAS</h2>
+          <h1 className="text-5xl font-extrabold mb-3 tracking-wider text-slate-200 drop-shadow-md">MONICA IMUT</h1>
+          <h2 className="text-xl font-bold text-blue-400 mb-6 tracking-wide">Monitoring Capaian Sertifikasi Mutu Terpadu</h2>
           
-          <p className="text-slate-400 text-lg max-w-md leading-relaxed">
-            Platform terpusat untuk pengelolaan, pengarsipan, dan pelaporan kegiatan dinas secara efisien dan aman.
+          <p className="text-slate-400 text-lg max-w-md leading-relaxed mt-4">
+            Platform terpusat untuk pengelolaan, pengarsipan, dan pelaporan kegiatan sertifikasi mutu secara efisien dan aman.
           </p>
         </div>
       </div>

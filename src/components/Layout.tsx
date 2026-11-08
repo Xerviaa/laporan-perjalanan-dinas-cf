@@ -57,7 +57,6 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   // --- EFEK SAAT PINDAH HALAMAN (PWA) ---
   useEffect(() => {
-    // PWA install button bisa muncul di halaman arsip atau dashboard monitoring
     if ((pathname === '/arsip' || pathname === '/monitoring-dashboard') && deferredPrompt) {
       setShowInstallBtn(true);
     } else {
@@ -82,7 +81,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     router.refresh();
   };
 
-  // MENU ITEMS (URUTAN DISESUAIKAN)
+  // MENU ITEMS
   const menuItems = [
     { name: 'Dashboard Monitoring', path: '/monitoring-dashboard', icon: '📈' },
     { name: 'Upload Laporan', path: '/upload', icon: '📤' },
@@ -107,22 +106,21 @@ export default function Layout({ children }: { children: ReactNode }) {
         md:relative md:translate-x-0
       `}>
         
-        {/* Area Logo */}
-        <div className="h-44 flex flex-col items-center justify-center border-b border-slate-600/50 bg-[#1a252f] p-3">
-          <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-slate-600/50 shadow-lg mb-3 bg-[#0f172a]">
+        {/* Area Logo & Nama Aplikasi */}
+        <div className="h-56 flex flex-col items-center justify-center border-b border-slate-600/50 bg-[#1a252f] p-3">
+          <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-slate-600/50 shadow-lg mb-3 bg-white p-1">
             <img 
-              src="/logo.png" 
-              alt="Logo Instansi" 
-              className="w-full h-full object-cover scale-110" 
+              src="/logo-monica.png" 
+              alt="Logo MONICA IMUT" 
+              className="w-full h-full object-contain" 
             />
           </div>
-          <h1 className="text-lg font-bold tracking-widest text-slate-100">LAPORAN DINAS</h1>
-          <p className="text-[10px] text-slate-400 mt-1 uppercase">BPPMHKP DENPASAR</p>
+          <h1 className="text-lg font-bold tracking-widest text-slate-100 text-center leading-tight">MONICA IMUT</h1>
+          <p className="text-[9px] text-slate-400 mt-1 uppercase text-center px-2">Monitoring Capaian Sertifikasi Mutu Terpadu</p>
         </div>
 
         <nav className="flex-1 py-3 overflow-y-auto">
           {menuItems.map((item) => {
-            // LOGIKA BARU: Hanya aktif jika URL persis sama
             const isActive = pathname === item.path;
             
             return (
@@ -160,7 +158,10 @@ export default function Layout({ children }: { children: ReactNode }) {
             <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-slate-300 hover:text-white focus:outline-none cursor-pointer">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </button>
-            <h2 className="text-sm md:text-base font-semibold text-slate-100 tracking-wide truncate">Laporan Perjalanan Dinas</h2>
+            {/* Judul Header Atas Diganti */}
+            <h2 className="text-sm md:text-base font-semibold text-slate-100 tracking-wide truncate">
+              MONICA IMUT - Monitoring Capaian Sertifikasi Mutu Terpadu
+            </h2>
           </div>
           
           <div className="flex items-center gap-3 md:gap-5 relative z-10">
@@ -178,14 +179,15 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        {/* RUNNING TEXT */}
+        {/* RUNNING TEXT (INFO) */}
         <div className="bg-slate-900 text-white text-[10px] md:text-xs py-1.5 overflow-hidden flex items-center border-b border-slate-700 shadow-inner shrink-0">
           <div className="px-3 font-bold flex items-center gap-1.5 bg-slate-800 h-full py-1.5 z-10 shadow-md whitespace-nowrap">
             <span className="animate-pulse text-yellow-400">📢</span> INFO
           </div>
           <div className="flex-1 overflow-hidden relative">
             <div className="animate-marquee">
-              Selamat Datang di Sistem Informasi Laporan Perjalanan Dinas BPPMHKP Denpasar. Harap unggah laporan maksimal 3 hari setelah perjalanan dinas selesai. Tetap jaga integritas dan profesionalisme kerja!
+              {/* Teks Running Diganti */}
+              Selamat Datang di MONICA IMUT (Monitoring Capaian Sertifikasi Mutu Terpadu) BPPMHKP Denpasar. Harap unggah laporan maksimal 3 hari setelah perjalanan dinas selesai. Tetap jaga integritas dan profesionalisme kerja!
             </div>
           </div>
         </div>
@@ -198,16 +200,16 @@ export default function Layout({ children }: { children: ReactNode }) {
       {/* --- POPUP INSTALL PWA --- */}
       {showInstallBtn && (
         <div className="fixed bottom-4 right-4 z-50 bg-white p-3 rounded-xl shadow-2xl border border-slate-200 flex items-center gap-3 animate-bounce-slow">
-          <div className="w-12 h-12 bg-[#1a252f] rounded-full flex items-center justify-center shrink-0 overflow-hidden p-1.5">
+          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0 overflow-hidden p-1 border border-slate-200">
             <img 
-              src="/logo.png" 
-              alt="Logo Instansi" 
-              className="w-full h-full object-contain scale-110" 
+              src="/logo-monica.png" 
+              alt="Logo MONICA IMUT" 
+              className="w-full h-full object-contain" 
             />
           </div>
           <div>
             <p className="text-xs font-bold text-slate-800">Install Aplikasi</p>
-            <p className="text-[10px] text-slate-500 mb-1.5">Akses lebih cepat dari layar utama.</p>
+            <p className="text-[10px] text-slate-500 mb-1.5">Akses MONICA IMUT lebih cepat dari layar utama.</p>
             <div className="flex gap-2">
               <button onClick={handleInstallClick} className="bg-blue-600 text-white text-[10px] font-semibold px-2.5 py-1 rounded hover:bg-blue-700 transition-colors cursor-pointer">
                 Install
