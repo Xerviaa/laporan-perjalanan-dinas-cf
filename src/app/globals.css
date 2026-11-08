@@ -15,14 +15,10 @@
   animation-play-state: paused;
 }
 
-/* ========================================= */
-/* PENGATURAN KHUSUS UNTUK CETAK (PRINT)     */
-/* ========================================= */
 @media print {
-  /* KUNCI UTAMA: Beri margin 2cm pada kertas */
   @page {
     size: A4 portrait;
-    margin: 2cm; /* Jarak aman atas, bawah, kiri, kanan */
+    margin: 0; /* KOSONGKAN, biarkan template yang atur */
   }
 
   body, html {
@@ -35,12 +31,10 @@
     overflow: visible !important;
   }
 
-  /* Sembunyikan scrollbar saat print */
   ::-webkit-scrollbar {
     display: none;
   }
 
-  /* Pastikan tabel tidak melebar */
   table {
     width: 100% !important;
     table-layout: fixed !important;
@@ -53,21 +47,16 @@
     white-space: normal !important;
   }
 
-  /* Pastikan gambar tidak melebar */
   img {
     max-width: 100% !important;
     height: auto !important;
   }
 
-  /* Memastikan halaman baru dimulai dengan benar */
   .page-break-before-always {
     page-break-before: always !important;
   }
 }
 
-/* ========================================= */
-/* KUSTOMISASI CETAK SURAT TUGAS (IFRAME)    */
-/* ========================================= */
 @media print {
   .pdf-container iframe {
     border: none !important;
