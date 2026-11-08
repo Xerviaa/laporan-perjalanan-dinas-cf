@@ -16,10 +16,9 @@
 }
 
 @media print {
-  /* HAPUS @page margin, biarkan template yang atur */
   @page {
     size: A4 portrait;
-    margin: 0;
+    margin: 0; /* KOSONGKAN, biarkan template yang atur */
   }
 
   body, html {
@@ -56,9 +55,21 @@
   .page-break-before-always {
     page-break-before: always !important;
   }
+}
 
-  /* PAKSA SETIAP HALAMAN BARU PUNYA JARAK ATAS */
-  .page-break-before-always {
-    padding-top: 2cm !important;
+@media print {
+  .pdf-container iframe {
+    border: none !important;
+    outline: none !important;
+  }
+
+  .pdf-container iframe ::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  .pdf-container iframe {
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
   }
 }
