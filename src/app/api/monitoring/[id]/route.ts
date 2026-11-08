@@ -6,7 +6,6 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
-    // KEMBALIKAN KE NUMBER KARENA DATABASE ANDA INTEGER
     const id = Number(resolvedParams.id); 
     
     if (isNaN(id)) {
@@ -14,10 +13,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     const formData = await request.formData();
-
     const { env } = getCloudflareContext();
     const bucket = (env as any).MY_BUCKET as R2Bucket;
 
+    // Fungsi upload ke R2
     const uploadToR2 = async (file: File, prefix: string) => {
       const safeName = file.name.replace(/\s+/g, '_');
       const key = `reports/${prefix}/${Date.now()}-${safeName}`;
@@ -30,84 +29,70 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const db = getDb();
     const updateData: any = {};
 
-    const extractCleanFiles = (data: any): string[] => {
-      if (!data) return [];
-      let str = String(data).trim();
-      if (str.startsWith('[') && str.endsWith(']')) {
-        try {
-          const parsed = JSON.parse(str);
-          if (Array.isArray(parsed)) {
-            return parsed.map(item => String(item).replace(/[\[\]"]/g, '').trim()).filter(Boolean);
-          }
-        } catch (e) { }
+    // Kita ambil data lama dari database dulu untuk berjaga-jaga
+    const existingData = await db.select().from(reports).where(eq(reports.id, id)).limit(1);
+    if (existingData.length === 0) {
+      return Response.json({ status: "error", message: "Data laporan tidak ditemukan di DB." }, { status: 404 });
+    }
+    const currentReport = existingData[0];
+
+    // Helper untuk memproses file (Tunggal maupun Array)
+    const processFiles = async (formDataKey: string, prefix: string, existingValue: string | null) => {
+      const newFiles = formData.getAll(formDataKey) as File[];
+      const validNewFiles = newFiles.filter(f => f.size > 0);
+
+      // Jika TIDAK ADA file baru yang diupload, kembalikan nilai lama (Jangan diapa-apakan)
+      if (validNewFiles.length === 0) {
+        return existingValue;
       }
-      str = str.replace(/[\[\]"]/g, '').trim();
-      return str.split(',').map(s => s.trim()).filter(Boolean);
+
+      // Jika ada file baru, upload ke R2
+      const newKeys = [];
+      for (const file of validNewFiles) {
+        newKeys.push(await uploadToR2(file, prefix));
+      }
+
+      // Karena input di frontend biasanya menimpa (bukan menambah), kita ganti dengan file baru
+      // Jika field ini menggunakan array (JSON), kita simpan sebagai JSON array
+      return newKeys.length === 1 ? newKeys[0] : JSON.stringify(newKeys);
     };
 
-    const oldSuratTugas = extractCleanFiles(formData.get('oldSuratTugas'));
-    const oldBerkasKegiatan = extractCleanFiles(formData.get('oldBerkasKegiatan'));
-    const oldBerkasPerbaikan = extractCleanFiles(formData.get('oldBerkasPerbaikan'));
-    const oldBerkasPemeriksaan = extractCleanFiles(formData.get('oldBerkasPemeriksaan'));
-
-    const filesToDeleteStr = formData.get('filesToDelete') as string;
-    const filesToDelete: string[] = filesToDeleteStr ? extractCleanFiles(filesToDeleteStr) : [];
-
-    // 1. SURAT TUGAS
-    const filesSuratTugas = formData.getAll('suratTugas') as File[];
-    let finalSuratTugas: string[] = oldSuratTugas.filter((key) => !filesToDelete.includes(key));
-    for (const file of filesSuratTugas) {
-      if (file.size > 0) {
-        const key = await uploadToR2(file, 'surat-tugas');
-        finalSuratTugas.push(key);
-      }
+    // Proses ke-4 file
+    updateData.suratTugas = await processFiles('suratTugas', 'surat-tugas', currentReport.suratTugas);
+    
+    // Untuk berkas kegiatan & perbaikan biasanya multi-file (disimpan sebagai JSON string)
+    const newBerkasKegiatan = formData.getAll('berkasKegiatan') as File[];
+    if (newBerkasKegiatan.some(f => f.size > 0)) {
+        const keys = [];
+        for (const file of newBerkasKegiatan) {
+            if (file.size > 0) keys.push(await uploadToR2(file, 'berkas-kegiatan'));
+        }
+        updateData.berkasKegiatan = JSON.stringify(keys);
+    } else {
+        updateData.berkasKegiatan = currentReport.berkasKegiatan;
     }
-    updateData.suratTugas = finalSuratTugas.length > 0 ? JSON.stringify(finalSuratTugas) : null;
 
-    // 2. BERKAS KEGIATAN
-    let finalBerkasKegiatan: string[] = oldBerkasKegiatan.filter((key) => !filesToDelete.includes(key));
-    const filesBerkasKegiatan = formData.getAll('berkasKegiatan') as File[];
-    for (const file of filesBerkasKegiatan) {
-      if (file.size > 0) {
-        const key = await uploadToR2(file, 'berkas-kegiatan');
-        finalBerkasKegiatan.push(key);
-      }
+    const newBerkasPerbaikan = formData.getAll('berkasPerbaikan') as File[];
+    if (newBerkasPerbaikan.some(f => f.size > 0)) {
+        const keys = [];
+        for (const file of newBerkasPerbaikan) {
+            if (file.size > 0) keys.push(await uploadToR2(file, 'berkas-perbaikan'));
+        }
+        updateData.berkasPerbaikan = JSON.stringify(keys);
+    } else {
+        updateData.berkasPerbaikan = currentReport.berkasPerbaikan;
     }
-    updateData.berkasKegiatan = finalBerkasKegiatan.length > 0 ? JSON.stringify(finalBerkasKegiatan) : null;
 
-    // 3. BERKAS PERBAIKAN
-    let finalBerkasPerbaikan: string[] = oldBerkasPerbaikan.filter((key) => !filesToDelete.includes(key));
-    const filesBerkasPerbaikan = formData.getAll('berkasPerbaikan') as File[];
-    for (const file of filesBerkasPerbaikan) {
-      if (file.size > 0) {
-        const key = await uploadToR2(file, 'berkas-perbaikan');
-        finalBerkasPerbaikan.push(key);
-      }
-    }
-    updateData.berkasPerbaikan = finalBerkasPerbaikan.length > 0 ? JSON.stringify(finalBerkasPerbaikan) : null;
+    updateData.berkasPemeriksaanTindakanPerbaikan = await processFiles('berkasPemeriksaanTindakanPerbaikan', 'pemeriksaan-perbaikan', currentReport.berkasPemeriksaanTindakanPerbaikan);
 
-    // 4. PEMERIKSAAN
-    let finalBerkasPemeriksaan: string[] = oldBerkasPemeriksaan.filter((key) => !filesToDelete.includes(key));
-    const filesPemeriksaan = formData.getAll('berkasPemeriksaanTindakanPerbaikan') as File[];
-    for (const file of filesPemeriksaan) {
-      if (file.size > 0) {
-        const key = await uploadToR2(file, 'pemeriksaan-perbaikan');
-        finalBerkasPemeriksaan.push(key);
-      }
-    }
-    updateData.berkasPemeriksaanTindakanPerbaikan = finalBerkasPemeriksaan.length > 0 ? JSON.stringify(finalBerkasPemeriksaan) : null;
-
-    // --- PROSES UPDATE DATABASE ---
+    // Lakukan Update ke Database
     const updatedData = await db.update(reports)
       .set(updateData)
       .where(eq(reports.id, id))
       .returning({ id: reports.id });
 
     if (updatedData.length === 0) {
-      return Response.json({ 
-        status: "error", 
-        message: `Gagal menyimpan. Laporan dengan ID ${id} tidak ditemukan.` 
-      }, { status: 404 });
+      return Response.json({ status: "error", message: "Gagal update database." }, { status: 500 });
     }
 
     return Response.json({ status: "success", message: "Berhasil diperbarui" });
