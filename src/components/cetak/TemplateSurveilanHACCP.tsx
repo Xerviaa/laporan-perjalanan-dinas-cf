@@ -98,7 +98,8 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </div>
 
         {/* V. PETUGAS PELAKSANA (TABEL SEJAJAR) */}
-        <div className="mb-4 break-inside-avoid page-break-inside-avoid">
+        {/* TAMBAHKAN mt-8 agar jika terdorong ke halaman baru, ada jarak atas */}
+        <div className="mb-4 mt-8 break-inside-avoid page-break-inside-avoid">
           <h4 className="font-bold">V. Petugas Pelaksana</h4>
           <table className="w-full mt-2 border-collapse">
             <tbody>
@@ -133,7 +134,9 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
           </table>
         </div>
 
-        <div className="mb-4">
+        {/* VI. PELAKSANAAN KEGIATAN */}
+        {/* TAMBAHKAN mt-8 agar jika terdorong ke halaman baru, ada jarak atas */}
+        <div className="mb-4 mt-8">
           <h4 className="font-bold">VI. Pelaksanaan Kegiatan</h4>
           <p className="indent-8 mt-1">
             Kegiatan survivalen HACCP ini menghasilkan laporan hasil survivalen berupa daftar hadir dan temuan ketidaksesuaian dari penerapan GMP/SSOP sebagai dasar Unit Pengolahan Ikan untuk memperbaiki dan bertanggungjawab terhadap penerapan HACCP yang dimiliki.
@@ -141,7 +144,8 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         </div>
 
         {/* HASIL KEGIATAN & KENDALA */}
-        <div className="mb-4">
+        {/* TAMBAHKAN mt-8 agar jika terdorong ke halaman baru, ada jarak atas */}
+        <div className="mb-4 mt-8">
           <h4 className="font-bold">VII. Hasil Kegiatan dan Kendala</h4>
           <div className="mt-2">
             <p className="font-semibold">A. Hasil Kegiatan</p>
@@ -153,7 +157,9 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
           </div>
         </div>
 
-        <div className="mb-4">
+        {/* VIII. PENUTUP */}
+        {/* TAMBAHKAN mt-8 agar jika terdorong ke halaman baru, ada jarak atas */}
+        <div className="mb-4 mt-8">
           <h4 className="font-bold">VIII. Penutup</h4>
           <p className="indent-8 mt-1">
             Demikian laporan ini dibuat dari hasil kegiatan yang dilaksanakan dengan sebaik-baiknya dengan harapan dapat memberikan jaminan keamanan hasil perikanan yang diekspor ataupun yang dikonsumsi lokal oleh masyarakat Indonesia. Pelaksanan kegiatan ini lebih baik dengan adanya peralatan dan perlengkapan yang disediakan oleh kantor Balai PPMHKP Denpasar sehingga hasil yang didapat lebih sempurna.
