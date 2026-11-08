@@ -62,12 +62,10 @@ export default async function CetakLaporan({
         </div>
       )}
       
-      {/* JIKA MODE PDF, OTOMATIS TRIGGER PRINT SETELAH PDF SELESAI DIMUAT */}
       {isPdfMode && (
         <script dangerouslySetInnerHTML={{
           __html: `
             window.onload = function() {
-              // Tunggu 2.5 detik agar iframe PDF selesai dimuat
               setTimeout(function() {
                 window.print();
               }, 2500);
@@ -86,7 +84,6 @@ export default async function CetakLaporan({
         {/* ======================================================= */}
         {data.suratTugas && (
           <div className="w-[21cm] h-[29.7cm] bg-white break-after-page print:block print:w-[21cm] print:h-[29.7cm] print:p-0 print:m-0 print:overflow-hidden">
-            {/* Gunakan iframe dengan parameter untuk menyembunyikan toolbar */}
             <iframe 
               src={`/api/r2/${data.suratTugas}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
               className="w-full h-full border-0 block"
@@ -99,7 +96,8 @@ export default async function CetakLaporan({
         {/* ========================================= */}
         {/* 2. ISI LAPORAN (COVER DLL)                */}
         {/* ========================================= */}
-        <div className="w-full p-[2cm] print:p-0 print:w-full">
+        {/* PERUBAHAN: print:p-0 diganti print:p-[2cm] agar ada margin saat dicetak */}
+        <div className="w-full p-[2cm] print:p-[2cm] print:w-full">
           {kontenLaporan}
         </div>
 
