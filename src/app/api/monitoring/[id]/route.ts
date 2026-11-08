@@ -16,7 +16,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { env } = getCloudflareContext();
     const bucket = (env as any).MY_BUCKET as R2Bucket;
 
-    // Fungsi upload ke R2
     const uploadToR2 = async (file: File, prefix: string) => {
       const safeName = file.name.replace(/\s+/g, '_');
       const key = `reports/${prefix}/${Date.now()}-${safeName}`;
@@ -27,75 +26,62 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     };
 
     const db = getDb();
-    const updateData: any = {};
-
-    // Kita ambil data lama dari database dulu untuk berjaga-jaga
+    
+    // 1. AMBIL DATA LAMA LANGSUNG DARI DATABASE (Anti-Gagal)
     const existingData = await db.select().from(reports).where(eq(reports.id, id)).limit(1);
     if (existingData.length === 0) {
-      return Response.json({ status: "error", message: "Data laporan tidak ditemukan di DB." }, { status: 404 });
+      return Response.json({ status: "error", message: "Laporan tidak ditemukan di DB." }, { status: 404 });
     }
     const currentReport = existingData[0];
 
-    // Helper untuk memproses file (Tunggal maupun Array)
-    const processFiles = async (formDataKey: string, prefix: string, existingValue: string | null) => {
-      const newFiles = formData.getAll(formDataKey) as File[];
-      const validNewFiles = newFiles.filter(f => f.size > 0);
+    const updateData: any = {};
 
-      // Jika TIDAK ADA file baru yang diupload, kembalikan nilai lama (Jangan diapa-apakan)
-      if (validNewFiles.length === 0) {
-        return existingValue;
-      }
+    // 2. PROSES SURAT TUGAS (Tunggal)
+    const newSuratTugas = formData.getAll('suratTugas') as File[];
+    if (newSuratTugas.length > 0 && newSuratTugas[0].size > 0) {
+      updateData.suratTugas = await uploadToR2(newSuratTugas[0], 'surat-tugas');
+    } else {
+      // Jika tidak ada file baru, gunakan data lama dari DB
+      updateData.suratTugas = currentReport.suratTugas; 
+    }
 
-      // Jika ada file baru, upload ke R2
-      const newKeys = [];
-      for (const file of validNewFiles) {
-        newKeys.push(await uploadToR2(file, prefix));
-      }
-
-      // Karena input di frontend biasanya menimpa (bukan menambah), kita ganti dengan file baru
-      // Jika field ini menggunakan array (JSON), kita simpan sebagai JSON array
-      return newKeys.length === 1 ? newKeys[0] : JSON.stringify(newKeys);
-    };
-
-    // Proses ke-4 file
-    updateData.suratTugas = await processFiles('suratTugas', 'surat-tugas', currentReport.suratTugas);
-    
-    // Untuk berkas kegiatan & perbaikan biasanya multi-file (disimpan sebagai JSON string)
+    // 3. PROSES BERKAS KEGIATAN (Array/JSON)
     const newBerkasKegiatan = formData.getAll('berkasKegiatan') as File[];
-    if (newBerkasKegiatan.some(f => f.size > 0)) {
-        const keys = [];
-        for (const file of newBerkasKegiatan) {
-            if (file.size > 0) keys.push(await uploadToR2(file, 'berkas-kegiatan'));
-        }
-        updateData.berkasKegiatan = JSON.stringify(keys);
+    if (newBerkasKegiatan.length > 0 && newBerkasKegiatan[0].size > 0) {
+      const keys = [];
+      for (const file of newBerkasKegiatan) {
+        if (file.size > 0) keys.push(await uploadToR2(file, 'berkas-kegiatan'));
+      }
+      updateData.berkasKegiatan = JSON.stringify(keys);
     } else {
-        updateData.berkasKegiatan = currentReport.berkasKegiatan;
+      updateData.berkasKegiatan = currentReport.berkasKegiatan;
     }
 
+    // 4. PROSES BERKAS PERBAIKAN (Array/JSON)
     const newBerkasPerbaikan = formData.getAll('berkasPerbaikan') as File[];
-    if (newBerkasPerbaikan.some(f => f.size > 0)) {
-        const keys = [];
-        for (const file of newBerkasPerbaikan) {
-            if (file.size > 0) keys.push(await uploadToR2(file, 'berkas-perbaikan'));
-        }
-        updateData.berkasPerbaikan = JSON.stringify(keys);
+    if (newBerkasPerbaikan.length > 0 && newBerkasPerbaikan[0].size > 0) {
+      const keys = [];
+      for (const file of newBerkasPerbaikan) {
+        if (file.size > 0) keys.push(await uploadToR2(file, 'berkas-perbaikan'));
+      }
+      updateData.berkasPerbaikan = JSON.stringify(keys);
     } else {
-        updateData.berkasPerbaikan = currentReport.berkasPerbaikan;
+      updateData.berkasPerbaikan = currentReport.berkasPerbaikan;
     }
 
-    updateData.berkasPemeriksaanTindakanPerbaikan = await processFiles('berkasPemeriksaanTindakanPerbaikan', 'pemeriksaan-perbaikan', currentReport.berkasPemeriksaanTindakanPerbaikan);
-
-    // Lakukan Update ke Database
-    const updatedData = await db.update(reports)
-      .set(updateData)
-      .where(eq(reports.id, id))
-      .returning({ id: reports.id });
-
-    if (updatedData.length === 0) {
-      return Response.json({ status: "error", message: "Gagal update database." }, { status: 500 });
+    // 5. PROSES PEMERIKSAAN TINDAKAN PERBAIKAN (Tunggal)
+    const newPemeriksaan = formData.getAll('berkasPemeriksaanTindakanPerbaikan') as File[];
+    if (newPemeriksaan.length > 0 && newPemeriksaan[0].size > 0) {
+      updateData.berkasPemeriksaanTindakanPerbaikan = await uploadToR2(newPemeriksaan[0], 'pemeriksaan-perbaikan');
+    } else {
+      updateData.berkasPemeriksaanTindakanPerbaikan = currentReport.berkasPemeriksaanTindakanPerbaikan;
     }
+
+    // 6. UPDATE DATABASE
+    await db.update(reports).set(updateData).where(eq(reports.id, id));
 
     return Response.json({ status: "success", message: "Berhasil diperbarui" });
+    
   } catch (error: any) {
     console.error("Error update monitoring:", error);
     return Response.json({ status: "error", message: error.message }, { status: 500 });
