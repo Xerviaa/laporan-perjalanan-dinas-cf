@@ -62,13 +62,15 @@ export default async function CetakLaporan({
         </div>
       )}
       
+      {/* JIKA MODE PDF, OTOMATIS TRIGGER PRINT SETELAH PDF SELESAI DIMUAT */}
       {isPdfMode && (
         <script dangerouslySetInnerHTML={{
           __html: `
             window.onload = function() {
+              // Tunggu 2.5 detik agar iframe PDF selesai dimuat
               setTimeout(function() {
                 window.print();
-              }, 2000);
+              }, 2500);
             };
           `
         }} />
@@ -83,13 +85,10 @@ export default async function CetakLaporan({
         {/* 1. SURAT TUGAS (HALAMAN PERTAMA)                         */}
         {/* ======================================================= */}
         {data.suratTugas && (
-          <div 
-            className="w-[21cm] h-[29.7cm] bg-white break-after-page print:block print:w-[21cm] print:h-[29.7cm] print:p-0 print:m-0 print:overflow-hidden"
-            style={{ overflow: 'hidden' }}
-          >
+          <div className="w-[21cm] h-[29.7cm] bg-white break-after-page print:block print:w-[21cm] print:h-[29.7cm] print:p-0 print:m-0 print:overflow-hidden">
+            {/* Gunakan iframe dengan parameter untuk menyembunyikan toolbar */}
             <iframe 
-              // HAPUS parameter #toolbar... agar browser tidak "membingkai" PDF
-              src={`/api/r2/${data.suratTugas}`} 
+              src={`/api/r2/${data.suratTugas}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
               className="w-full h-full border-0 block"
               style={{ width: '100%', height: '100%' }}
               title="Surat Tugas"
@@ -105,16 +104,6 @@ export default async function CetakLaporan({
         </div>
 
       </div>
-
-      {/* CSS KHUSUS UNTUK MENYEMBUNYIKAN SCROLLBAR SAAT PRINT */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @media print {
-          iframe {
-            border: none !important;
-            outline: none !important;
-          }
-        }
-      `}} />
     </div>
   );
 }
