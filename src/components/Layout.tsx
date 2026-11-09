@@ -87,6 +87,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     { name: 'Upload Laporan', path: '/upload', icon: '📤' },
     { name: 'Arsip Laporan', path: '/arsip', icon: '📁' }, 
     { name: 'Monitoring Sertifikasi', path: '/monitoring', icon: '📊' },
+    { name: 'Backup Google Drive', path: '/backup', icon: '☁️' }, // <-- MENU BARU
   ];
 
   return (
@@ -106,7 +107,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         md:relative md:translate-x-0
       `}>
         
-        {/* Area Logo & Nama Aplikasi - DIPERBARUI */}
+        {/* Area Logo & Nama Aplikasi */}
         <div className="h-56 flex flex-col items-center justify-center border-b border-slate-600/50 bg-[#1a252f] p-3">
           <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-slate-600/50 shadow-lg mb-3 bg-white p-1 flex items-center justify-center">
             <img 
@@ -158,7 +159,6 @@ export default function Layout({ children }: { children: ReactNode }) {
             <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden text-slate-300 hover:text-white focus:outline-none cursor-pointer">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
             </button>
-            {/* Judul Header Atas Diganti */}
             <h2 className="text-sm md:text-base font-semibold text-slate-100 tracking-wide truncate">
               MONICA IMUT - Monitoring Capaian Sertifikasi Mutu Terpadu
             </h2>
@@ -186,7 +186,6 @@ export default function Layout({ children }: { children: ReactNode }) {
           </div>
           <div className="flex-1 overflow-hidden relative">
             <div className="animate-marquee">
-              {/* Teks Running Diganti */}
               Selamat Datang di MONICA IMUT (Monitoring Capaian Sertifikasi Mutu Terpadu) BPPMHKP Denpasar. Harap unggah laporan maksimal 3 hari setelah perjalanan dinas selesai. Tetap jaga integritas dan profesionalisme kerja!
             </div>
           </div>
@@ -197,7 +196,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </main>
 
-      {/* --- POPUP INSTALL PWA - DIPERBARUI --- */}
+      {/* --- POPUP INSTALL PWA --- */}
       {showInstallBtn && (
         <div className="fixed bottom-4 right-4 z-50 bg-white p-3 rounded-xl shadow-2xl border border-slate-200 flex items-center gap-3 animate-bounce-slow">
           <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0 overflow-hidden p-1 border border-slate-200">
