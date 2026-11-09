@@ -246,8 +246,11 @@ export default function ArsipPage() {
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
                                   {(monthData.reports as any[]).map((report: any) => {
+                                    // PERUBAHAN: replace "Survailen" menjadi "Surveilan" untuk tampilan
+                                    const jenisKegiatanTampil = (report.jenisKegiatan || '').replace(/Survailen/gi, 'Surveilan');
+                                    
                                     // LOGIKA MEMISAHKAN NAMA KEGIATAN & JENIS
-                                    const parts = (report.jenisKegiatan || '').split(' ');
+                                    const parts = jenisKegiatanTampil.split(' ');
                                     const namaKegiatan = parts[0] || '-';
                                     const jenis = parts.slice(1).join(' ') || '-';
 
