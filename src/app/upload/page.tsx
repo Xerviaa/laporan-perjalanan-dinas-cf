@@ -142,6 +142,7 @@ export default function UploadPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    // PERUBAHAN: 'Survailen' -> 'Surveilan'
     const isDetailRequired = jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Surveilan';
     
     if (!jenisKegiatan || (isDetailRequired && !detailKegiatan) || !namaPerusahaan || !tanggal) {
@@ -158,6 +159,7 @@ export default function UploadPage() {
       })
       .join('|');
 
+    // PERUBAHAN: 'Survailen' -> 'Surveilan'
     let fullJenisKegiatan = jenisKegiatan === 'Inspeksi' ? `Inspeksi ${detailKegiatan}` : jenisKegiatan === 'Surveilan' ? `Surveilan ${detailKegiatan}` : jenisKegiatan;
 
     const formData = new FormData();
@@ -201,11 +203,12 @@ export default function UploadPage() {
     }
   };
 
+  // PERUBAHAN: 'Survailen' -> 'Surveilan'
   const opsiJenisKegiatan = ['Inspeksi', 'Surveilan', 'Inpres', 'Selfdeclare Kapal'];
-  // TAMBAHKAN OPSI "Surveilan CPIB" DI SINI
-const getOpsiDetail = () => (jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Surveilan') 
-  ? ['CPIB Kapal', 'CBIB', 'CPIB', 'HACCP', 'SKP', 'SPDI'] 
-  : [];
+  
+  const getOpsiDetail = () => (jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Surveilan') 
+    ? ['CPIB Kapal', 'CBIB', 'CPIB', 'HACCP', 'SKP', 'SPDI'] 
+    : [];
 
   return (
     <Layout>

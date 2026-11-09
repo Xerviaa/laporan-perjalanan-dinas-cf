@@ -73,9 +73,7 @@ export default function TemplateInspeksiCPIB({ data }: { data: any }) {
                 const match = petugas.trim().match(/(.*)\((.*)\)/);
                 const nama = match ? match[1].trim() : petugas.trim();
                 const peran = match ? match[2].trim() : '';
-                return (
-                  <p key={index}>{String.fromCharCode(97 + index)}. {nama} {peran ? `(${peran})` : ''}</p>
-                );
+                return (<p key={index}>{String.fromCharCode(97 + index)}. {nama} {peran ? `(${peran})` : ''}</p>);
               })
             ) : (<p>-</p>)}
           </div>
@@ -84,27 +82,27 @@ export default function TemplateInspeksiCPIB({ data }: { data: any }) {
         <div className="mb-4">
           <h4 className="font-bold">III. Pendahuluan</h4>
           <p className="indent-8 mt-1">
-            Cara Pembenihan Ikan yang Baik (CPIB) merupakan pedoman yang mengatur seluruh kegiatan pembenihan ikan agar menghasilkan benih yang bermutu, sehat, dan aman bagi lingkungan...
+            Cara Pembenihan Ikan yang Baik (CPIB) merupakan pedoman yang mengatur seluruh kegiatan pembenihan ikan agar menghasilkan benih yang bermutu, sehat, dan aman bagi lingkungan. CPIB mencakup berbagai aspek, mulai dari pemilihan lokasi dan fasilitas hatchery, pengelolaan induk, pemijahan, penetasan telur, pemeliharaan larva, hingga penanganan benih sebelum didistribusikan. Penerapan CPIB juga menekankan pentingnya kebersihan sarana, pengendalian penyakit, penggunaan pakan yang tepat, serta pencatatan kegiatan pembenihan untuk menjamin ketertelusuran proses produksi.
           </p>
           <p className="indent-8 mt-1">
-            CPIB bertujuan untuk memastikan bahwa setiap tahapan pembenihan dilakukan sesuai dengan standar teknis...
+            CPIB bertujuan untuk memastikan bahwa setiap tahapan pembenihan dilakukan sesuai dengan standar teknis yang dapat meminimalkan risiko kegagalan produksi dan penyebaran penyakit ikan. Melalui penerapan biosekuriti yang baik, pengelolaan kualitas air yang terkontrol, serta penggunaan induk yang berkualitas, unit pembenihan dapat menghasilkan benih yang memiliki tingkat kelangsungan hidup tinggi, pertumbuhan yang baik, dan performa yang optimal saat dibudidayakan lebih lanjut.
           </p>
           <p className="indent-8 mt-1">
-            Penerapan CPIB memberikan banyak manfaat bagi pada pembudidaya, antara lain meningkatkan produktivitas usaha...
+            Penerapan CPIB memberikan banyak manfaat bagi pada pembudidaya, antara lain meningkatkan produktivitas usaha, menghasilkan benih yang lebih berkualitas dan seragam, serta meningkatkan kepercayaan konsumen dan pelaku usaha perikanan terhadap produk yang dihasilkan. Selain itu, sertifikasi atau penerapan CPIB dapat menjadi nilai tambah dalam pemasaran benih, mendukung keberlanjutan usaha budidaya perikanan, dan membantu memenuhi persyaratan mutu yang ditetapkan oleh pemerintah maupun pasar. Dengan demikian, CPIB menjadi salah satu fondasi penting dalam pengembangan usaha perbenihan ikan yang efisien, berdaya saing, dan berkelanjutan.
           </p>
         </div>
 
         <div className="mb-4">
           <h4 className="font-bold">IV. Maksud dan Tujuan</h4>
           <p className="indent-8 mt-1">
-            (Isi teks Maksud dan Tujuan dari file docx Anda di sini)
+            Sertifikasi CPIB bertujuan untuk meningkatkan penerapan sistem manajemen mutu dan biosekuriti pada unit pembenihan guna mengurangi risiko penyebaran penyakit, meningkatkan efisiensi produksi, serta mendukung kelestarian sumber daya perikanan. Melalui sertifikasi ini, pembenih didorong untuk menerapkan praktik pembenihan yang memperhatikan kualitas lingkungan, kesehatan ikan, serta ketertelusuran proses produksi untuk memenuhi sistem jaminan mutu dan keamanan hasil perikanan dengan cara melakukan sertifikasi cara penanganan ikan di atas kapal.
           </p>
         </div>
 
         <div className="mb-4">
           <h4 className="font-bold">V. Waktu dan Tempat Pelaksanaan</h4>
           <p className="indent-8 mt-1">
-            Kegiatan ini dilaksanakan di <strong>{formatNamaPerusahaan(data.namaPerusahaan)}</strong> yang mengajukan permohonan kepada Balai PPMHKP pusat...
+            Kegiatan ini dilaksanakan di <strong>{formatNamaPerusahaan(data.namaPerusahaan)}</strong> yang mengajukan permohonan kepada Balai PPMHKP pusat dan diteruskan kepada inspektur mutu/asisten inspektur mutu yang berada di UPT Balai PPMHKP Denpasar setelah dilakukan verifikasi permohonan melalui OSS.
           </p>
           <p className="indent-8 mt-1">
             Kegiatan inspeksi sertifikasi cara pembenihan ikan yang baik (CPIB) dilaksanakan pada tanggal <strong>{tanggalIndo || "-"}</strong> oleh Inspektur Mutu/Asisten Inspektur Mutu Balai PPMHKP Denpasar.
@@ -114,20 +112,23 @@ export default function TemplateInspeksiCPIB({ data }: { data: any }) {
         <div className="mb-4">
           <h4 className="font-bold">VI. Pelaksanaan Kegiatan</h4>
           <p className="indent-8 mt-1">
-            Inspeksi dapat dilakukan setelah adanya surat perintah dari pusat...
+            Inspeksi dapat dilakukan setelah adanya surat perintah dari pusat berdasarkan hasil verifikasi pengajuan permohonan sertifikasi melalui OSS dan dilanjutkan melalui aplikasi SIAP MUTU, dengan persyaratan sebagai berikut:
           </p>
           <div className="pl-4 mt-1 space-y-1">
             <p>a. Nomor induk berusaha dan sertifikat standar;</p>
-            <p>b. Data umum pemenihan...</p>
+            <p>b. Data umum pemenihan (permohonan sertifikasi CPIB, data umum pemenihan, SKA induk/benih/larva, Hasil uji kualitas air untuk parameter Pb, Cd, Hg)</p>
             <p>c. Layout tata letak unit budidaya</p>
             <p>d. Struktur organisasi dan uraian tugas dari tiap personil</p>
             <p>e. Standar operasional prosedur kegiatan budidaya</p>
           </div>
           <p className="indent-8 mt-1">
-            Setelah kelengkapan terpenuhi maka verifikator akan melakukan verifikasi...
+            Setelah kelengkapan terpenuhi maka verifikator akan melakukan verifikasi dan membuat surat perintah untuk dilakukan inspeksi CPIB oleh inspektur mutu/asisten inspektur mutu.
+          </p>
+          <p className="indent-8 mt-1">
+            Sistem, mekanisme dan prosedur inspeksi CPIB di atas kapal adalah sebagai berikut:
           </p>
           <div className="pl-4 mt-1 space-y-1">
-            <p>a. Pelaku usaha melakukan permohonan melalui OSS...</p>
+            <p>a. Pelaku usaha melakukan permohonan melalui OSS dan verifikasi oleh verifikator OSS yang kemudian diproses pada sistem SIAPMUTU</p>
             <p>b. Verifikasi kelengkapan dan keabsahan dokumen oleh petugas</p>
             <p>c. Inspeksi CPIB oleh Inspektur Mutu</p>
             <p>d. Review oleh Tim Teknis Internal BPPMHKP Denpasar</p>
@@ -139,10 +140,23 @@ export default function TemplateInspeksiCPIB({ data }: { data: any }) {
           </p>
         </div>
 
+        {/* --- TAMBAHAN HASIL KEGIATAN & KENDALA --- */}
         <div className="mb-4">
-          <h4 className="font-bold">VII. Penutup</h4>
+          <h4 className="font-bold">VII. Hasil Kegiatan dan Kendala</h4>
+          <div className="mt-2">
+            <p className="font-semibold">A. Hasil Kegiatan</p>
+            <p className="indent-8 mt-1 text-justify">{data.hasilKegiatan || "-"}</p>
+          </div>
+          <div className="mt-2">
+            <p className="font-semibold">B. Kendala</p>
+            <p className="indent-8 mt-1 text-justify">{data.kendala || "-"}</p>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <h4 className="font-bold">VIII. Penutup</h4>
           <p className="indent-8 mt-1">
-            Demikian laporan ini dibuat dari hasil kegiatan yang dilaksanakan dengan sebaik- baiknya...
+            Demikian laporan ini dibuat dari hasil kegiatan yang dilaksanakan dengan sebaik- baiknya dengan harapan dapat memberikan jaminan keamanan hasil perikanan yang diekspor ataupun yang dikonsumsi lokal oleh masyarakat Indonesia. Pelaksanaan kegiatan ini lebih baik dengan adanya peralatan dan perlengkapan yang disediakan oleh kantor Balai PPMHKP Denpasar sehingga hasil yang didapat lebih sempurna.
           </p>
         </div>
 

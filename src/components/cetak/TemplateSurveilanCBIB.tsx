@@ -83,27 +83,27 @@ export default function TemplateSurveilanCBIB({ data }: { data: any }) {
         <div className="mb-4">
           <h4 className="font-bold">III. Pendahuluan</h4>
           <p className="indent-8 mt-1">
-            Cara Budidaya Ikan yang Baik (CBIB) merupakan pedoman yang mengatur seluruh kegiatan budidaya ikan agar dilakukan secara benar, efisien, dan bertanggung jawab...
+            Cara Budidaya Ikan yang Baik (CBIB) merupakan pedoman yang mengatur seluruh kegiatan budidaya ikan agar dilakukan secara benar, efisien, dan bertanggung jawab. CBIB mencakup berbagai aspek dalam proses budidaya, mulai dari pemilihan lokasi, persiapan wadah budidaya, penggunaan benih yang berkualitas, pengelolaan pakan, pemantauan kualitas air, pengendalian hama dan penyakit, hingga penanganan hasil panen. Penerapan CBIB bertujuan memastikan bahwa kegiatan budidaya dilakukan dengan memperhatikan aspek mutu produk, kesehatan ikan, keamanan pangan, serta kelestarian lingkungan.
           </p>
           <p className="indent-8 mt-1">
-            CBIB menekankan pentingnya penerapan biosekuriti, sanitasi, pencatatan kegiatan budidaya...
+            CBIB menekankan pentingnya penerapan biosekuriti, sanitasi, pencatatan kegiatan budidaya, serta penggunaan sarana produksi yang sesuai dengan ketentuan. Dengan menerapkan CBIB, pembudidaya dapat mengurangi risiko kematian ikan, mencegah terjadinya wabah penyakit, dan meningkatkan efisiensi penggunaan pakan maupun sumber daya lainnya. Selain itu, sistem pencatatan yang baik memungkinkan pembudidaya melakukan evaluasi dan perbaikan berkelanjutan terhadap proses budidaya yang dijalankan.
           </p>
           <p className="indent-8 mt-1">
-            Penerapan CBIB memberikan manfaat berupa peningkatan produktivitas, kualitas hasil panen yang lebih baik...
+            Penerapan CBIB memberikan manfaat berupa peningkatan produktivitas, kualitas hasil panen yang lebih baik, serta peningkatan kepercayaan konsumen terhadap produk yang dihasilkan. CBIB juga membantu pembudidaya memenuhi persyaratan mutu dan keamanan pangan yang ditetapkan oleh pemerintah maupun pasar, sehingga membuka peluang akses pasar yang lebih luas. Dengan demikian, CBIB menjadi salah satu instrumen penting dalam mewujudkan usaha budidaya ikan yang berkelanjutan, berdaya saing, dan mampu menghasilkan produk perikanan yang aman serta berkualitas tinggi.
           </p>
         </div>
 
         <div className="mb-4">
           <h4 className="font-bold">IV. Maksud dan Tujuan</h4>
           <p className="indent-8 mt-1">
-            (Isi teks Maksud dan Tujuan dari file docx Anda di sini)
+            Maksud dan tujuan dari kegiatan ini adalah melaksanakan kegiatan survailen dan monitoring guna menjamin Sistem Jaminan Mutu dan Keamanan Hasil Perikanan dari Unit Pengolahan {formatNamaPerusahaan(data.namaPerusahaan)}. Kegiatan Survailen ini dilaksanakan untuk melihat konsistensi dari penerapan CBIB dan monitoring berupa pengambilan sampel untuk memberikan jaminan keamanan hasil perikanan untuk dilakukan pemeriksaan laboratorium.
           </p>
         </div>
 
         <div className="mb-4">
           <h4 className="font-bold">V. Waktu dan Tempat Pelaksanaan</h4>
           <p className="indent-8 mt-1">
-            Kegiatan ini dilaksanakan di <strong>{formatNamaPerusahaan(data.namaPerusahaan)}</strong> yang mengajukan permohonan kepada Balai PPMHKP Denpasar...
+            Kegiatan ini dilaksanakan di <strong>{formatNamaPerusahaan(data.namaPerusahaan)}</strong> yang mengajukan permohonan kepada Balai PPMHKP Denpasar dan diteruskan kepada inspektur mutu/asisten inspektur mutu yang berada di UPT Balai PPMHKP Denpasar.
           </p>
           <p className="indent-8 mt-1">
             Kegiatan Surveilan sertifikasi cara budidaya ikan yang baik (CBIB) dilaksanakan pada tanggal <strong>{tanggalIndo || "-"}</strong> oleh Inspektur Mutu/Asisten Inspektur Mutu Balai PPMHKP Denpasar.
@@ -113,17 +113,27 @@ export default function TemplateSurveilanCBIB({ data }: { data: any }) {
         <div className="mb-4">
           <h4 className="font-bold">VI. Pelaksanaan Kegiatan</h4>
           <p className="indent-8 mt-1">
-            Surveilan dapat dilakukan setelah adanya surat perintah dari pusat berdasarkan jadwal surveilan sesuai dengan grade yang telah tercantum pada sertifikat CBIB...
-          </p>
-          <p className="indent-8 mt-1">
-            Jangka waktu terbitnya sertifikat keterangan hasil surveilan (SKHS) setelah perbaikan dinyatakan lengkap dan sesuai dengan jangka waktu 30 hari.
+            Surveilan dapat dilakukan setelah adanya surat perintah dari pusat berdasarkan jadwal surveilan sesuai dengan grade yang telah tercantum pada sertifikat CBIB yaitu Grade Sangat Baik (A): surveilan satu kali dalam satu tahun, Grade Baik B: surveilan dua kali dalam satu tahun dan Grade Cukup (C): surveilan tiga kali dalam satu tahun). Jangka waktu terbitnya sertifikat keterangan hasil surveilan (SKHS) setelah perbaikan dinyatakan lengkap dan sesuai dengan jangka waktu 30 hari.
           </p>
         </div>
 
+        {/* --- TAMBAHAN HASIL KEGIATAN & KENDALA --- */}
         <div className="mb-4">
-          <h4 className="font-bold">VII. Penutup</h4>
+          <h4 className="font-bold">VII. Hasil Kegiatan dan Kendala</h4>
+          <div className="mt-2">
+            <p className="font-semibold">A. Hasil Kegiatan</p>
+            <p className="indent-8 mt-1 text-justify">{data.hasilKegiatan || "-"}</p>
+          </div>
+          <div className="mt-2">
+            <p className="font-semibold">B. Kendala</p>
+            <p className="indent-8 mt-1 text-justify">{data.kendala || "-"}</p>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <h4 className="font-bold">VIII. Penutup</h4>
           <p className="indent-8 mt-1">
-            Demikian laporan ini dibuat dari hasil kegiatan yang dilaksanakan dengan sebaik- baiknya...
+            Demikian laporan ini dibuat dari hasil kegiatan yang dilaksanakan dengan sebaik- baiknya dengan harapan dapat memberikan jaminan keamanan hasil perikanan yang diekspor ataupun yang dikonsumsi lokal oleh masyarakat Indonesia. Pelaksanan kegiatan ini lebih baik dengan adanya peralatan dan perlengkapan yang disediakan oleh kantor Balai PPMHKP Denpasar sehingga hasil yang didapat lebih sempurna.
           </p>
         </div>
 

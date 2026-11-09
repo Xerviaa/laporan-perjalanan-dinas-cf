@@ -96,9 +96,9 @@ export default function MonitoringDashboardPage() {
     return { jenis, target, realisasi, persentase };
   });
 
-  // Data Target Kegiatan
+  // Data Target Kegiatan (SUDAH DIPERBAIKI: Surveilans -> Surveilan)
   const kegiatanTargets: { [key: string]: number } = {
-    'Inspeksi': 50, 'Surveilans': 50, 'Selfdecare Kapal': 50, 'Inpres': 50
+    'Inspeksi': 50, 'Surveilan': 50, 'Selfdecare Kapal': 50, 'Inpres': 50
   };
 
   const capaianKegiatan = Object.keys(kegiatanTargets).map((jenis) => {

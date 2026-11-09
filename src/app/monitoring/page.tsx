@@ -245,7 +245,10 @@ export default function MonitoringPage() {
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Tidak ada data monitoring yang ditemukan.</td></tr>
               ) : (
                 filteredReports.map((report, index) => {
-                  const kegiatanArray = report.jenisKegiatan ? report.jenisKegiatan.split(' ') : [];
+                  // PERUBAHAN DI SINI: replace "Survailen" menjadi "Surveilan" untuk tampilan
+                  const jenisKegiatanTampil = (report.jenisKegiatan || '').replace(/Survailen/gi, 'Surveilan');
+                  
+                  const kegiatanArray = jenisKegiatanTampil ? jenisKegiatanTampil.split(' ') : [];
                   const namaKegiatan = kegiatanArray.length > 0 ? kegiatanArray[0] : '-';
                   const jenisSertifikasi = kegiatanArray.length > 1 ? kegiatanArray.slice(1).join(' ') : '-';
                   const autoStatus = getAutoStatus(report);
@@ -388,7 +391,7 @@ export default function MonitoringPage() {
                 </div>
                 <div>
                   <p className="text-slate-500 text-xs uppercase font-semibold">Jenis Kegiatan</p>
-                  <p className="font-bold text-slate-800 text-base">{selectedReport.jenisKegiatan || '-'}</p>
+                  <p className="font-bold text-slate-800 text-base">{selectedReport.jenisKegiatan?.replace(/Survailen/gi, 'Surveilan') || '-'}</p>
                 </div>
                 <div>
                   <p className="text-slate-500 text-xs uppercase font-semibold">Tanggal Pelaksanaan</p>
@@ -473,7 +476,7 @@ export default function MonitoringPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-sm">
             <h3 className="text-lg font-bold text-slate-800 mb-2">Hapus Laporan?</h3>
-            <p className="text-slate-500 text-sm mb-6">Laporan <strong>{reportToDelete.jenisKegiatan}</strong> akan dihapus permanen.</p>
+            <p className="text-slate-500 text-sm mb-6">Laporan <strong>{reportToDelete.jenisKegiatan?.replace(/Survailen/gi, 'Surveilan')}</strong> akan dihapus permanen.</p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setIsDeleteModalOpen(false)} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg cursor-pointer">Batal</button>
               <button onClick={confirmDelete} disabled={isDeleting} className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg cursor-pointer">{isDeleting ? 'Menghapus...' : 'Hapus'}</button>
