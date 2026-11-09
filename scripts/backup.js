@@ -4,7 +4,6 @@ const path = require('path');
 const { execSync } = require('child_process');
 const https = require('https');
 
-// Fungsi untuk mengunduh file dari URL
 function downloadFile(url, dest) {
   return new Promise((resolve, reject) => {
     const file = fs.createWriteStream(dest);
@@ -15,9 +14,7 @@ function downloadFile(url, dest) {
         return reject(new Error(`Gagal mengunduh: ${response.statusCode}`));
       }
       response.pipe(file);
-      file.on('finish', () => {
-        file.close(resolve);
-      });
+      file.on('finish', () => { file.close(resolve); });
     }).on('error', (err) => {
       fs.unlink(dest, () => {});
       reject(err);
@@ -46,8 +43,10 @@ async function main() {
     fs.rmSync(baseLocalFolder, { recursive: true, force: true });
   }
 
+  // Daftar Jenis Utama yang dikenal
+  const jenisUtamaList = ['Inspeksi', 'Survailen', 'Inpres', 'Selfdecare Kapal'];
+
   for (const report of reports) {
-    // 1. Tentukan Tanggal
     let date = new Date();
     if (report.tanggal) {
       const parsedDate = new Date(report.tanggal);
@@ -60,30 +59,47 @@ async function main() {
     const year = date.getFullYear();
     const month = date.toLocaleString('id-ID', { month: 'long' });
     
-    // 2. Pisahkan Jenis Kegiatan Utama dan Sub-Kegiatan
+    // --- LOGIKA PINTAR UNTUK MEMISAHKAN JENIS UTAMA & SUB-KEGIATAN ---
     let jenisUtama = 'Lainnya';
-    let subKegiatan = 'Lainnya';
+    let subKegiatan = 'Umum';
+    const rawJenis = (report.jenisKegiatan || '').trim();
 
-    if (report.jenisKegiatan) {
-      const parts = report.jenisKegiatan.trim().split(/\s+/);
-      if (parts.length > 0) {
+    if (rawJenis) {
+      // Cari apakah ada jenis utama yang cocok di dalam string
+      let found = false;
+      for (const ju of jenisUtamaList) {
+        if (rawJenis.toLowerCase().startsWith(ju.toLowerCase())) {
+          jenisUtama = ju;
+          // Ambil sisa string setelah nama jenis utama
+          let sisa = rawJenis.substring(ju.length).trim();
+          // Hapus karakter aneh di awal sisa string (seperti spasi atau tanda hubung)
+          sisa = sisa.replace(/^[-:\s]+/, '');
+          subKegiatan = sisa || 'Umum';
+          found = true;
+          break;
+        }
+      }
+      
+      // Jika tidak cocok dengan daftar, pakai logika split biasa
+      if (!found) {
+        const parts = rawJenis.split(/\s+/);
         jenisUtama = parts[0];
         subKegiatan = parts.length > 1 ? parts.slice(1).join(' ') : 'Umum';
       }
     }
 
+    // Sanitasi nama folder
     jenisUtama = jenisUtama.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Lainnya';
-    subKegiatan = subKegiatan.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Lainnya';
+    subKegiatan = subKegiatan.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Umum';
     const namaPerusahaan = (report.namaPerusahaan || 'Tanpa Nama').replace(/[\/\\?%*:|"<>]/g, '-');
 
-    // 3. Struktur Folder: Tahun/Bulan/Jenis Utama/Sub-Kegiatan/Nama Perusahaan
     const folderPath = path.join(baseLocalFolder, String(year), month, jenisUtama, subKegiatan, namaPerusahaan);
     
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
     }
 
-    // 4. Unduh File PDF dari R2
+    // --- UNDUH FILE PDF ---
     const filesToDownload = [
       { key: report.suratTugas, name: 'Surat Tugas' },
       { key: report.berkasKegiatan, name: 'Berkas Kegiatan', isArray: true },
@@ -109,7 +125,7 @@ async function main() {
         const key = fileKeys[i];
         if (!key || key === '[]') continue;
 
-        const fileName = key.split('/').pop(); // Ambil nama file dari path
+        const fileName = key.split('/').pop();
         const destPath = path.join(folderPath, fileName);
         
         try {
@@ -121,7 +137,7 @@ async function main() {
       }
     }
 
-    // 5. Buat file data.csv sebagai pelengkap
+    // --- BUAT FILE CSV ---
     const csvHeader = 'ID,Nama Perusahaan,Tanggal,Pelaksana,Hasil,Kendala\n';
     const csvRow = `"${report.id}","${report.namaPerusahaan || ''}","${report.tanggal || ''}","${report.petugasPelaksana || ''}","${report.hasilKegiatan || ''}","${report.kendala || ''}"`;
     fs.writeFileSync(path.join(folderPath, 'data.csv'), csvHeader + csvRow, 'utf8');
