@@ -43,16 +43,16 @@ export default async function CetakLaporan({
 
   let kontenLaporan = null;
   
-  // --- LOGIKA PEMILIHAN TEMPLATE (URUTAN SUDAH DIPERBAIKI) ---
+  // --- LOGIKA PEMILIHAN TEMPLATE (SUPPORT "SURVEILAN" & "SURVAILEN") ---
   const jenis = data.jenisKegiatan?.toLowerCase() || "";
 
-  if (jenis.includes("surveilan cbib") || jenis.includes("surveilan cbib")) {
+  if (jenis.includes("surveilan cbib") || jenis.includes("survailen cbib")) {
     kontenLaporan = <TemplateSurveilanCBIB data={data} />;
   }
   else if (jenis.includes("inspeksi cbib")) {
     kontenLaporan = <TemplateInspeksiCBIB data={data} />;
   }
-  else if (jenis.includes("surveilan cpib") || jenis.includes("surveilan cpib")) {
+  else if (jenis.includes("surveilan cpib") || jenis.includes("survailen cpib")) {
     kontenLaporan = <TemplateSurveilanCPIB data={data} />;
   }
   // CEK CPIB KAPAL DULU SEBELUM INSPEKSI CPIB
@@ -62,7 +62,7 @@ export default async function CetakLaporan({
   else if (jenis.includes("inspeksi cpib")) {
     kontenLaporan = <TemplateInspeksiCPIB data={data} />;
   }
-  else if (jenis.includes("surveilan haccp") || jenis.includes("surveilan haccp")) {
+  else if (jenis.includes("surveilan haccp") || jenis.includes("survailen haccp")) {
     kontenLaporan = <TemplateSurveilanHACCP data={data} />;
   }
   else if (jenis.includes("haccp")) {
