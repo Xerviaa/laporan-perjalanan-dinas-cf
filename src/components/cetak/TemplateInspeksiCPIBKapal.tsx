@@ -152,7 +152,7 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
         <div className="mb-4">
           <h4 className="font-bold">V. Waktu dan Tempat Pelaksanaan</h4>
           <p className="indent-8 mt-1">
-            Kegiatan ini dilaksanakan di <strong>{data.namaPerusahaan || "-"}</strong> di Pelabuhan Benoa, Denpasar-Bali yang mengajukan permohonan kepada BPPMHKP dan akan diteruskan pada inspektur mutu/asisten inspektur mutu yang berada di Balai PPMHKP Denpasar setelah dilakukan verifikasi permohonan.
+            Kegiatan ini dilaksanakan di <strong>{formatNamaPerusahaan(data.namaPerusahaan)}</strong> di Pelabuhan Benoa, Denpasar-Bali yang mengajukan permohonan kepada BPPMHKP dan akan diteruskan pada inspektur mutu/asisten inspektur mutu yang berada di Balai PPMHKP Denpasar setelah dilakukan verifikasi permohonan.
           </p>
           <p className="indent-8 mt-1">
             Inspeksi dilaksanakan pada tanggal <strong>{tanggalIndo || "-"}</strong> oleh Inspektur Mutu/Asisten Inspektur Mutu dan petugas yang dimiliki oleh Balai PPMHKP Denpasar.

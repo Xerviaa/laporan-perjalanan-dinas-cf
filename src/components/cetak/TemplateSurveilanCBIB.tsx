@@ -103,7 +103,7 @@ export default function TemplateSurveilanCBIB({ data }: { data: any }) {
         <div className="mb-4">
           <h4 className="font-bold">V. Waktu dan Tempat Pelaksanaan</h4>
           <p className="indent-8 mt-1">
-            Kegiatan ini dilaksanakan di <strong>{data.namaPerusahaan || "-"}</strong> yang mengajukan permohonan kepada Balai PPMHKP Denpasar...
+            Kegiatan ini dilaksanakan di <strong>{formatNamaPerusahaan(data.namaPerusahaan)}</strong> yang mengajukan permohonan kepada Balai PPMHKP Denpasar...
           </p>
           <p className="indent-8 mt-1">
             Kegiatan Surveilan sertifikasi cara budidaya ikan yang baik (CBIB) dilaksanakan pada tanggal <strong>{tanggalIndo || "-"}</strong> oleh Inspektur Mutu/Asisten Inspektur Mutu Balai PPMHKP Denpasar.

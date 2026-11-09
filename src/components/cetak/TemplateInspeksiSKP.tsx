@@ -91,7 +91,7 @@ export default function TemplateInspeksiSKP({ data }: { data: any }) {
         <div className="mb-4">
           <h4 className="font-bold">IV. Waktu dan Tempat Pelaksanaan</h4>
           <p className="indent-8 mt-1">
-            Kegiatan ini dilaksanakan berdasarkan Surat Tugas Nomor {data.noSurat || "-"} pada tanggal <strong>{tanggalIndo || "-"}</strong> di Unit Pengolahan Ikan <strong>{data.namaPerusahaan || "-"}</strong> yang beralamat di {data.alamatPerusahaan || "-"} oleh Inspektur Mutu yang dimiliki oleh Balai PPMHKP Denpasar.
+            Kegiatan ini dilaksanakan berdasarkan Surat Tugas Nomor {data.noSurat || "-"} pada tanggal <strong>{tanggalIndo || "-"}</strong> di Unit Pengolahan Ikan <strong>{formatNamaPerusahaan(data.namaPerusahaan)}</strong> yang beralamat di {data.alamatPerusahaan || "-"} oleh Inspektur Mutu yang dimiliki oleh Balai PPMHKP Denpasar.
           </p>
         </div>
 

@@ -86,14 +86,14 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         <div className="mb-4">
           <h4 className="font-bold">III. Maksud dan Tujuan</h4>
           <p className="indent-8 mt-1">
-            Maksud dan tujuan dari kegiatan ini adalah melaksanakan kegiatan survailen dan monitoring guna menjamin Sistem Jaminan Mutu dan Keamanan Hasil Perikanan dari Unit Pengolahan {data.namaPerusahaan || "-"}. Kegiatan Survailen ini dilaksanakan untuk melihat konsistensi dari penerapan HACCP dan monitoring berupa pengambilan sampel untuk memberikan jaminan keamanan hasil perikanan untuk dilakukan pemeriksaan laboratorium.
+            Maksud dan tujuan dari kegiatan ini adalah melaksanakan kegiatan survailen dan monitoring guna menjamin Sistem Jaminan Mutu dan Keamanan Hasil Perikanan dari Unit Pengolahan {formatNamaPerusahaan(data.namaPerusahaan)}. Kegiatan Survailen ini dilaksanakan untuk melihat konsistensi dari penerapan HACCP dan monitoring berupa pengambilan sampel untuk memberikan jaminan keamanan hasil perikanan untuk dilakukan pemeriksaan laboratorium.
           </p>
         </div>
 
         <div className="mb-4">
           <h4 className="font-bold">IV. Waktu dan Tempat Pelaksanaan</h4>
           <p className="indent-8 mt-1">
-            Kegiatan ini dilaksanakan di Unit Pengolahan Ikan <strong>{data.namaPerusahaan || "-"}</strong> yang beralamat di {data.alamatPerusahaan || "-"} pada tanggal <strong>{tanggalIndo || "-"}</strong> oleh Inspektur Mutu yang dimiliki oleh Balai PPMHKP Denpasar.
+            Kegiatan ini dilaksanakan di Unit Pengolahan Ikan <strong>{formatNamaPerusahaan(data.namaPerusahaan)}</strong> yang beralamat di {data.alamatPerusahaan || "-"} pada tanggal <strong>{tanggalIndo || "-"}</strong> oleh Inspektur Mutu yang dimiliki oleh Balai PPMHKP Denpasar.
           </p>
         </div>
 
