@@ -22,16 +22,32 @@ function downloadFile(url, dest) {
   });
 }
 
-// FUNGSI BARU: Membersihkan nama file dari karakter aneh
-function cleanFileName(rawKey) {
-  if (!rawKey) return '';
-  // Hapus tanda kutip, kurung siku, dan spasi di awal/akhir
-  let cleaned = rawKey.replace(/[\[\]"]/g, '').trim();
-  // Jika ada koma (array), ambil elemen pertama
-  if (cleaned.includes(',')) {
-    cleaned = cleaned.split(',')[0].trim();
+// FUNGSI BARU: Ekstrak nama file dari berbagai format database
+function extractFileKey(rawData) {
+  if (!rawData) return null;
+  
+  let str = String(rawData).trim();
+  if (!str || str === '[]' || str === 'null') return null;
+
+  // 1. Coba parse sebagai JSON Array
+  if (str.startsWith('[') && str.endsWith(']')) {
+    try {
+      const parsed = JSON.parse(str);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return String(parsed[0]).trim(); // Ambil elemen pertama
+      }
+    } catch (e) {
+      // Jika gagal parse, lanjut ke pembersihan manual
+    }
   }
-  return cleaned;
+
+  // 2. Pembersihan manual (hapus [, ], ", spasi, dan koma)
+  str = str.replace(/[\[\]"]/g, '').trim();
+  if (str.includes(',')) {
+    str = str.split(',')[0].trim();
+  }
+  
+  return str || null;
 }
 
 async function main() {
@@ -104,43 +120,48 @@ async function main() {
     }
 
     // --- PROSES UNDUH FILE (DIPERBAIKI) ---
-    const filesToDownload = [
-      { key: report.surat_tugas, isArray: false },
-      { key: report.berkas_kegiatan, isArray: true },
-      { key: report.berkas_perbaikan, isArray: true },
-      { key: report.berkas_pemeriksaan_tindakan_perbaikan, isArray: false }
+    const fileColumns = [
+      { key: report.surat_tugas },
+      { key: report.berkas_kegiatan },
+      { key: report.berkas_perbaikan },
+      { key: report.berkas_pemeriksaan_tindakan_perbaikan }
     ];
 
-    for (const fileInfo of filesToDownload) {
+    for (const fileInfo of fileColumns) {
       if (!fileInfo.key) continue;
 
+      // Ekstrak semua file yang mungkin ada (jika array)
       let fileKeys = [];
-      if (fileInfo.isArray) {
+      let rawStr = String(fileInfo.key).trim();
+      
+      if (rawStr.startsWith('[') && rawStr.endsWith(']')) {
         try {
-          fileKeys = JSON.parse(fileInfo.key);
+          const parsed = JSON.parse(rawStr);
+          if (Array.isArray(parsed)) {
+            fileKeys = parsed;
+          } else {
+            fileKeys = [rawStr];
+          }
         } catch (e) {
-          fileKeys = [fileInfo.key];
+          fileKeys = [rawStr];
         }
       } else {
-        fileKeys = [fileInfo.key];
+        fileKeys = [rawStr];
       }
 
-      // Pastikan fileKeys adalah array
-      if (!Array.isArray(fileKeys)) fileKeys = [fileKeys];
-
       for (let i = 0; i < fileKeys.length; i++) {
-        const rawKey = fileKeys[i];
-        const key = cleanFileName(rawKey); // Bersihkan nama file
-        if (!key || key === '[]') continue;
+        const key = extractFileKey(fileKeys[i]);
+        if (!key) continue;
 
         const fileName = key.split('/').pop();
         const destPath = path.join(folderPath, fileName);
         
         try {
-          console.log(`Mengunduh: ${fileName}`);
+          console.log(`Mengunduh: ${fileName} dari ${baseUrl + key}`);
           await downloadFile(baseUrl + key, destPath);
+          console.log(`BERHASIL: ${fileName}`);
         } catch (error) {
-          console.error(`Gagal mengunduh ${fileName}:`, error.message);
+          console.error(`Gagal mengunduh ${fileName}: ${error.message}`);
         }
       }
     }
