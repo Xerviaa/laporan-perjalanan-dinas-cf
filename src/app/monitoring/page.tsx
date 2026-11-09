@@ -158,7 +158,6 @@ export default function MonitoringPage() {
         setIsEditModalOpen(false);
         showToast('Berkas berhasil di-upload!', 'success');
         
-        // --- OPTIMISTIC UI FINAL (TANPA FETCH ULANG) ---
         const updatedReport = { ...selectedReport };
         if (fileSuratTugas.length > 0) updatedReport.suratTugas = 'file-baru.pdf';
         if (fileBerkasKegiatan.length > 0) updatedReport.berkasKegiatan = '["file-baru.pdf"]';
@@ -245,7 +244,6 @@ export default function MonitoringPage() {
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">Tidak ada data monitoring yang ditemukan.</td></tr>
               ) : (
                 filteredReports.map((report, index) => {
-                  // PERUBAHAN DI SINI: replace "Survailen" menjadi "Surveilan" untuk tampilan
                   const jenisKegiatanTampil = (report.jenisKegiatan || '').replace(/Survailen/gi, 'Surveilan');
                   
                   const kegiatanArray = jenisKegiatanTampil ? jenisKegiatanTampil.split(' ') : [];
@@ -282,8 +280,9 @@ export default function MonitoringPage() {
                           <button onClick={() => handleViewClick(report)} title="Lihat Detail" className="p-1.5 bg-cyan-400 text-white rounded hover:bg-cyan-500 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
                           <button onClick={() => handleEditClick(report)} title="Upload Berkas" className="p-1.5 bg-yellow-400 text-white rounded hover:bg-yellow-500 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
                           <button onClick={() => handleDeleteClick(report)} title="Hapus Laporan" className="p-1.5 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></button>
-                          {/* PERUBAHAN DI SINI: href diubah ke /cetak/ */}
-                          <a href={`/cetak/${report.id}`} target="_blank" rel="noopener noreferrer" title="Cetak Laporan Monitoring" className="p-1.5 bg-emerald-500 text-white rounded hover:bg-emerald-600 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg></a>
+                          
+                          {/* 👇 INI YANG SUDAH DIPERBAIKI KE /monitoring/print/ 👇 */}
+                          <a href={`/monitoring/print/${report.id}`} target="_blank" rel="noopener noreferrer" title="Cetak Laporan Monitoring" className="p-1.5 bg-emerald-500 text-white rounded hover:bg-emerald-600 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg></a>
                         </div>
                       </td>
                     </tr>
