@@ -203,9 +203,9 @@ export default function UploadPage() {
 
   const opsiJenisKegiatan = ['Inspeksi', 'Survailen', 'Inpres', 'Selfdeclare Kapal'];
   // TAMBAHKAN OPSI "Surveilan CPIB" DI SINI
-  const getOpsiDetail = () => (jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Survailen') 
-    ? ['CPIB Kapal', 'CBIB', 'CPIB', 'HACCP', 'SKP', 'SPDI', 'Inspeksi CPIB', 'Inspeksi CBIB', 'Surveilan CBIB', 'Surveilan CPIB'] 
-    : [];
+const getOpsiDetail = () => (jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Survailen') 
+  ? ['CPIB Kapal', 'CBIB', 'CPIB', 'HACCP', 'SKP', 'SPDI'] 
+  : [];
 
   return (
     <Layout>
