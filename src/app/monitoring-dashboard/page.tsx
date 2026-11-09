@@ -96,13 +96,25 @@ export default function MonitoringDashboardPage() {
     return { jenis, target, realisasi, persentase };
   });
 
-  // Data Target Kegiatan (SUDAH DIPERBAIKI: Surveilans -> Surveilan)
+  // Data Target Kegiatan (SUDAH DIPERBAIKI: Menggunakan filter yang lebih toleran)
   const kegiatanTargets: { [key: string]: number } = {
     'Inspeksi': 50, 'Surveilan': 50, 'Selfdecare Kapal': 50, 'Inpres': 50
   };
 
   const capaianKegiatan = Object.keys(kegiatanTargets).map((jenis) => {
-    const realisasi = reports.filter((r) => r.jenisKegiatan?.startsWith(jenis)).length;
+    const realisasi = reports.filter((r) => {
+      if (!r.jenisKegiatan) return false;
+      
+      // Ubah ke huruf kecil semua
+      let namaKegiatan = r.jenisKegiatan.toLowerCase();
+      
+      // Samakan variasi ejaan (surveilans, survailen, surveilen -> surveilan)
+      namaKegiatan = namaKegiatan.replace(/surveilans|survailen|surveilen/g, 'surveilan');
+      
+      // Cek apakah nama kegiatan mengandung jenis target
+      return namaKegiatan.includes(jenis.toLowerCase());
+    }).length;
+    
     const target = kegiatanTargets[jenis];
     const persentase = target > 0 ? Math.round((realisasi / target) * 100) : 0;
     return { jenis, target, realisasi, persentase };
