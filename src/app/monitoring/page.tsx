@@ -159,8 +159,6 @@ export default function MonitoringPage() {
         showToast('Berkas berhasil di-upload!', 'success');
         
         // --- OPTIMISTIC UI FINAL (TANPA FETCH ULANG) ---
-        // Ubah state secara lokal dan JANGAN panggil fetchReports()
-        // agar tidak ada data lama dari server yang menimpa tampilan.
         const updatedReport = { ...selectedReport };
         if (fileSuratTugas.length > 0) updatedReport.suratTugas = 'file-baru.pdf';
         if (fileBerkasKegiatan.length > 0) updatedReport.berkasKegiatan = '["file-baru.pdf"]';
@@ -198,11 +196,6 @@ export default function MonitoringPage() {
 
   return (
     <Layout>
-      {/* ... (SISA KODE JSX SAMA PERSIS SEPERTI SEBELUMNYA, TIDAK PERLU DIUBAH) ... */}
-      {/* Silakan scroll ke bawah untuk melihat JSX lengkapnya, tapi karena ini file panjang, 
-          cukup pastikan bagian handleUpdateStatus di atas yang diubah. 
-          Untuk amannya, copy-paste seluruh file ini. */}
-      
       {/* TOAST NOTIFIKASI */}
       {toast.show && (
         <div className={`fixed top-24 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border-l-4 animate-in slide-in-from-top-4 fade-in duration-300 ${
@@ -286,7 +279,8 @@ export default function MonitoringPage() {
                           <button onClick={() => handleViewClick(report)} title="Lihat Detail" className="p-1.5 bg-cyan-400 text-white rounded hover:bg-cyan-500 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
                           <button onClick={() => handleEditClick(report)} title="Upload Berkas" className="p-1.5 bg-yellow-400 text-white rounded hover:bg-yellow-500 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
                           <button onClick={() => handleDeleteClick(report)} title="Hapus Laporan" className="p-1.5 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></button>
-                          <a href={`/monitoring/print/${report.id}`} target="_blank" rel="noopener noreferrer" title="Cetak Laporan Monitoring" className="p-1.5 bg-emerald-500 text-white rounded hover:bg-emerald-600 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg></a>
+                          {/* PERUBAHAN DI SINI: href diubah ke /cetak/ */}
+                          <a href={`/cetak/${report.id}`} target="_blank" rel="noopener noreferrer" title="Cetak Laporan Monitoring" className="p-1.5 bg-emerald-500 text-white rounded hover:bg-emerald-600 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg></a>
                         </div>
                       </td>
                     </tr>

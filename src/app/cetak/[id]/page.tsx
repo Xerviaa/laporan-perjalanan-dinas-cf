@@ -3,6 +3,11 @@ import TemplateInspeksiCPIBKapal from "@/components/cetak/TemplateInspeksiCPIBKa
 import TemplateInspeksiHACCP from "@/components/cetak/TemplateInspeksiHACCP";
 import TemplateInspeksiSKP from "@/components/cetak/TemplateInspeksiSKP";
 import TemplateSurveilanHACCP from "@/components/cetak/TemplateSurveilanHACCP";
+// IMPORT TEMPLATE BARU
+import TemplateInspeksiCPIB from "@/components/cetak/TemplateInspeksiCPIB";
+import TemplateInspeksiCBIB from "@/components/cetak/TemplateInspeksiCBIB";
+import TemplateSurveilanCBIB from "@/components/cetak/TemplateSurveilanCBIB";
+
 import { getDb } from "@/db";
 import { reports } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -37,16 +42,28 @@ export default async function CetakLaporan({
 
   let kontenLaporan = null;
   
-  if (data.jenisKegiatan?.includes("CPIB")) {
+  // --- LOGIKA PEMILIHAN TEMPLATE YANG DIPERBARUI ---
+  const jenis = data.jenisKegiatan?.toLowerCase() || "";
+
+  if (jenis.includes("surveilan cbib") || jenis.includes("survailen cbib")) {
+    kontenLaporan = <TemplateSurveilanCBIB data={data} />;
+  }
+  else if (jenis.includes("inspeksi cbib")) {
+    kontenLaporan = <TemplateInspeksiCBIB data={data} />;
+  }
+  else if (jenis.includes("inspeksi cpib")) {
+    kontenLaporan = <TemplateInspeksiCPIB data={data} />;
+  }
+  else if (jenis.includes("cpib kapal")) {
     kontenLaporan = <TemplateInspeksiCPIBKapal data={data} />;
-  } 
-  else if (data.jenisKegiatan?.includes("HACCP") && data.jenisKegiatan?.includes("Survailen")) {
+  }
+  else if (jenis.includes("survailen haccp") || jenis.includes("surveilan haccp")) {
     kontenLaporan = <TemplateSurveilanHACCP data={data} />;
   }
-  else if (data.jenisKegiatan?.includes("HACCP")) {
+  else if (jenis.includes("haccp")) {
     kontenLaporan = <TemplateInspeksiHACCP data={data} />;
   }
-  else if (data.jenisKegiatan?.includes("SKP")) {
+  else if (jenis.includes("skp")) {
     kontenLaporan = <TemplateInspeksiSKP data={data} />;
   }
   else {
@@ -79,9 +96,7 @@ export default async function CetakLaporan({
         style={{ overflow: 'visible' }}
       >
         
-        {/* ======================================================= */}
-        {/* 1. SURAT TUGAS (HALAMAN PERTAMA)                         */}
-        {/* ======================================================= */}
+        {/* 1. SURAT TUGAS (HALAMAN PERTAMA) */}
         {data.suratTugas && (
           <div className="w-[21cm] h-[29.7cm] bg-white break-after-page print:block print:w-[21cm] print:h-[29.7cm] print:p-0 print:m-0 print:overflow-hidden">
             <iframe 
@@ -93,10 +108,7 @@ export default async function CetakLaporan({
           </div>
         )}
 
-        {/* ========================================= */}
-        {/* 2. ISI LAPORAN (COVER DLL)                */}
-        {/* ========================================= */}
-        {/* PERUBAHAN: print:p-[2cm] agar margin kiri-kanan dan atas-bawah tetap ada */}
+        {/* 2. ISI LAPORAN (COVER DLL) */}
         <div className="w-full p-[2cm] print:p-[2cm] print:w-full">
           {kontenLaporan}
         </div>
