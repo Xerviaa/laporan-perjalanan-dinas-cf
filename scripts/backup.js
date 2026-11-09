@@ -48,24 +48,25 @@ async function main() {
 
   for (const report of reports) {
     let date = new Date();
+    // Gunakan nama kolom database: tanggal
     if (report.tanggal) {
       const parsedDate = new Date(report.tanggal);
       if (!isNaN(parsedDate.getTime())) date = parsedDate;
-    } else if (report.createdAt) {
-      const parsedDate = new Date(report.createdAt);
+    } else if (report.created_at) {
+      const parsedDate = new Date(report.created_at);
       if (!isNaN(parsedDate.getTime())) date = parsedDate;
     }
 
     const year = date.getFullYear();
     const month = date.toLocaleString('id-ID', { month: 'long' });
     
-    // --- LOGIKA PINTAR UNTUK MEMISAHKAN JENIS UTAMA & SUB-KEGIATAN ---
+    // --- PERBAIKAN: Gunakan nama kolom database (underscore) ---
     let jenisUtama = 'Lainnya';
     let subKegiatan = 'Umum';
-    const rawJenis = (report.jenisKegiatan || '').trim();
+    const rawJenis = (report.jenis_kegiatan || '').trim(); // <-- jenis_kegiatan
 
     // DEBUG: Cetak data asli ke log GitHub Actions
-    console.log(`DEBUG: ID=${report.id}, Jenis="${rawJenis}", Perusahaan="${report.namaPerusahaan}"`);
+    console.log(`DEBUG: ID=${report.id}, Jenis="${rawJenis}", Perusahaan="${report.nama_perusahaan}"`); // <-- nama_perusahaan
 
     if (rawJenis) {
       // Cari apakah ada jenis utama yang cocok di dalam string
@@ -94,7 +95,8 @@ async function main() {
     // Sanitasi nama folder
     jenisUtama = jenisUtama.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Lainnya';
     subKegiatan = subKegiatan.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Umum';
-    const namaPerusahaan = (report.namaPerusahaan || 'Tanpa Nama').replace(/[\/\\?%*:|"<>]/g, '-');
+    // Gunakan nama kolom database: nama_perusahaan
+    const namaPerusahaan = (report.nama_perusahaan || `Laporan-ID-${report.id}`).replace(/[\/\\?%*:|"<>]/g, '-');
 
     const folderPath = path.join(baseLocalFolder, String(year), month, jenisUtama, subKegiatan, namaPerusahaan);
     
@@ -103,11 +105,12 @@ async function main() {
     }
 
     // --- UNDUH FILE PDF ---
+    // Gunakan nama kolom database: surat_tugas, berkas_kegiatan, berkas_perbaikan, berkas_pemeriksaan_tindakan_perbaikan
     const filesToDownload = [
-      { key: report.suratTugas, name: 'Surat Tugas' },
-      { key: report.berkasKegiatan, name: 'Berkas Kegiatan', isArray: true },
-      { key: report.berkasPerbaikan, name: 'Berkas Perbaikan', isArray: true },
-      { key: report.berkasPemeriksaanTindakanPerbaikan, name: 'Pemeriksaan Perbaikan' }
+      { key: report.surat_tugas, name: 'Surat Tugas' }, 
+      { key: report.berkas_kegiatan, name: 'Berkas Kegiatan', isArray: true },
+      { key: report.berkas_perbaikan, name: 'Berkas Perbaikan', isArray: true },
+      { key: report.berkas_pemeriksaan_tindakan_perbaikan, name: 'Pemeriksaan Perbaikan' }
     ];
 
     for (const fileInfo of filesToDownload) {
@@ -142,7 +145,8 @@ async function main() {
 
     // --- BUAT FILE CSV ---
     const csvHeader = 'ID,Nama Perusahaan,Tanggal,Pelaksana,Hasil,Kendala\n';
-    const csvRow = `"${report.id}","${report.namaPerusahaan || ''}","${report.tanggal || ''}","${report.petugasPelaksana || ''}","${report.hasilKegiatan || ''}","${report.kendala || ''}"`;
+    // Gunakan nama kolom database: nama_perusahaan, petugas_pelaksana, hasil_kegiatan, kendala
+    const csvRow = `"${report.id}","${report.nama_perusahaan || ''}","${report.tanggal || ''}","${report.petugas_pelaksana || ''}","${report.hasil_kegiatan || ''}","${report.kendala || ''}"`;
     fs.writeFileSync(path.join(folderPath, 'data.csv'), csvHeader + csvRow, 'utf8');
   }
 
