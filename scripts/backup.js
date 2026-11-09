@@ -2,9 +2,30 @@ const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const https = require('https');
+
+// Fungsi untuk mengunduh file dari URL
+function downloadFile(url, dest) {
+  return new Promise((resolve, reject) => {
+    const file = fs.createWriteStream(dest);
+    https.get(url, (response) => {
+      if (response.statusCode !== 200) {
+        file.close();
+        fs.unlink(dest, () => {});
+        return reject(new Error(`Gagal mengunduh: ${response.statusCode}`));
+      }
+      response.pipe(file);
+      file.on('finish', () => {
+        file.close(resolve);
+      });
+    }).on('error', (err) => {
+      fs.unlink(dest, () => {});
+      reject(err);
+    });
+  });
+}
 
 async function main() {
-  // 1. Koneksi ke Database Supabase
   const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
   await client.connect();
 
@@ -18,47 +39,99 @@ async function main() {
     return;
   }
 
-  // 2. Buat Folder dan File CSV untuk setiap laporan
   const baseLocalFolder = './backup-temp';
+  const baseUrl = 'https://laporan-dinas-cf.vickyariesta-id.workers.dev/api/r2/';
   
-  // Hapus folder lama jika ada (untuk menghindari duplikasi saat run ulang)
   if (fs.existsSync(baseLocalFolder)) {
     fs.rmSync(baseLocalFolder, { recursive: true, force: true });
   }
 
   for (const report of reports) {
-    const date = report.tanggal ? new Date(report.tanggal) : new Date(report.createdAt);
+    // 1. Tentukan Tanggal
+    let date = new Date();
+    if (report.tanggal) {
+      const parsedDate = new Date(report.tanggal);
+      if (!isNaN(parsedDate.getTime())) date = parsedDate;
+    } else if (report.createdAt) {
+      const parsedDate = new Date(report.createdAt);
+      if (!isNaN(parsedDate.getTime())) date = parsedDate;
+    }
+
     const year = date.getFullYear();
     const month = date.toLocaleString('id-ID', { month: 'long' });
     
-    // Pisahkan nama kegiatan (contoh: "Inspeksi CPIB Kapal" -> "CPIB Kapal")
-    const jenisParts = (report.jenisKegiatan || '').split(' ');
-    const jenisKegiatan = jenisParts.slice(1).join(' ') || jenisParts[0] || 'Lainnya';
-    
-    const namaPerusahaan = (report.namaPerusahaan || 'Tanpa Nama').replace(/[\/\\?%*:|"<>]/g, '-'); // Sanitasi nama folder
+    // 2. Pisahkan Jenis Kegiatan Utama dan Sub-Kegiatan
+    let jenisUtama = 'Lainnya';
+    let subKegiatan = 'Lainnya';
 
-    // Struktur Folder: Tahun/Bulan/Jenis Kegiatan/Nama Perusahaan
-    const folderPath = path.join(baseLocalFolder, String(year), month, jenisKegiatan, namaPerusahaan);
+    if (report.jenisKegiatan) {
+      const parts = report.jenisKegiatan.trim().split(/\s+/);
+      if (parts.length > 0) {
+        jenisUtama = parts[0];
+        subKegiatan = parts.length > 1 ? parts.slice(1).join(' ') : 'Umum';
+      }
+    }
+
+    jenisUtama = jenisUtama.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Lainnya';
+    subKegiatan = subKegiatan.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Lainnya';
+    const namaPerusahaan = (report.namaPerusahaan || 'Tanpa Nama').replace(/[\/\\?%*:|"<>]/g, '-');
+
+    // 3. Struktur Folder: Tahun/Bulan/Jenis Utama/Sub-Kegiatan/Nama Perusahaan
+    const folderPath = path.join(baseLocalFolder, String(year), month, jenisUtama, subKegiatan, namaPerusahaan);
     
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
     }
 
-    // Buat konten CSV
-    const csvHeader = 'ID,Nama Perusahaan,Jenis Kegiatan,Tanggal,Pelaksana,Hasil,Kendala\n';
-    const csvRow = `"${report.id}","${report.namaPerusahaan || ''}","${report.jenisKegiatan || ''}","${report.tanggal || ''}","${report.petugasPelaksana || ''}","${report.hasilKegiatan || ''}","${report.kendala || ''}"`;
-    
-    const fileName = `detail-${report.id}.csv`;
-    fs.writeFileSync(path.join(folderPath, fileName), csvHeader + csvRow, 'utf8');
+    // 4. Unduh File PDF dari R2
+    const filesToDownload = [
+      { key: report.suratTugas, name: 'Surat Tugas' },
+      { key: report.berkasKegiatan, name: 'Berkas Kegiatan', isArray: true },
+      { key: report.berkasPerbaikan, name: 'Berkas Perbaikan', isArray: true },
+      { key: report.berkasPemeriksaanTindakanPerbaikan, name: 'Pemeriksaan Perbaikan' }
+    ];
+
+    for (const fileInfo of filesToDownload) {
+      if (!fileInfo.key) continue;
+
+      let fileKeys = [];
+      if (fileInfo.isArray) {
+        try {
+          fileKeys = JSON.parse(fileInfo.key);
+        } catch (e) {
+          fileKeys = [fileInfo.key];
+        }
+      } else {
+        fileKeys = [fileInfo.key];
+      }
+
+      for (let i = 0; i < fileKeys.length; i++) {
+        const key = fileKeys[i];
+        if (!key || key === '[]') continue;
+
+        const fileName = key.split('/').pop(); // Ambil nama file dari path
+        const destPath = path.join(folderPath, fileName);
+        
+        try {
+          console.log(`Mengunduh: ${fileName}`);
+          await downloadFile(baseUrl + key, destPath);
+        } catch (error) {
+          console.error(`Gagal mengunduh ${fileName}:`, error.message);
+        }
+      }
+    }
+
+    // 5. Buat file data.csv sebagai pelengkap
+    const csvHeader = 'ID,Nama Perusahaan,Tanggal,Pelaksana,Hasil,Kendala\n';
+    const csvRow = `"${report.id}","${report.namaPerusahaan || ''}","${report.tanggal || ''}","${report.petugasPelaksana || ''}","${report.hasilKegiatan || ''}","${report.kendala || ''}"`;
+    fs.writeFileSync(path.join(folderPath, 'data.csv'), csvHeader + csvRow, 'utf8');
   }
 
   await client.end();
-  console.log(`Berhasil membuat ${reports.length} file CSV.`);
+  console.log(`Berhasil memproses ${reports.length} laporan.`);
 
-  // 3. Upload ke Google Drive via Rclone
   console.log('Mengunggah ke Google Drive...');
   try {
-    // Menyalin isi folder local ke folder 'gdrive:supabase-backups'
     execSync(`rclone copy ${baseLocalFolder} gdrive:supabase-backups`, { stdio: 'inherit' });
     console.log('Upload ke Google Drive BERHASIL!');
   } catch (error) {
