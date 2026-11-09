@@ -1,4 +1,4 @@
-name: Backup Supabase to Google Drive
+name: Backup Supabase to Google Drive (Structured)
 
 on:
   schedule:
@@ -12,24 +12,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install PostgreSQL Client & Rclone
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install pg
+
+      - name: Install Rclone
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-client rclone
+          sudo apt-get install -y rclone
 
       - name: Configure Rclone
         run: |
           mkdir -p ~/.config/rclone
           echo "${{ secrets.RCLONE_CONFIG }}" | base64 -d > ~/.config/rclone/rclone.conf
 
-      - name: Dump Supabase Database
-        run: |
-          # Simpan ke file .dump dengan format custom
-          pg_dump "${{ secrets.SUPABASE_DB_URL }}" \
-            --format=custom \
-            --schema=public \
-            --file="backup-$(date +%F).dump"
-
-      - name: Upload to Google Drive
-        run: |
-          rclone copy "backup-$(date +%F).dump" gdrive:supabase-backups/
+      - name: Run Backup Script
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: node scripts/backup.js
