@@ -64,6 +64,9 @@ async function main() {
     let subKegiatan = 'Umum';
     const rawJenis = (report.jenisKegiatan || '').trim();
 
+    // DEBUG: Cetak data asli ke log GitHub Actions
+    console.log(`DEBUG: ID=${report.id}, Jenis="${rawJenis}", Perusahaan="${report.namaPerusahaan}"`);
+
     if (rawJenis) {
       // Cari apakah ada jenis utama yang cocok di dalam string
       let found = false;
