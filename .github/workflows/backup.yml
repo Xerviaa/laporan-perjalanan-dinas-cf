@@ -1,0 +1,35 @@
+name: Backup Supabase to Google Drive
+
+on:
+  schedule:
+    - cron: '0 3 * * 0' # Setiap hari Minggu jam 03:00 UTC (10:00 WIB)
+  workflow_dispatch: {} # Tombol untuk menjalankan manual
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL Client & Rclone
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client rclone
+
+      - name: Configure Rclone
+        run: |
+          mkdir -p ~/.config/rclone
+          echo "${{ secrets.RCLONE_CONFIG }}" > ~/.config/rclone/rclone.conf
+
+      - name: Dump Supabase Database
+        run: |
+          # Simpan ke file .dump dengan format custom
+          pg_dump "${{ secrets.SUPABASE_DB_URL }}" \
+            --format=custom \
+            --schema=public \
+            --file="backup-$(date +%F).dump"
+
+      - name: Upload to Google Drive
+        run: |
+          rclone copy "backup-$(date +%F).dump" gdrive:supabase-backups/
