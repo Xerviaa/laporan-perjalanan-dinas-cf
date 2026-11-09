@@ -7,6 +7,7 @@ import TemplateSurveilanHACCP from "@/components/cetak/TemplateSurveilanHACCP";
 import TemplateInspeksiCPIB from "@/components/cetak/TemplateInspeksiCPIB";
 import TemplateInspeksiCBIB from "@/components/cetak/TemplateInspeksiCBIB";
 import TemplateSurveilanCBIB from "@/components/cetak/TemplateSurveilanCBIB";
+import TemplateSurveilanCPIB from "@/components/cetak/TemplateSurveilanCPIB";
 
 import { getDb } from "@/db";
 import { reports } from "@/db/schema";
@@ -50,6 +51,9 @@ export default async function CetakLaporan({
   }
   else if (jenis.includes("inspeksi cbib")) {
     kontenLaporan = <TemplateInspeksiCBIB data={data} />;
+  }
+  else if (jenis.includes("surveilan cpib") || jenis.includes("survailen cpib")) {
+    kontenLaporan = <TemplateSurveilanCPIB data={data} />;
   }
   // CEK CPIB KAPAL DULU SEBELUM INSPEKSI CPIB
   else if (jenis.includes("cpib kapal")) {
