@@ -35,7 +35,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         <div className="mt-16 w-full flex flex-col items-center gap-4">
           <h1 className="w-full text-center text-[16pt] font-bold uppercase leading-tight">PELAPORAN PERJALANAN DINAS</h1>
           <h2 className="w-full text-center text-[14pt] font-bold uppercase leading-snug">
-            KEGIATAN SURVAILEN DAN PENGAMBILAN SAMPEL<br/>DI UNIT PENGOLAHAN IKAN
+            KEGIATAN SURVEILAN DAN PENGAMBILAN SAMPEL<br/>DI UNIT PENGOLAHAN IKAN
           </h2>
           <div className="mt-8 flex flex-col items-center gap-2 tracking-tight">
             <p className="font-bold text-[14pt] uppercase">{formatNamaPerusahaan(data.namaPerusahaan)}</p>
@@ -57,7 +57,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
       <div className="pt-8">
         <div className="w-full text-center mb-8">
           <h3 className="font-bold uppercase text-[12pt] leading-tight">
-            LAPORAN PERJALANAN DINAS<br/>KEGIATAN SURVAILEN DAN PENGAMBILAN SAMPEL<br/>DI UNIT PENGOLAHAN IKAN
+            LAPORAN PERJALANAN DINAS<br/>KEGIATAN SURVEILAN DAN PENGAMBILAN SAMPEL<br/>DI UNIT PENGOLAHAN IKAN
           </h3>
         </div>
 
@@ -86,7 +86,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         <div className="mb-4">
           <h4 className="font-bold">III. Maksud dan Tujuan</h4>
           <p className="indent-8 mt-1">
-            Maksud dan tujuan dari kegiatan ini adalah melaksanakan kegiatan survailen dan monitoring guna menjamin Sistem Jaminan Mutu dan Keamanan Hasil Perikanan dari Unit Pengolahan {formatNamaPerusahaan(data.namaPerusahaan)}. Kegiatan Survailen ini dilaksanakan untuk melihat konsistensi dari penerapan HACCP dan monitoring berupa pengambilan sampel untuk memberikan jaminan keamanan hasil perikanan untuk dilakukan pemeriksaan laboratorium.
+            Maksud dan tujuan dari kegiatan ini adalah melaksanakan kegiatan surveilan dan monitoring guna menjamin Sistem Jaminan Mutu dan Keamanan Hasil Perikanan dari Unit Pengolahan {formatNamaPerusahaan(data.namaPerusahaan)}. Kegiatan Surveilan ini dilaksanakan untuk melihat konsistensi dari penerapan HACCP dan monitoring berupa pengambilan sampel untuk memberikan jaminan keamanan hasil perikanan untuk dilakukan pemeriksaan laboratorium.
           </p>
         </div>
 
@@ -139,7 +139,7 @@ export default function TemplateSurveilanHACCP({ data }: { data: any }) {
         <div className="mb-4 mt-8">
           <h4 className="font-bold">VI. Pelaksanaan Kegiatan</h4>
           <p className="indent-8 mt-1">
-            Kegiatan survivalen HACCP ini menghasilkan laporan hasil survivalen berupa daftar hadir dan temuan ketidaksesuaian dari penerapan GMP/SSOP sebagai dasar Unit Pengolahan Ikan untuk memperbaiki dan bertanggungjawab terhadap penerapan HACCP yang dimiliki.
+            Kegiatan surveilan HACCP ini menghasilkan laporan hasil surveilan berupa daftar hadir dan temuan ketidaksesuaian dari penerapan GMP/SSOP sebagai dasar Unit Pengolahan Ikan untuk memperbaiki dan bertanggungjawab terhadap penerapan HACCP yang dimiliki.
           </p>
         </div>
 

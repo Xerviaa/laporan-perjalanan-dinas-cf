@@ -142,7 +142,7 @@ export default function UploadPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const isDetailRequired = jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Survailen';
+    const isDetailRequired = jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Surveilan';
     
     if (!jenisKegiatan || (isDetailRequired && !detailKegiatan) || !namaPerusahaan || !tanggal) {
       showToast('Mohon lengkapi data wajib (Jenis, Detail, Perusahaan, Tanggal).', 'error');
@@ -158,7 +158,7 @@ export default function UploadPage() {
       })
       .join('|');
 
-    let fullJenisKegiatan = jenisKegiatan === 'Inspeksi' ? `Inspeksi ${detailKegiatan}` : jenisKegiatan === 'Survailen' ? `Survailen ${detailKegiatan}` : jenisKegiatan;
+    let fullJenisKegiatan = jenisKegiatan === 'Inspeksi' ? `Inspeksi ${detailKegiatan}` : jenisKegiatan === 'Surveilan' ? `Surveilan ${detailKegiatan}` : jenisKegiatan;
 
     const formData = new FormData();
     formData.append('namaPerusahaan', namaPerusahaan);
@@ -201,9 +201,9 @@ export default function UploadPage() {
     }
   };
 
-  const opsiJenisKegiatan = ['Inspeksi', 'Survailen', 'Inpres', 'Selfdeclare Kapal'];
+  const opsiJenisKegiatan = ['Inspeksi', 'Surveilan', 'Inpres', 'Selfdeclare Kapal'];
   // TAMBAHKAN OPSI "Surveilan CPIB" DI SINI
-const getOpsiDetail = () => (jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Survailen') 
+const getOpsiDetail = () => (jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Surveilan') 
   ? ['CPIB Kapal', 'CBIB', 'CPIB', 'HACCP', 'SKP', 'SPDI'] 
   : [];
 

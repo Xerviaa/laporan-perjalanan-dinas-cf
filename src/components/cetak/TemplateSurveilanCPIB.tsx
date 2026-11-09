@@ -32,7 +32,7 @@ export default function TemplateSurveilanCPIB({ data }: { data: any }) {
         <div className="mt-16 w-full flex flex-col items-center gap-4">
           <h1 className="w-full text-center text-[16pt] font-bold uppercase leading-tight">LAPORAN PERJALANAN DINAS</h1>
           <h2 className="w-full text-center text-[14pt] font-bold uppercase leading-snug">
-            KEGIATAN SURVAILEN CARA PEMBENIHAN IKAN<br/>YANG BAIK (CPIB)
+            KEGIATAN SURVEILAN CARA PEMBENIHAN IKAN<br/>YANG BAIK (CPIB)
           </h2>
           <div className="mt-8 flex flex-col items-center gap-2 tracking-tight">
             <p className="font-bold text-[14pt] uppercase">{formatNamaPerusahaan(data.namaPerusahaan)}</p>
@@ -53,7 +53,7 @@ export default function TemplateSurveilanCPIB({ data }: { data: any }) {
       <div className="pt-8">
         <div className="w-full text-center mb-8">
           <h3 className="font-bold uppercase text-[12pt] leading-tight">
-            LAPORAN PERJALANAN DINAS<br/>KEGIATAN SURVAILEN CARA PEMBENIHAN IKAN YANG BAIK (CPIB)
+            LAPORAN PERJALANAN DINAS<br/>KEGIATAN SURVEILAN CARA PEMBENIHAN IKAN YANG BAIK (CPIB)
           </h3>
         </div>
 
@@ -105,14 +105,14 @@ export default function TemplateSurveilanCPIB({ data }: { data: any }) {
             Kegiatan ini dilaksanakan di <strong>{formatNamaPerusahaan(data.namaPerusahaan)}</strong> yang mengajukan permohonan kepada Balai PPMHKP pusat...
           </p>
           <p className="indent-8 mt-1">
-            Kegiatan survailen sertifikasi cara pembenihan ikan yang baik (CPIB) dilaksanakan pada tanggal <strong>{tanggalIndo || "-"}</strong> oleh Inspektur Mutu/Asisten Inspektur Mutu Balai PPMHKP Denpasar.
+            Kegiatan surveilan sertifikasi cara pembenihan ikan yang baik (CPIB) dilaksanakan pada tanggal <strong>{tanggalIndo || "-"}</strong> oleh Inspektur Mutu/Asisten Inspektur Mutu Balai PPMHKP Denpasar.
           </p>
         </div>
 
         <div className="mb-4">
           <h4 className="font-bold">VI. Pelaksanaan Kegiatan</h4>
           <p className="indent-8 mt-1">
-            survailen dapat dilakukan setelah adanya surat perintah dari pusat...
+            surveilan dapat dilakukan setelah adanya surat perintah dari pusat...
           </p>
           <div className="pl-4 mt-1 space-y-1">
             <p>a. Nomor induk berusaha dan sertifikat standar;</p>
@@ -127,7 +127,7 @@ export default function TemplateSurveilanCPIB({ data }: { data: any }) {
           <div className="pl-4 mt-1 space-y-1">
             <p>a. Pelaku usaha melakukan permohonan melalui OSS...</p>
             <p>b. Verifikasi kelengkapan dan keabsahan dokumen oleh petugas</p>
-            <p>c. surveilen CPIB oleh Inspektur Mutu</p>
+            <p>c. surveilan CPIB oleh Inspektur Mutu</p>
             <p>d. Review oleh Tim Teknis Internal BPPMHKP Denpasar</p>
             <p>e. Rekomendasi penerbitan sertifikat CPIB</p>
             <p>f. Penerbitan sertifikat CPIB melalui sistem OSS</p>
