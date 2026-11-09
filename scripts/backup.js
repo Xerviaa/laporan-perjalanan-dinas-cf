@@ -22,6 +22,18 @@ function downloadFile(url, dest) {
   });
 }
 
+// FUNGSI BARU: Membersihkan nama file dari karakter aneh
+function cleanFileName(rawKey) {
+  if (!rawKey) return '';
+  // Hapus tanda kutip, kurung siku, dan spasi di awal/akhir
+  let cleaned = rawKey.replace(/[\[\]"]/g, '').trim();
+  // Jika ada koma (array), ambil elemen pertama
+  if (cleaned.includes(',')) {
+    cleaned = cleaned.split(',')[0].trim();
+  }
+  return cleaned;
+}
+
 async function main() {
   const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
   await client.connect();
@@ -43,12 +55,10 @@ async function main() {
     fs.rmSync(baseLocalFolder, { recursive: true, force: true });
   }
 
-  // Daftar Jenis Utama yang dikenal
   const jenisUtamaList = ['Inspeksi', 'Survailen', 'Inpres', 'Selfdecare Kapal'];
 
   for (const report of reports) {
     let date = new Date();
-    // Gunakan nama kolom database: tanggal
     if (report.tanggal) {
       const parsedDate = new Date(report.tanggal);
       if (!isNaN(parsedDate.getTime())) date = parsedDate;
@@ -60,31 +70,22 @@ async function main() {
     const year = date.getFullYear();
     const month = date.toLocaleString('id-ID', { month: 'long' });
     
-    // --- PERBAIKAN: Gunakan nama kolom database (underscore) ---
     let jenisUtama = 'Lainnya';
     let subKegiatan = 'Umum';
-    const rawJenis = (report.jenis_kegiatan || '').trim(); // <-- jenis_kegiatan
-
-    // DEBUG: Cetak data asli ke log GitHub Actions
-    console.log(`DEBUG: ID=${report.id}, Jenis="${rawJenis}", Perusahaan="${report.nama_perusahaan}"`); // <-- nama_perusahaan
+    const rawJenis = (report.jenis_kegiatan || '').trim();
 
     if (rawJenis) {
-      // Cari apakah ada jenis utama yang cocok di dalam string
       let found = false;
       for (const ju of jenisUtamaList) {
         if (rawJenis.toLowerCase().startsWith(ju.toLowerCase())) {
           jenisUtama = ju;
-          // Ambil sisa string setelah nama jenis utama
           let sisa = rawJenis.substring(ju.length).trim();
-          // Hapus karakter aneh di awal sisa string (seperti spasi atau tanda hubung)
           sisa = sisa.replace(/^[-:\s]+/, '');
           subKegiatan = sisa || 'Umum';
           found = true;
           break;
         }
       }
-      
-      // Jika tidak cocok dengan daftar, pakai logika split biasa
       if (!found) {
         const parts = rawJenis.split(/\s+/);
         jenisUtama = parts[0];
@@ -92,10 +93,8 @@ async function main() {
       }
     }
 
-    // Sanitasi nama folder
     jenisUtama = jenisUtama.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Lainnya';
     subKegiatan = subKegiatan.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Umum';
-    // Gunakan nama kolom database: nama_perusahaan
     const namaPerusahaan = (report.nama_perusahaan || `Laporan-ID-${report.id}`).replace(/[\/\\?%*:|"<>]/g, '-');
 
     const folderPath = path.join(baseLocalFolder, String(year), month, jenisUtama, subKegiatan, namaPerusahaan);
@@ -104,13 +103,12 @@ async function main() {
       fs.mkdirSync(folderPath, { recursive: true });
     }
 
-    // --- UNDUH FILE PDF ---
-    // Gunakan nama kolom database: surat_tugas, berkas_kegiatan, berkas_perbaikan, berkas_pemeriksaan_tindakan_perbaikan
+    // --- PROSES UNDUH FILE (DIPERBAIKI) ---
     const filesToDownload = [
-      { key: report.surat_tugas, name: 'Surat Tugas' }, 
-      { key: report.berkas_kegiatan, name: 'Berkas Kegiatan', isArray: true },
-      { key: report.berkas_perbaikan, name: 'Berkas Perbaikan', isArray: true },
-      { key: report.berkas_pemeriksaan_tindakan_perbaikan, name: 'Pemeriksaan Perbaikan' }
+      { key: report.surat_tugas, isArray: false },
+      { key: report.berkas_kegiatan, isArray: true },
+      { key: report.berkas_perbaikan, isArray: true },
+      { key: report.berkas_pemeriksaan_tindakan_perbaikan, isArray: false }
     ];
 
     for (const fileInfo of filesToDownload) {
@@ -127,8 +125,12 @@ async function main() {
         fileKeys = [fileInfo.key];
       }
 
+      // Pastikan fileKeys adalah array
+      if (!Array.isArray(fileKeys)) fileKeys = [fileKeys];
+
       for (let i = 0; i < fileKeys.length; i++) {
-        const key = fileKeys[i];
+        const rawKey = fileKeys[i];
+        const key = cleanFileName(rawKey); // Bersihkan nama file
         if (!key || key === '[]') continue;
 
         const fileName = key.split('/').pop();
@@ -145,7 +147,6 @@ async function main() {
 
     // --- BUAT FILE CSV ---
     const csvHeader = 'ID,Nama Perusahaan,Tanggal,Pelaksana,Hasil,Kendala\n';
-    // Gunakan nama kolom database: nama_perusahaan, petugas_pelaksana, hasil_kegiatan, kendala
     const csvRow = `"${report.id}","${report.nama_perusahaan || ''}","${report.tanggal || ''}","${report.petugas_pelaksana || ''}","${report.hasil_kegiatan || ''}","${report.kendala || ''}"`;
     fs.writeFileSync(path.join(folderPath, 'data.csv'), csvHeader + csvRow, 'utf8');
   }
