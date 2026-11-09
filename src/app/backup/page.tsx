@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Layout from '@/components/Layout';
+import Link from 'next/link';
 
 export default function BackupPage() {
   const [isBackingUp, setIsBackingUp] = useState(false);
@@ -51,8 +52,20 @@ export default function BackupPage() {
           )}
         </button>
 
-        <p className="text-xs text-slate-400 mt-4 text-center">
+        <p className="text-xs text-slate-400 mt-4 text-center mb-6">
           *Fitur backup manual akan segera tersedia.
+        </p>
+
+        <hr className="border-slate-200 mb-6" />
+
+        <Link 
+          href="/backup/arsip" 
+          className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+        >
+          📂 Lihat Arsip Backup
+        </Link>
+        <p className="text-xs text-slate-400 mt-2 text-center">
+          Telusuri data backup berdasarkan Tahun, Bulan, Jenis Kegiatan, dan Detail.
         </p>
       </div>
     </Layout>
