@@ -37,51 +37,37 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
     <div className="text-[11pt] leading-relaxed text-justify text-black" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
       
       {/* HALAMAN 1: COVER */}
-      <div className="w-full h-[24cm] relative page-break-after-always block">
-        <div className="mt-10 w-full text-center">
+      <div className="w-full h-[25.7cm] relative print:break-after-page flex flex-col items-center">
+        <div className="mt-16 w-full flex flex-col items-center gap-4">
           <h1 className="w-full text-center text-[16pt] font-bold uppercase leading-tight">
-            PELAPORAN PERJALANAN DINAS
+            LAPORAN PERJALANAN DINAS
           </h1>
-          <h2 className="w-full text-center text-[14pt] font-bold uppercase leading-snug mt-4">
+          <h2 className="w-full text-center text-[14pt] font-bold uppercase leading-snug">
             KEGIATAN INSPEKSI CARA PENANGANAN IKAN<br/>YANG BAIK (CPIB) DI ATAS KAPAL
           </h2>
           
-          {/* NAMA KAPAL (Jika datanya ada, dipanggil. Jika tidak, pakai default) */}
-          <p className="w-full text-center font-bold text-[14pt] uppercase mt-8">
-            {data.namaKapal || "KM. NAGA MAS PERKASA"}
-          </p>
-
-          {/* TANGGAL DI ATAS LOGO */}
-          <p className="w-full text-center font-bold text-[14pt] uppercase mt-2">
-            {tanggalIndo}
-          </p>
+          {/* NAMA PERUSAHAAN & TANGGAL DARI INPUTAN USER */}
+          <div className="mt-8 flex flex-col items-center gap-2 tracking-tight">
+            <p className="font-bold text-[14pt] uppercase">{formatNamaPerusahaan(data.namaPerusahaan)}</p>
+            <p className="font-bold text-[14pt] uppercase">{tanggalIndo}</p>
+          </div>
         </div>
-
+        
         {/* LOGO DI TENGAH */}
-        <div className="absolute top-[50%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full flex flex-col items-center text-center">
+        <div className="absolute top-[60%] left-1/2 transform -translate-x-1/2 -translate-y-1/2">
           <img src="/logo-kkp.png" alt="Logo KKP" className="w-40 h-40 object-contain mx-auto" />
         </div>
-
-        {/* BAGIAN BAWAH: NAMA PERUSAHAAN & KEMENTERIAN */}
-        <div className="absolute bottom-0 w-full text-center pb-4">
-          {/* Nama CV ditaruh di sini, di atas teks Kementerian */}
-          <p className="font-bold text-[14pt] uppercase mb-6">
-            {formatNamaPerusahaan(data.namaPerusahaan)}
-          </p>
-          
+        
+        {/* TEKS KEMENTERIAN DI BAWAH */}
+        <div className="absolute bottom-10 w-full text-center">
           <h3 className="text-[14pt] font-bold uppercase leading-tight">
-            KEMENTERIAN KELAUTAN DAN PERIKANAN<br/>
-            BADAN PENGENDALIAN DAN PENGAWASAN MUTU<br/>
-            HASIL KELAUTAN DAN PERIKANAN<br/>
-            BALAI PPMHKP DENPASAR<br/>
-            2026
+            KEMENTERIAN KELAUTAN DAN PERIKANAN<br/>BADAN PENGENDALIAN DAN PENGAWASAN MUTU<br/>HASIL KELAUTAN DAN PERIKANAN<br/>BALAI PPMHKP DENPASAR<br/>2026
           </h3>
         </div>
       </div>
-      
+
       {/* HALAMAN 2: ISI LAPORAN */}
-      <div className="w-full page-break-before-always pt-8" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
-        
+      <div className="pt-8">
         <div className="w-full text-center mb-8">
           <h3 className="font-bold uppercase text-[12pt] leading-tight">
             LAPORAN PERJALANAN DINAS<br/>
@@ -230,53 +216,38 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
         </div>
 
         {/* TANDA TANGAN PETUGAS */}
-        <div className="mt-8 mb-8 ml-20 break-inside-avoid page-break-inside-avoid w-full max-w-[500px]">
-          <p className="mb-4">Petugas Pelaksana :</p>
-          
-          <table className="w-full border-collapse">
-            <tbody>
-              {data.petugasPelaksana ? (
-                data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
-                  const match = petugas.trim().match(/(.*)\((.*)\)/);
-                  const namaLengkap = match ? match[1].trim() : petugas.trim();
-                  const ttdUrl = getTtdUrl(namaLengkap);
+        <div className="mt-8 mb-8 ml-32">
+          <p>Petugas Pelaksana :</p>
+          <div className="mt-4 space-y-4">
+            {data.petugasPelaksana ? (
+              data.petugasPelaksana.split('|').map((petugas: string, index: number) => {
+                const match = petugas.trim().match(/(.*)\((.*)\)/);
+                const namaLengkap = match ? match[1].trim() : petugas.trim();
+                const ttdUrl = getTtdUrl(namaLengkap);
 
-                  return (
-                    <tr key={index}>
-                      <td className="w-[30px] align-middle pb-8">
-                        {String.fromCharCode(97 + index)}.
-                      </td>
-                      <td className="w-[250px] align-middle pb-8">
-                        {namaLengkap}
-                      </td>
-                      <td className="align-middle pb-8 text-lg">
-                        <div className="flex flex-row items-center justify-start h-[40px] gap-2">
-                          <span>(</span>
-                          <div 
-                            className="w-[80px] h-full bg-no-repeat bg-center bg-contain"
-                            style={{ backgroundImage: `url(${ttdUrl})` }}
-                          ></div>
-                          <span>)</span>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td className="w-[30px] align-middle pb-8">a.</td>
-                  <td className="w-[250px] align-middle pb-8">-</td>
-                  <td className="align-middle pb-8 text-lg">
-                    <div className="flex flex-row items-center justify-start h-[40px] gap-2">
-                      <span>(</span>
-                      <div className="w-[80px] h-full"></div>
-                      <span>)</span>
+                return (
+                  <div key={index} className="flex items-center">
+                    <span className="w-6 shrink-0">{index + 1}.</span>
+                    <span className="w-[280px] shrink-0">{namaLengkap}</span>
+                    <div className="flex items-center">
+                      <span className="text-gray-600">(</span>
+                      <div 
+                        className="w-[80px] h-10 bg-no-repeat bg-contain bg-center"
+                        style={{ backgroundImage: `url(${ttdUrl})` }}
+                      ></div>
+                      <span className="text-gray-600">)</span>
                     </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="flex items-center">
+                <span className="w-6 shrink-0">1.</span>
+                <span className="w-[280px] shrink-0">-</span>
+                <span className="text-gray-600">(......)</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* HALAMAN BARU UNTUK DOKUMENTASI */}
