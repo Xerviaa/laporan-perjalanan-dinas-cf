@@ -2,7 +2,7 @@ name: Backup Supabase to Google Drive (Structured)
 
 on:
   schedule:
-    # Berjalan Senin-Jumat jam 10:00 UTC (17:00 WIB)
+    # Berjalan Senin-Jumat jam 10:00 UTC (18:00 WITA)
     - cron: '0 10 * * 1-5' 
   workflow_dispatch: {} # Tombol untuk menjalankan manual
   repository_dispatch:  # Untuk dipicu dari tombol aplikasi Monica
@@ -20,22 +20,28 @@ jobs:
         with:
           node-version: '20'
 
-      # TAMBAHKAN LANGKAH INI UNTUK MENGINSTALL LIBRARY CANVAS
+      # 1. INSTALL LIBRARY CANVAS
       - name: Install System Dependencies for Canvas
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev
 
-      # UBAH BAGIAN INI: Gunakan npm install (untuk membaca package.json)
+      # 2. INSTALL GOOGLE CHROME (Pengganti Chromium Snap yang lambat)
+      - name: Install Google Chrome (Stable)
+        timeout-minutes: 5
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg
+          wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      # 3. INSTALL DEPENDENCIES (Node.js)
       - name: Install Dependencies
         run: npm install
 
-      # TAMBAHKAN LANGKAH INI UNTUK MENGINSTALL CHROMIUM (untuk Puppeteer)
-      - name: Install Chromium for Puppeteer
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y chromium-browser
-
+      # 4. INSTALL RCLONE
       - name: Install Rclone
         run: |
           sudo apt-get update
@@ -46,8 +52,10 @@ jobs:
           mkdir -p ~/.config/rclone
           echo "${{ secrets.RCLONE_CONFIG }}" | base64 -d > ~/.config/rclone/rclone.conf
 
+      # 5. RUN BACKUP SCRIPT
       - name: Run Backup Script
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
-          PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
+          # Arahkan ke Google Chrome yang baru diinstall
+          PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome-stable
         run: node scripts/backup.js
