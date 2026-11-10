@@ -32,9 +32,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y wget gnupg
-          # Hapus keyring lama jika ada (mencegah error "File exists")
           sudo rm -f /usr/share/keyrings/google-chrome.gpg
-          # Unduh key dengan flag --batch dan --yes
           wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/google-chrome.gpg
           echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
           sudo apt-get update
@@ -42,6 +40,9 @@ jobs:
 
       # 3. INSTALL DEPENDENCIES (Node.js)
       - name: Install Dependencies
+        env:
+          # Mencegah Puppeteer mengunduh Chrome yang bikin timeout
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
         run: npm install
 
       # 4. INSTALL RCLONE
