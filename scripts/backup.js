@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 const https = require('https');
+const puppeteer = require('puppeteer'); // Library untuk HTML to PDF
 
 function downloadFile(url, dest) {
   return new Promise((resolve, reject) => {
@@ -37,6 +38,27 @@ function extractFileKey(rawData) {
   return str || null;
 }
 
+async function generatePdfFromUrl(url, destPath) {
+  const browser = await puppeteer.launch({ 
+    headless: 'new',
+    args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+  });
+  const page = await browser.newPage();
+  
+  // Buka halaman cetak
+  await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
+  
+  // Cetak ke PDF
+  await page.pdf({ 
+    path: destPath, 
+    format: 'A4', 
+    printBackground: true,
+    margin: { top: '0cm', right: '0cm', bottom: '0cm', left: '0cm' }
+  });
+  
+  await browser.close();
+}
+
 async function main() {
   const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
   await client.connect();
@@ -60,6 +82,7 @@ async function main() {
 
   const baseLocalFolder = './backup-temp';
   const baseUrl = 'https://laporan-dinas-cf.vickyariesta-id.workers.dev/api/r2/';
+  const cetakUrl = 'https://laporan-dinas-cf.vickyariesta-id.workers.dev/cetak/';
   
   if (fs.existsSync(baseLocalFolder)) {
     fs.rmSync(baseLocalFolder, { recursive: true, force: true });
@@ -79,21 +102,15 @@ async function main() {
     const rawJenis = (report.jenis_kegiatan || '').trim().toLowerCase();
     let jenisUtama = 'Lainnya';
     
-    // Deteksi Inspeksi
     if (rawJenis.includes('inspeksi')) {
       jenisUtama = 'Inspeksi';
-    } 
-    // Deteksi Surveilan (apapun typo-nya: surveilan, survailen, surveilans)
-    else if (rawJenis.includes('surveilan') || rawJenis.includes('survailen') || rawJenis.includes('surveilans')) {
+    } else if (rawJenis.includes('surveilan') || rawJenis.includes('survailen') || rawJenis.includes('surveilans')) {
       jenisUtama = 'Surveilan';
-    } 
-    // Deteksi Inpres
-    else if (rawJenis.includes('inpres')) {
+    } else if (rawJenis.includes('inpres')) {
       jenisUtama = 'Inpres';
     }
 
-    // --- 2. TENTUKAN DETAIL KEGIATAN (Anti-Typo juga) ---
-    // Kita cek apakah rawJenis mengandung salah satu dari detail ini
+    // --- 2. TENTUKAN DETAIL KEGIATAN (Anti-Typo) ---
     let detailKegiatan = 'Lainnya';
     
     if (rawJenis.includes('cpib kapal')) {
@@ -120,7 +137,7 @@ async function main() {
       fs.mkdirSync(folderPath, { recursive: true });
     }
 
-    // --- 3. PROSES UNDUH FILE ---
+    // --- 3. PROSES UNDUH FILE ASLI (Surat Tugas, dll) ---
     const fileColumns = [
       { key: report.surat_tugas },
       { key: report.berkas_kegiatan },
@@ -158,7 +175,19 @@ async function main() {
       }
     }
 
-    // --- 4. BUAT FILE CSV ---
+    // --- 4. PROSES GENERATE PDF LAPORAN DARI TEMPLATE HTML ---
+    const pdfLaporanPath = path.join(folderPath, `Laporan_${namaPerusahaan}.pdf`);
+    const urlCetak = `${cetakUrl}${report.id}`;
+    
+    try {
+      console.log(`Membuat PDF Laporan dari ${urlCetak}...`);
+      await generatePdfFromUrl(urlCetak, pdfLaporanPath);
+      console.log(`BERHASIL: Laporan_${namaPerusahaan}.pdf`);
+    } catch (error) {
+      console.error(`Gagal membuat PDF Laporan: ${error.message}`);
+    }
+
+    // --- 5. BUAT FILE CSV ---
     const csvHeader = 'ID,Nama Perusahaan,Tanggal,Pelaksana,Hasil,Kendala\n';
     const csvRow = `"${report.id}","${report.nama_perusahaan || ''}","${report.tanggal || ''}","${report.petugas_pelaksana || ''}","${report.hasil_kegiatan || ''}","${report.kendala || ''}"`;
     fs.writeFileSync(path.join(folderPath, 'data.csv'), csvHeader + csvRow, 'utf8');
