@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '0 3 * * 0' # Setiap hari Minggu jam 03:00 UTC (10:00 WIB)
   workflow_dispatch: {} # Tombol untuk menjalankan manual
+  repository_dispatch:  # <--- TAMBAHKAN BARIS INI
+    types: [backup_trigger] # <--- DAN BARIS INI
 
 jobs:
   backup:

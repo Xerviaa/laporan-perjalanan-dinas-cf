@@ -8,12 +8,25 @@ export default function BackupPage() {
   const [isBackingUp, setIsBackingUp] = useState(false);
 
   const handleManualBackup = async () => {
+    // Konfirmasi ke user sebelum memicu backup
+    if (!confirm('Apakah Anda yakin ingin memulai backup ke Google Drive sekarang?')) return;
+
     setIsBackingUp(true);
-    // Untuk saat ini, kita hanya menampilkan notifikasi bahwa backup manual sedang diproses
-    setTimeout(() => {
+    try {
+      // Memanggil API Route yang tadi kita buat di src/app/api/backup/route.ts
+      const res = await fetch('/api/backup', { method: 'POST' });
+      const data = await res.json();
+      
+      if (res.ok) {
+        alert('✅ Sinyal backup berhasil dikirim! Proses backup akan berjalan di GitHub Actions (1-2 menit). Silakan cek Google Drive Anda.');
+      } else {
+        alert('❌ Gagal memicu backup: ' + (data.error || 'Terjadi kesalahan server.'));
+      }
+    } catch (err) {
+      alert('❌ Terjadi kesalahan jaringan. Pastikan koneksi internet stabil.');
+    } finally {
       setIsBackingUp(false);
-      alert('Backup manual telah dijadwalkan. Silakan cek Google Drive Anda dalam beberapa menit.');
-    }, 2000);
+    }
   };
 
   return (
@@ -42,7 +55,7 @@ export default function BackupPage() {
           {isBackingUp ? (
             <>
               <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-              Memproses...
+              Mengirim Sinyal...
             </>
           ) : (
             <>
@@ -52,11 +65,7 @@ export default function BackupPage() {
           )}
         </button>
 
-        <p className="text-xs text-slate-400 mt-4 text-center mb-6">
-          *Fitur backup manual akan segera tersedia.
-        </p>
-
-        <hr className="border-slate-200 mb-6" />
+        <hr className="border-slate-200 my-6" />
 
         <Link 
           href="/backup/arsip" 
