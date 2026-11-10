@@ -7,7 +7,8 @@ export async function POST() {
   try {
     // Ambil token dari Environment Variable Cloudflare
     const { env } = getCloudflareContext();
-    GITHUB_TOKEN = env.GITHUB_PAT;
+    // TAMBAHKAN (env as any) DI SINI 👇
+    GITHUB_TOKEN = (env as any).GITHUB_PAT; 
   } catch (error) {
     // Fallback untuk localhost
     GITHUB_TOKEN = process.env.GITHUB_PAT;
