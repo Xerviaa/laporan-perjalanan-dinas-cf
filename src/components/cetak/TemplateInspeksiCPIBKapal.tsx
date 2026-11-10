@@ -46,20 +46,29 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
             KEGIATAN INSPEKSI CARA PENANGANAN IKAN<br/>YANG BAIK (CPIB) DI ATAS KAPAL
           </h2>
           
-          {/* TANGGAL DIPINDAHKAN KE SINI (Di atas logo) */}
-          <p className="w-full text-center font-bold text-[14pt] uppercase mt-8 mb-4">
+          {/* NAMA KAPAL (Jika datanya ada, dipanggil. Jika tidak, pakai default) */}
+          <p className="w-full text-center font-bold text-[14pt] uppercase mt-8">
+            {data.namaKapal || "KM. NAGA MAS PERKASA"}
+          </p>
+
+          {/* TANGGAL DI ATAS LOGO */}
+          <p className="w-full text-center font-bold text-[14pt] uppercase mt-2">
             {tanggalIndo}
           </p>
         </div>
 
+        {/* LOGO DI TENGAH */}
         <div className="absolute top-[50%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full flex flex-col items-center text-center">
-          <img src="/logo-kkp.png" alt="Logo KKP" className="w-40 h-40 object-contain mx-auto mb-8" />
-          <div className="flex flex-col items-center gap-1 tracking-tight">
-            <p className="font-bold text-[14pt] uppercase">{formatNamaPerusahaan(data.namaPerusahaan)}</p>
-          </div>
+          <img src="/logo-kkp.png" alt="Logo KKP" className="w-40 h-40 object-contain mx-auto" />
         </div>
 
+        {/* BAGIAN BAWAH: NAMA PERUSAHAAN & KEMENTERIAN */}
         <div className="absolute bottom-0 w-full text-center pb-4">
+          {/* Nama CV ditaruh di sini, di atas teks Kementerian */}
+          <p className="font-bold text-[14pt] uppercase mb-6">
+            {formatNamaPerusahaan(data.namaPerusahaan)}
+          </p>
+          
           <h3 className="text-[14pt] font-bold uppercase leading-tight">
             KEMENTERIAN KELAUTAN DAN PERIKANAN<br/>
             BADAN PENGENDALIAN DAN PENGAWASAN MUTU<br/>
@@ -71,7 +80,6 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
       </div>
       
       {/* HALAMAN 2: ISI LAPORAN */}
-      {/* KUNCI: pt-8 untuk jarak atas saat print */}
       <div className="w-full page-break-before-always pt-8" style={{ pageBreakBefore: 'always', breakBefore: 'page' }}>
         
         <div className="w-full text-center mb-8">
@@ -95,7 +103,7 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
           </ol>
         </div>
 
-        {/* II. PETUGAS PELAKSANA (TABEL SEJAJAR) */}
+        {/* II. PETUGAS PELAKSANA */}
         <div className="mb-4 break-inside-avoid page-break-inside-avoid">
           <h4 className="font-bold">II. Petugas Pelaksana</h4>
           <table className="w-full mt-2 border-collapse">
