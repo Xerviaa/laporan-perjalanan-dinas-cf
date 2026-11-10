@@ -70,8 +70,11 @@ export default function UploadPage() {
   // State Data
   const [jenisKegiatan, setJenisKegiatan] = useState('');
   const [detailKegiatan, setDetailKegiatan] = useState('');
+  
+  // State Nama & Alamat Perusahaan
   const [namaPerusahaan, setNamaPerusahaan] = useState('');
   const [alamatPerusahaan, setAlamatPerusahaan] = useState('');
+  
   const [tanggal, setTanggal] = useState('');
   const [noSurat, setNoSurat] = useState('');
   
@@ -114,11 +117,19 @@ export default function UploadPage() {
     setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 4000); 
   };
 
+  // ==========================================
+  // LOGIKA PENCARIAN ALAMAT OTOMATIS
+  // ==========================================
   useEffect(() => {
     if (namaPerusahaan) {
       const allPerusahaan = [...perusahaanHACCP, ...perusahaanSKP];
-      const found = allPerusahaan.find(p => p.nama === namaPerusahaan);
-      if (found) setAlamatPerusahaan(found.alamat);
+      // Mencari persis sama dengan nama yang ada di daftar
+      const found = allPerusahaan.find(p => p.nama.toLowerCase() === namaPerusahaan.toLowerCase());
+      
+      if (found) {
+        setAlamatPerusahaan(found.alamat);
+      }
+      // Jika tidak ditemukan (user mengetik nama baru), kita biarkan alamat yang sudah diketik user
     } else {
       setAlamatPerusahaan('');
     }
@@ -142,7 +153,6 @@ export default function UploadPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // PERUBAHAN: 'Survailen' -> 'Surveilan'
     const isDetailRequired = jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Surveilan';
     
     if (!jenisKegiatan || (isDetailRequired && !detailKegiatan) || !namaPerusahaan || !tanggal) {
@@ -159,7 +169,6 @@ export default function UploadPage() {
       })
       .join('|');
 
-    // PERUBAHAN: 'Survailen' -> 'Surveilan'
     let fullJenisKegiatan = jenisKegiatan === 'Inspeksi' ? `Inspeksi ${detailKegiatan}` : jenisKegiatan === 'Surveilan' ? `Surveilan ${detailKegiatan}` : jenisKegiatan;
 
     const formData = new FormData();
@@ -174,9 +183,6 @@ export default function UploadPage() {
     
     fotoFiles.forEach(file => formData.append('foto', file));
 
-    // ==========================================
-    // APPEND BERKAS (SEKARANG TUNGGAL)
-    // ==========================================
     if (suratTugas) formData.append('suratTugas', suratTugas);
     if (berkasKegiatan) formData.append('berkasKegiatan', berkasKegiatan);
     if (berkasPerbaikan) formData.append('berkasPerbaikan', berkasPerbaikan);
@@ -188,8 +194,7 @@ export default function UploadPage() {
       if (res.ok) {
         showToast('Laporan berhasil diunggah!', 'success');
         
-        // Reset form
-        setJenisKegiatan(''); setDetailKegiatan(''); setNamaPerusahaan(''); setTanggal(''); setNoSurat('');
+        setJenisKegiatan(''); setDetailKegiatan(''); setNamaPerusahaan(''); setAlamatPerusahaan(''); setTanggal(''); setNoSurat('');
         setHasilKegiatan(''); setKendala(''); setPetugasList([{ nama: '', peran: '', customPeran: '', ttd: '' }]);
         setFotoFiles([]);
         setSuratTugas(null); setBerkasKegiatan(null); setBerkasPerbaikan(null); setBerkasPemeriksaanTindakanPerbaikan(null);
@@ -203,16 +208,20 @@ export default function UploadPage() {
     }
   };
 
-  // PERUBAHAN: 'Survailen' -> 'Surveilan'
   const opsiJenisKegiatan = ['Inspeksi', 'Surveilan', 'Inpres', 'Selfdeclare Kapal'];
   
   const getOpsiDetail = () => (jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Surveilan') 
     ? ['CPIB Kapal', 'CBIB', 'CPIB', 'HACCP', 'SKP', 'SPDI'] 
     : [];
 
+  // Menggabungkan data perusahaan dan menyaring agar unik
+  const allPerusahaan = [...perusahaanHACCP, ...perusahaanSKP];
+  const perusahaanUnik = allPerusahaan.filter((v, i, a) => 
+    a.findIndex(t => t.nama.toLowerCase() === v.nama.toLowerCase()) === i
+  );
+
   return (
     <Layout>
-      {/* TOAST NOTIFIKASI */}
       {toast.show && (
         <div className={`fixed top-24 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border-l-4 animate-in slide-in-from-top-4 fade-in duration-300 ${toast.type === 'success' ? 'bg-white border-emerald-500 text-slate-800' : 'bg-white border-red-500 text-slate-800'}`}>
           <div className={`flex items-center justify-center w-8 h-8 rounded-full ${toast.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
@@ -231,7 +240,6 @@ export default function UploadPage() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6 max-w-4xl">
         <form onSubmit={handleSubmit} className="space-y-6">
           
-          {/* 1. BAGIAN PETUGAS */}
           <div>
             <label className="block text-sm font-semibold text-slate-700 mb-2">Petugas Pelaksana (Maks. 10 Orang)</label>
             {petugasList.map((petugas, index) => (
@@ -261,7 +269,6 @@ export default function UploadPage() {
             <button type="button" onClick={addPetugas} className="text-sm text-blue-600 hover:underline font-semibold">+ Tambah Petugas</button>
           </div>
 
-          {/* 2. JENIS KEGIATAN */}
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
             <label className="block text-sm font-semibold text-slate-700 mb-3">Jenis Kegiatan</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -272,8 +279,68 @@ export default function UploadPage() {
 
           {/* 3. DATA PERUSAHAAN & TANGGAL */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="block text-sm font-semibold text-slate-700 mb-1">Nama Perusahaan</label><select value={namaPerusahaan} onChange={(e) => setNamaPerusahaan(e.target.value)} className="w-full border border-slate-300 rounded px-3 py-2 text-sm" required><option value="">-- Pilih Perusahaan --</option>{[...perusahaanHACCP, ...perusahaanSKP].map((p, idx) => <option key={idx} value={p.nama}>{p.nama}</option>)}</select></div>
-            <div><label className="block text-sm font-semibold text-slate-700 mb-1">Alamat Perusahaan</label><input type="text" value={alamatPerusahaan} readOnly placeholder="Alamat otomatis terisi" className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-slate-100 text-slate-500 cursor-not-allowed" /></div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Perusahaan</label>
+              
+              {/* Custom Dropdown untuk Nama Perusahaan */}
+              <div className="relative">
+                <input 
+                  type="text"
+                  placeholder="Ketik Nama Perusahaan Jika Tidak Terdapat di Daftar" 
+                  value={namaPerusahaan}
+                  onChange={(e) => {
+                    setNamaPerusahaan(e.target.value);
+                    setActiveDropdown(-1); // Gunakan -1 untuk menandai dropdown perusahaan terbuka
+                  }}
+                  onFocus={() => setActiveDropdown(-1)}
+                  onBlur={() => setTimeout(() => setActiveDropdown(null), 200)}
+                  className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                  required
+                />
+                
+                {/* Ikon Panah Bawah */}
+                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+
+                {/* List Custom Dropdown */}
+                {activeDropdown === -1 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                    {perusahaanUnik
+                      .filter((p) => p.nama.toLowerCase().includes(namaPerusahaan.toLowerCase()))
+                      .map((p, idx) => (
+                        <div 
+                          key={idx} 
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setNamaPerusahaan(p.nama);
+                            setAlamatPerusahaan(p.alamat);
+                            setActiveDropdown(null);
+                          }}
+                          className="px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0"
+                        >
+                          {p.nama}
+                        </div>
+                    ))}
+                    {perusahaanUnik.filter((p) => p.nama.toLowerCase().includes(namaPerusahaan.toLowerCase())).length === 0 && (
+                      <div className="px-3 py-2 text-sm text-slate-400 italic text-center">
+                        Perusahaan baru akan ditambahkan
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Alamat Perusahaan</label>
+              <input 
+                type="text" 
+                value={alamatPerusahaan} 
+                onChange={(e) => setAlamatPerusahaan(e.target.value)}
+                placeholder="Ketik Alamat Perusahaan..." 
+                className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none" 
+              />
+            </div>
             <div><label className="block text-sm font-semibold text-slate-700 mb-1">Tanggal Pelaksanaan</label><input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="w-full border border-slate-300 rounded px-3 py-2 text-sm" required /></div>
             <div><label className="block text-sm font-semibold text-slate-700 mb-1">No Surat</label><input type="text" value={noSurat} onChange={(e) => setNoSurat(e.target.value)} placeholder="Contoh: 123/BPPMHKP/2026" className="w-full border border-slate-300 rounded px-3 py-2 text-sm" /></div>
           </div>
@@ -292,12 +359,7 @@ export default function UploadPage() {
             {fotoFiles.length > 0 && <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">{fotoFiles.map((file, idx) => <div key={idx} className="relative bg-slate-50 border border-slate-200 rounded-lg p-2 flex flex-col items-center"><img src={URL.createObjectURL(file)} alt={`Preview ${idx}`} className="w-full h-32 object-cover rounded-md mb-2 border border-slate-200" /><div className="w-full flex justify-between items-center"><span className="text-[10px] text-slate-600 truncate max-w-[80%]">{file.name}</span><button type="button" onClick={(e) => { e.stopPropagation(); setFotoFiles(fotoFiles.filter((_, i) => i !== idx)); }} className="text-red-500 hover:text-red-700 font-bold bg-red-50 px-1.5 py-0.5 rounded text-xs" title="Hapus Foto">✕</button></div></div>)}</div>}
           </div>
 
-          {/* ========================================================= */}
-          {/* 5. BAGIAN BERKAS (SEMUA JADI 1 FILE)                      */}
-          {/* ========================================================= */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-            
-            {/* 1. Surat Tugas */}
             <div className="border border-blue-300 rounded-lg p-4 bg-blue-50">
               <label className="block text-sm font-semibold text-blue-800 mb-2">Surat Tugas (PDF)</label>
               <button type="button" onClick={() => suratTugasInputRef.current?.click()} className="w-full text-sm text-left text-slate-500 border border-slate-300 rounded-lg cursor-pointer bg-white px-3 py-2 hover:bg-blue-100">
@@ -307,7 +369,6 @@ export default function UploadPage() {
               {suratTugas && <div className="mt-2 flex items-center justify-between text-xs text-emerald-600 bg-emerald-50 p-2 rounded"><span className="truncate">✔ {suratTugas.name}</span><button type="button" onClick={() => setSuratTugas(null)} className="text-red-500 font-bold ml-2">✕</button></div>}
             </div>
 
-            {/* 2. Berkas Kegiatan */}
             <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
               <label className="block text-sm font-semibold text-slate-700 mb-2">Berkas Kegiatan</label>
               <button type="button" onClick={() => berkasKegiatanInputRef.current?.click()} className="w-full text-sm text-left text-slate-500 border border-slate-300 rounded-lg cursor-pointer bg-white px-3 py-2 hover:bg-slate-100">
@@ -317,7 +378,6 @@ export default function UploadPage() {
               {berkasKegiatan && <div className="mt-2 flex items-center justify-between text-xs text-emerald-600 bg-emerald-50 p-2 rounded"><span className="truncate">✔ {berkasKegiatan.name}</span><button type="button" onClick={() => setBerkasKegiatan(null)} className="text-red-500 font-bold ml-2">✕</button></div>}
             </div>
 
-            {/* 3. Berkas Perbaikan */}
             <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
               <label className="block text-sm font-semibold text-slate-700 mb-2">Berkas Tindakan Perbaikan</label>
               <button type="button" onClick={() => berkasPerbaikanInputRef.current?.click()} className="w-full text-sm text-left text-slate-500 border border-slate-300 rounded-lg cursor-pointer bg-white px-3 py-2 hover:bg-slate-100">
@@ -327,7 +387,6 @@ export default function UploadPage() {
               {berkasPerbaikan && <div className="mt-2 flex items-center justify-between text-xs text-emerald-600 bg-emerald-50 p-2 rounded"><span className="truncate">✔ {berkasPerbaikan.name}</span><button type="button" onClick={() => setBerkasPerbaikan(null)} className="text-red-500 font-bold ml-2">✕</button></div>}
             </div>
 
-            {/* 4. Pemeriksaan Tindakan Perbaikan */}
             <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
               <label className="block text-sm font-semibold text-slate-700 mb-2">Pemeriksaan Tindakan Perbaikan</label>
               <button type="button" onClick={() => pemeriksaanInputRef.current?.click()} className="w-full text-sm text-left text-slate-500 border border-slate-300 rounded-lg cursor-pointer bg-white px-3 py-2 hover:bg-slate-100">
