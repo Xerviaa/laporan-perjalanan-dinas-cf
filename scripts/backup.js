@@ -22,31 +22,18 @@ function downloadFile(url, dest) {
   });
 }
 
-// FUNGSI BARU: Ekstrak nama file dari berbagai format database
 function extractFileKey(rawData) {
   if (!rawData) return null;
-  
   let str = String(rawData).trim();
   if (!str || str === '[]' || str === 'null') return null;
-
-  // 1. Coba parse sebagai JSON Array
   if (str.startsWith('[') && str.endsWith(']')) {
     try {
       const parsed = JSON.parse(str);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return String(parsed[0]).trim(); // Ambil elemen pertama
-      }
-    } catch (e) {
-      // Jika gagal parse, lanjut ke pembersihan manual
-    }
+      if (Array.isArray(parsed) && parsed.length > 0) return String(parsed[0]).trim();
+    } catch (e) {}
   }
-
-  // 2. Pembersihan manual (hapus [, ], ", spasi, dan koma)
   str = str.replace(/[\[\]"]/g, '').trim();
-  if (str.includes(',')) {
-    str = str.split(',')[0].trim();
-  }
-  
+  if (str.includes(',')) str = str.split(',')[0].trim();
   return str || null;
 }
 
@@ -54,12 +41,21 @@ async function main() {
   const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
   await client.connect();
 
-  console.log('Mengambil data dari database...');
-  const res = await client.query('SELECT * FROM reports ORDER BY tanggal DESC');
+  console.log('Mengambil data dari database (hanya arsip yang sah)...');
+  
+  // Filter: Hanya ambil data yang punya Surat Tugas dan Jenis Kegiatan
+  const res = await client.query(`
+    SELECT * FROM reports 
+    WHERE surat_tugas IS NOT NULL 
+      AND surat_tugas != '[]'
+      AND jenis_kegiatan IS NOT NULL
+    ORDER BY tanggal DESC
+  `);
+  
   const reports = res.rows;
 
   if (reports.length === 0) {
-    console.log('Tidak ada data untuk di-backup.');
+    console.log('Tidak ada data arsip untuk di-backup.');
     await client.end();
     return;
   }
@@ -71,8 +67,11 @@ async function main() {
     fs.rmSync(baseLocalFolder, { recursive: true, force: true });
   }
 
-  // --- PERUBAHAN DI SINI: 'Survailen' DIUBAH MENJADI 'Surveilan' ---
+  // DAFTAR KATEGORI UTAMA
   const jenisUtamaList = ['Inspeksi', 'Surveilan', 'Inpres', 'Selfdecare Kapal'];
+  
+  // DAFTAR DETAIL KEGIATAN YANG DIIZINKAN (Sesuai permintaan Anda)
+  const detailKegiatanList = ['CPIB Kapal', 'CPIB', 'CBIB', 'HACCP', 'SKP', 'SPDI'];
 
   for (const report of reports) {
     let date = new Date();
@@ -88,39 +87,40 @@ async function main() {
     const month = date.toLocaleString('id-ID', { month: 'long' });
     
     let jenisUtama = 'Lainnya';
-    let subKegiatan = 'Umum';
+    let subKegiatan = 'Lainnya';
     const rawJenis = (report.jenis_kegiatan || '').trim();
 
-    if (rawJenis) {
-      let found = false;
-      for (const ju of jenisUtamaList) {
-        if (rawJenis.toLowerCase().startsWith(ju.toLowerCase())) {
-          jenisUtama = ju;
-          let sisa = rawJenis.substring(ju.length).trim();
-          sisa = sisa.replace(/^[-:\s]+/, '');
-          subKegiatan = sisa || 'Umum';
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        const parts = rawJenis.split(/\s+/);
-        jenisUtama = parts[0];
-        subKegiatan = parts.length > 1 ? parts.slice(1).join(' ') : 'Umum';
+    // 1. Tentukan Jenis Utama (Inspeksi / Surveilan / dll)
+    for (const ju of jenisUtamaList) {
+      if (rawJenis.toLowerCase().startsWith(ju.toLowerCase())) {
+        jenisUtama = ju;
+        break;
       }
     }
 
+    // 2. Tentukan Detail Kegiatan (CPIB Kapal, CPIB, CBIB, HACCP, SKP, SPDI)
+    // Kita cek apakah rawJenis mengandung salah satu dari detailKegiatanList
+    for (const detail of detailKegiatanList) {
+      // Gunakan pencarian case-insensitive
+      if (rawJenis.toLowerCase().includes(detail.toLowerCase())) {
+        subKegiatan = detail;
+        break;
+      }
+    }
+
+    // Sanitasi nama folder (hapus karakter terlarang)
     jenisUtama = jenisUtama.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Lainnya';
-    subKegiatan = subKegiatan.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Umum';
+    subKegiatan = subKegiatan.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Lainnya';
     const namaPerusahaan = (report.nama_perusahaan || `Laporan-ID-${report.id}`).replace(/[\/\\?%*:|"<>]/g, '-');
 
+    // STRUKTUR FOLDER: Tahun -> Bulan -> Jenis Utama -> Detail Kegiatan -> Nama Perusahaan
     const folderPath = path.join(baseLocalFolder, String(year), month, jenisUtama, subKegiatan, namaPerusahaan);
     
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
     }
 
-    // --- PROSES UNDUH FILE (DIPERBAIKI) ---
+    // --- PROSES UNDUH FILE ---
     const fileColumns = [
       { key: report.surat_tugas },
       { key: report.berkas_kegiatan },
@@ -131,7 +131,6 @@ async function main() {
     for (const fileInfo of fileColumns) {
       if (!fileInfo.key) continue;
 
-      // Ekstrak semua file yang mungkin ada (jika array)
       let fileKeys = [];
       let rawStr = String(fileInfo.key).trim();
       
