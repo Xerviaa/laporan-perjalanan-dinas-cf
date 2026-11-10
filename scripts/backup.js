@@ -41,21 +41,19 @@ async function main() {
   const client = new Client({ connectionString: process.env.SUPABASE_DB_URL });
   await client.connect();
 
-  console.log('Mengambil data dari database (hanya arsip yang sah)...');
+  console.log('Mengambil data dari database...');
   
-  // Filter: Hanya ambil data yang punya Surat Tugas dan Jenis Kegiatan
   const res = await client.query(`
     SELECT * FROM reports 
     WHERE surat_tugas IS NOT NULL 
       AND surat_tugas != '[]'
-      AND jenis_kegiatan IS NOT NULL
     ORDER BY tanggal DESC
   `);
   
   const reports = res.rows;
 
   if (reports.length === 0) {
-    console.log('Tidak ada data arsip untuk di-backup.');
+    console.log('Tidak ada data untuk di-backup.');
     await client.end();
     return;
   }
@@ -67,60 +65,62 @@ async function main() {
     fs.rmSync(baseLocalFolder, { recursive: true, force: true });
   }
 
-  // DAFTAR KATEGORI UTAMA
-  const jenisUtamaList = ['Inspeksi', 'Surveilan', 'Inpres', 'Selfdecare Kapal'];
-  
-  // DAFTAR DETAIL KEGIATAN YANG DIIZINKAN (Sesuai permintaan Anda)
-  const detailKegiatanList = ['CPIB Kapal', 'CPIB', 'CBIB', 'HACCP', 'SKP', 'SPDI'];
-
   for (const report of reports) {
     let date = new Date();
     if (report.tanggal) {
       const parsedDate = new Date(report.tanggal);
-      if (!isNaN(parsedDate.getTime())) date = parsedDate;
-    } else if (report.created_at) {
-      const parsedDate = new Date(report.created_at);
       if (!isNaN(parsedDate.getTime())) date = parsedDate;
     }
 
     const year = date.getFullYear();
     const month = date.toLocaleString('id-ID', { month: 'long' });
     
+    // --- 1. TENTUKAN JENIS UTAMA (Anti-Typo) ---
+    const rawJenis = (report.jenis_kegiatan || '').trim().toLowerCase();
     let jenisUtama = 'Lainnya';
-    let subKegiatan = 'Lainnya';
-    const rawJenis = (report.jenis_kegiatan || '').trim();
-
-    // 1. Tentukan Jenis Utama (Inspeksi / Surveilan / dll)
-    for (const ju of jenisUtamaList) {
-      if (rawJenis.toLowerCase().startsWith(ju.toLowerCase())) {
-        jenisUtama = ju;
-        break;
-      }
+    
+    // Deteksi Inspeksi
+    if (rawJenis.includes('inspeksi')) {
+      jenisUtama = 'Inspeksi';
+    } 
+    // Deteksi Surveilan (apapun typo-nya: surveilan, survailen, surveilans)
+    else if (rawJenis.includes('surveilan') || rawJenis.includes('survailen') || rawJenis.includes('surveilans')) {
+      jenisUtama = 'Surveilan';
+    } 
+    // Deteksi Inpres
+    else if (rawJenis.includes('inpres')) {
+      jenisUtama = 'Inpres';
     }
 
-    // 2. Tentukan Detail Kegiatan (CPIB Kapal, CPIB, CBIB, HACCP, SKP, SPDI)
-    // Kita cek apakah rawJenis mengandung salah satu dari detailKegiatanList
-    for (const detail of detailKegiatanList) {
-      // Gunakan pencarian case-insensitive
-      if (rawJenis.toLowerCase().includes(detail.toLowerCase())) {
-        subKegiatan = detail;
-        break;
-      }
+    // --- 2. TENTUKAN DETAIL KEGIATAN (Anti-Typo juga) ---
+    // Kita cek apakah rawJenis mengandung salah satu dari detail ini
+    let detailKegiatan = 'Lainnya';
+    
+    if (rawJenis.includes('cpib kapal')) {
+      detailKegiatan = 'CPIB Kapal';
+    } else if (rawJenis.includes('cpib')) {
+      detailKegiatan = 'CPIB';
+    } else if (rawJenis.includes('cbib')) {
+      detailKegiatan = 'CBIB';
+    } else if (rawJenis.includes('haccp')) {
+      detailKegiatan = 'HACCP';
+    } else if (rawJenis.includes('skp')) {
+      detailKegiatan = 'SKP';
+    } else if (rawJenis.includes('spdi')) {
+      detailKegiatan = 'SPDI';
     }
 
-    // Sanitasi nama folder (hapus karakter terlarang)
-    jenisUtama = jenisUtama.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Lainnya';
-    subKegiatan = subKegiatan.replace(/[\/\\?%*:|"<>]/g, '-').trim() || 'Lainnya';
+    // Sanitasi nama folder
     const namaPerusahaan = (report.nama_perusahaan || `Laporan-ID-${report.id}`).replace(/[\/\\?%*:|"<>]/g, '-');
 
-    // STRUKTUR FOLDER: Tahun -> Bulan -> Jenis Utama -> Detail Kegiatan -> Nama Perusahaan
-    const folderPath = path.join(baseLocalFolder, String(year), month, jenisUtama, subKegiatan, namaPerusahaan);
+    // STRUKTUR FOLDER FINAL
+    const folderPath = path.join(baseLocalFolder, String(year), month, jenisUtama, detailKegiatan, namaPerusahaan);
     
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
     }
 
-    // --- PROSES UNDUH FILE ---
+    // --- 3. PROSES UNDUH FILE ---
     const fileColumns = [
       { key: report.surat_tugas },
       { key: report.berkas_kegiatan },
@@ -137,14 +137,8 @@ async function main() {
       if (rawStr.startsWith('[') && rawStr.endsWith(']')) {
         try {
           const parsed = JSON.parse(rawStr);
-          if (Array.isArray(parsed)) {
-            fileKeys = parsed;
-          } else {
-            fileKeys = [rawStr];
-          }
-        } catch (e) {
-          fileKeys = [rawStr];
-        }
+          fileKeys = Array.isArray(parsed) ? parsed : [rawStr];
+        } catch (e) { fileKeys = [rawStr]; }
       } else {
         fileKeys = [rawStr];
       }
@@ -157,16 +151,14 @@ async function main() {
         const destPath = path.join(folderPath, fileName);
         
         try {
-          console.log(`Mengunduh: ${fileName} dari ${baseUrl + key}`);
           await downloadFile(baseUrl + key, destPath);
-          console.log(`BERHASIL: ${fileName}`);
         } catch (error) {
           console.error(`Gagal mengunduh ${fileName}: ${error.message}`);
         }
       }
     }
 
-    // --- BUAT FILE CSV ---
+    // --- 4. BUAT FILE CSV ---
     const csvHeader = 'ID,Nama Perusahaan,Tanggal,Pelaksana,Hasil,Kendala\n';
     const csvRow = `"${report.id}","${report.nama_perusahaan || ''}","${report.tanggal || ''}","${report.petugas_pelaksana || ''}","${report.hasil_kegiatan || ''}","${report.kendala || ''}"`;
     fs.writeFileSync(path.join(folderPath, 'data.csv'), csvHeader + csvRow, 'utf8');
