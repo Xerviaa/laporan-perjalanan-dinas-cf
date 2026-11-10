@@ -1,0 +1,141 @@
+[33me8887cf[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m Fix: Menggunakan getCloudflareContext & process.env untuk keamanan token
+[33m40849d6[m[33m ([m[1;31morigin/main[m[33m)[m Fix: Menggunakan getCloudflareContext untuk membaca secret GITHUB_PAT
+[33m99c6e55[m Fix: Ganti typo Survailen ke Surveilan di backup script & update UI halaman backup
+[33m226ac02[m Menambahkan fitur tombol backup manual ke GitHub Actions
+[33m1fee988[m Fix: Tampilan Surat Tugas dan Foto di halaman cetak
+[33mbb17547[m Fix: Perbaiki tampilan print monitoring sertifikasi dan routing tombol print
+[33mb68f4a7[m Fix: Perbaiki filter perhitungan Surveilan di Dashboard Monitoring
+[33m26e38fb[m fix: halaman arsip merubah nama survailen menjadi surveilan
+[33m37a69c5[m fix: lengkapi teks template dan tambah bagian hasil kegiatan & kendala
+[33m9091f94[m fix: support both surveilan and survailen spelling in template selection
+[33m44469db[m fix: perbaiki penulisan Surveilan dan integrasi template baru
+[33medf0096[m fix: hapus opsi duplikat di dropdown detail kegiatan
+[33m0d0d498[m feat: tambah template Surveilan CPIB
+[33m8d38b9b[m fix: install canvas system dependencies for backup workflow
+[33md2782cd[m fix: perbaiki format nama perusahaan dan urutan template
+[33m3fd1859[m feat: integrasi template CPIB, CBIB, dan Surveilan CBIB
+[33m424b0f5[m fix: robust file key extraction for backup
+[33m0485c23[m fix: clean file names and handle array from database to fix 404 errors
+[33m3d4db2d[m fix: use correct database column names (snake_case)
+[33m7f21756[m debug: add console.log to inspect raw data from database
+[33m0d27f79[m fix: smart parsing for jenis kegiatan to ensure correct folder structure
+[33m300135a[m feat: backup PDF files from R2 to Google Drive with structured folders
+[33m63b1e5c[m feat: restructure backup to structured CSV folders in Google Drive
+[33m85aac4d[m feat: add link to backup archive page
+[33mdea96a7[m fix: decode base64 for rclone config
+[33m3020f1d[m feat: add Backup Google Drive menu and page
+[33mef484e4[m feat: add GitHub Actions workflow for Supabase backup
+[33m2b65655[m style: ubah urutan dan warna kartu dashboard (belum ada berkas jadi merah di ujung)
+[33m331d9a7[m fix: API strict dengan returning() untuk deteksi kegagalan database D1
+[33mcc71ba6[m fix: optimistic UI final tanpa fetch ulang untuk update real-time yang stabil
+[33m09dcd18[m feat: implementasi optimistic UI final dengan jeda aman untuk real-time update
+[33mb6694a4[m fix: hapus setTimeout, gunakan await fetchReports untuk update real-time yang akurat
+[33m3952a70[m feat: implementasi optimistic UI agar tabel update instan setelah upload
+[33m239dcbf[m fix: API upload anti-gagal dengan mengambil data lama langsung dari DB
+[33m4ca5504[m feat: update real-time table setelah hapus dan upload berkas
+[33m6952039[m fix: perbaikan logika upload berkas di API agar file tidak tertimpa null
+[33m502ba90[m fix: menghapus tombol hapus di halaman arsip, hapus hanya via monitoring
+[33ma630cda[m fix: mengembalikan tipe data ID ke Integer (Number) pada API hapus dan upload
+[33m67b06d7[m fix: perbaiki logika hapus laporan, tampilkan error API, dan optimasi kode monitoring
+[33m8b9db35[m fix: sinkronisasi status berkas 4 file di tabel monitoring dan kartu dashboard
+[33m52eef2a[m Revert "fix: perbaiki zoom logo pada halaman login, sidebar, dan popup PWA"
+[33mc7fb84b[m fix: perbaiki zoom logo pada halaman login, sidebar, dan popup PWA
+[33m0c93d51[m fix: zoom logo dan hapus pinggiran putih pada login, sidebar, dan popup PWA
+[33ma9559d3[m Update: Branding MONICA IMUT di Layout dan Login
+[33me1cc03b[m perbaikan
+[33m635c4d3[m Fix: Margin kiri-kanan dan jarak atas halaman print
+[33m7f81e71[m coba
+[33m855143a[m Fix: Paksa padding atas untuk halaman baru
+[33mcf3ff5c[m Fix: Jarak atas halaman 2 dan layout petugas sejajar
+[33mea0626a[m Fix: Jarak atas halaman 2 dan layout petugas sejajar
+[33mdfbcc5e[m Fix: Kembalikan margin kiri-kanan print
+[33mbc19506[m Fix: Margin print dan layout petugas sejajar
+[33mfd5aa13[m Fix: Layout petugas sejajar dan jarak atas halaman 2 di semua template
+[33m5e121d9[m perbaikan
+[33me22e595[m Fix: Rapikan layout petugas & margin atas halaman 2 di semua template
+[33m2a458a0[m Fix: Rapikan layout petugas pelaksana di template Surveilan HACCP
+[33mc37bf1e[m Fix: Tambah margin print pada isi laporan
+[33m67c3309[m Fix
+[33m55d652f[m Fix: Hapus parameter toolbar pada iframe PDF agar print penuh
+[33m0b9fb6c[m Fix: Tampilan Surat Tugas menjadi gambar statis & perbaikan cetak PDF
+[33md1f1cc5[m Fix: Semua TTD muncul di halaman Monitoring, Print, dan Arsip
+[33m6e79eae[m Fix: TTD muncul di form upload (mendukung nama file dengan/tanpa gelar)
+[33mae586c0[m Fix: Mengubah nama file TTD Adam agar sesuai dengan template
+[33m9963202[m Fix: Perbaikan logika nama file TTD dan pembaruan layout dashboard
+[33m2eec9ea[m Menambahkan file gambar tanda tangan pegawai
+[33m5700359[m Feat: Menambahkan Dashboard Monitoring, fitur Refresh, dan perbaikan layout
+[33m2fdfce5[m Fix: Menampilkan preview laporan di modal view monitoring
+[33m4faee9b[m Persiapan deploy
+[33mb3a70d8[m Fix: hapus folder lama dan tambahkan folder monitoring
+[33mee51c20[m Fix: ubah nama folder monitoring menjadi huruf kecil
+[33mad15ed0[m Tambah halaman dan menu Monitoring Sertifikasi
+[33m116aaf4[m Final: Gunakan trik background-image untuk semua template
+[33m5a2a49e[m Final: Seragamkan semua template cetak dan perbaikan TTD
+[33mc0fce9c[m Fix: perbaiki nama field upload foto
+[33m567b038[m Final: Semua fitur selesai dan siap deploy
+[33ma991be0[m Final: Upload form dengan search, hasil kegiatan, dan kendala
+[33mca354e6[m Fix: tambah kolom hasil dan kendala di database
+[33m03fedd8[m Tambah kolom hasil kegiatan dan kendala di schema
+[33mab1ddc6[m Integrasi dropdown pegawai dari file data
+[33md149863[m Revisi: Hapus Primer/Pasca di Upload dan sesuaikan Cetak
+[33m1efb7f1[m Final: Memindahkan posisi PT dan CV ke depan di semua template
+[33m126156d[m Final: Perbaiki judul halaman 2 dan format cover semua template
+[33mbacdfc9[m Tambah sistem anti-tidur
+[33mdb48196[m Fix: Rata tengah sub-judul cover dan perbaikan posisi ttd
+[33m8dc1b58[m Perbaiki posisi tanda tangan, cover, dan font semua template
+[33m661da1c[m Perbaiki posisi tanda tangan, cover, dan font semua template
+[33mdd28ba0[m Rapikan cover semua template
+[33m076984e[m Refactor: Pindahkan cover ke masing-masing template dan perbaiki layout
+[33m5d207e4[m Refactor: Ubah nama file template dan perbaiki format cover
+[33me0a1d70[m Refactor: Ubah nama file template dan perbaiki format cover
+[33mbd7e0b3[m perbaiki nama dan alamat perusahaan
+[33m6c8591c[m perbaiki problems
+[33m39324e1[m ubah posisi tampilan
+[33maf301fb[m Hapus aksi dashboard dan tampilkan 10 laporan
+[33macf3bea[m Format tanggal cover dan perbaikan template
+[33mb074328[m Terapkan trik CSS ke semua template
+[33m244e291[m Trik CSS untuk gambar
+[33me46733e[m Pakai page.tsx final yang bersih
+[33m14be63b[m Fix final: paksa render client-side untuk gambar
+[33m77c8b4d[m Uji: HACCP dengan TTD teks
+[33md33ef5e[m Trigger rebuild setelah perbaikan TtdImage
+[33m3eee73e[m Uji: HACCP teks saja
+[33m445ce20[m Final fix: template HACCP dengan komponen client
+[33m4811549[m Tambah Error Boundary untuk debugging
+[33m3062086[m Perbaiki komponen TtdImage dan FotoDokumentasi
+[33mf992f6d[m Uji isolasi: bypass komponen gambar
+[33m1a5e8b8[m Pindahkan gambar ke Client Component
+[33m329d855[m Restore TemplateHACCP with safety checks
+[33mc3c655f[m Test minimal TemplateHACCP
+[33mba2f444[m Uji isolasi: semua template pakai CPIB
+[33m56221b7[m Fix safety check data kosong di template HACCP, SKP, Surveilan
+[33mf12132e[m Fix typo Surveilan menjadi Survailen di page.tsx
+[33mb13e5bd[m Paksa tampilkan error asli
+[33m108a5f9[m Fix final serialization error di halaman cetak
+[33mebc1251[m Fix serialization error on cetak page
+[33mdb23977[m Fix error serialization di halaman cetak
+[33mee6268f[m Aktifkan logs untuk debugging
+[33mf34c460[m Fix crash pada TTD di form upload
+[33m39dde30[m Fix nama leaderboard menggunakan uploadedBy
+[33mde8188d[m Hapus fitur edit laporan
+[33mb23241a[m Fix API hapus dan edit laporan
+[33m1ba2b8b[m Rapikan format TTD dan layout 3 template lainnya
+[33mc36dc60[m Fix import perusahaan dan filter di form upload
+[33m849a770[m Finalisasi data perusahaan SKP dan HACCP
+[33md7748b8[m Fix R2 API dan tipe data Cloudflare
+[33m4e2bf50[m Fix template dan upload API error
+[33m545fff5[m Fix TTD dan Foto
+[33m7e43e27[m Fix API upload for new form structure
+[33m4168a2d[m Fix reports API for Hyperdrive
+[33m4e7c4ba[m Fix Hyperdrive configuration
+[33ma20b936[m Implement Hyperdrive for database connection
+[33m9d9978c[m Fix postgres bundling for Cloudflare workers
+[33m4acc125[m Fix infinite build loop - restore next build script
+[33ma48d14e[m Ganti pg ke postgres.js untuk kompatibilitas Cloudflare
+[33m7d898e8[m Sempurnakan template cetak PDF CPIB
+[33me398080[m Update build script for OpenNext and fix React version
+[33ma00ed61[m Setup OpenNext for Cloudflare
+[33m4db8179[m Force rename layout.tsx to Layout.tsx
+[33m075da8e[m Trigger first Cloudflare build
+[33m75c5327[m commit pertama
+[33mecf728f[m Initial commit from Create Next App

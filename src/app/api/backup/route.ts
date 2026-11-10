@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server';
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export async function POST() {
-  // --- TES HARCODE: KITA TULIS LANGSUNG TOKENNYA ---
-  const GITHUB_TOKEN = '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'; // <--- PASTE TOKEN ASLI ANDA
+  let GITHUB_TOKEN;
+
+  try {
+    // Ambil token dari Environment Variable Cloudflare
+    const { env } = getCloudflareContext();
+    GITHUB_TOKEN = env.GITHUB_PAT;
+  } catch (error) {
+    // Fallback untuk localhost
+    GITHUB_TOKEN = process.env.GITHUB_PAT;
+  }
   
   const OWNER = 'Xerviaa'; 
   const REPO = 'laporan-perjalanan-dinas-cf'; 
