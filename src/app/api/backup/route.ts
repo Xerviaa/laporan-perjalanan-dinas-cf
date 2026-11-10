@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export async function POST() {
-  const GITHUB_TOKEN = process.env.GITHUB_PAT;
-  const OWNER = 'Xerviaa'; // Pastikan username GitHub ini benar
-  const REPO = 'laporan-perjalanan-dinas-cf'; // Pastikan nama repo ini benar
+  // 1. Ambil context Cloudflare, bukan process.env
+  const { env } = getCloudflareContext();
+  
+  // 2. Baca token dari env.GITHUB_PAT
+  const GITHUB_TOKEN = env.GITHUB_PAT;
+  
+  const OWNER = 'Xerviaa'; 
+  const REPO = 'laporan-perjalanan-dinas-cf'; 
 
   if (!GITHUB_TOKEN) {
     return NextResponse.json({ error: 'GitHub Token belum disetting.' }, { status: 500 });
