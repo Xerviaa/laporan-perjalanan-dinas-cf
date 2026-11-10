@@ -45,13 +45,17 @@ export default function TemplateInspeksiCPIBKapal({ data }: { data: any }) {
           <h2 className="w-full text-center text-[14pt] font-bold uppercase leading-snug mt-4">
             KEGIATAN INSPEKSI CARA PENANGANAN IKAN<br/>YANG BAIK (CPIB) DI ATAS KAPAL
           </h2>
+          
+          {/* TANGGAL DIPINDAHKAN KE SINI (Di atas logo) */}
+          <p className="w-full text-center font-bold text-[14pt] uppercase mt-8 mb-4">
+            {tanggalIndo}
+          </p>
         </div>
 
         <div className="absolute top-[50%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full flex flex-col items-center text-center">
           <img src="/logo-kkp.png" alt="Logo KKP" className="w-40 h-40 object-contain mx-auto mb-8" />
           <div className="flex flex-col items-center gap-1 tracking-tight">
             <p className="font-bold text-[14pt] uppercase">{formatNamaPerusahaan(data.namaPerusahaan)}</p>
-            <p className="font-bold text-[14pt] uppercase">{tanggalIndo}</p>
           </div>
         </div>
 
