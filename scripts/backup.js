@@ -71,7 +71,8 @@ async function main() {
     fs.rmSync(baseLocalFolder, { recursive: true, force: true });
   }
 
-  const jenisUtamaList = ['Inspeksi', 'Survailen', 'Inpres', 'Selfdecare Kapal'];
+  // --- PERUBAHAN DI SINI: 'Survailen' DIUBAH MENJADI 'Surveilan' ---
+  const jenisUtamaList = ['Inspeksi', 'Surveilan', 'Inpres', 'Selfdecare Kapal'];
 
   for (const report of reports) {
     let date = new Date();
