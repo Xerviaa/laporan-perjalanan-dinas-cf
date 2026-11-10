@@ -1,12 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export async function POST() {
-  // 1. Ambil context Cloudflare, bukan process.env
-  const { env } = getCloudflareContext();
-  
-  // 2. Baca token dari env.GITHUB_PAT
-  const GITHUB_TOKEN = env.GITHUB_PAT;
+  // --- TES HARCODE: KITA TULIS LANGSUNG TOKENNYA ---
+  const GITHUB_TOKEN = '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'; // <--- PASTE TOKEN ASLI ANDA
   
   const OWNER = 'Xerviaa'; 
   const REPO = 'laporan-perjalanan-dinas-cf'; 

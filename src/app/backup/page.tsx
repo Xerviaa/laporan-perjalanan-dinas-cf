@@ -6,22 +6,36 @@ import Link from 'next/link';
 
 export default function BackupPage() {
   const [isBackingUp, setIsBackingUp] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const handleManualBackup = async () => {
-    if (!confirm('Apakah Anda yakin ingin memulai backup ke Google Drive sekarang?')) return;
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
+    show: false,
+    message: '',
+    type: 'success',
+  });
 
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 4000);
+  };
+
+  const executeBackup = async () => {
+    setShowConfirmModal(false);
     setIsBackingUp(true);
+    
     try {
       const res = await fetch('/api/backup', { method: 'POST' });
       const data = await res.json();
       
       if (res.ok) {
-        alert('✅ Sinyal backup berhasil dikirim! Proses backup akan berjalan di server (1-2 menit). Silakan cek Google Drive Anda.');
+        showToast('Sinyal backup berhasil dikirim! Proses backup akan berjalan di server (1-2 menit).', 'success');
       } else {
-        alert('❌ Gagal memicu backup: ' + (data.error || 'Terjadi kesalahan server.'));
+        showToast('Gagal memicu backup: ' + (data.error || 'Terjadi kesalahan server.'), 'error');
       }
     } catch (err) {
-      alert('❌ Terjadi kesalahan jaringan. Pastikan koneksi internet stabil.');
+      showToast('Terjadi kesalahan jaringan. Pastikan koneksi internet stabil.', 'error');
     } finally {
       setIsBackingUp(false);
     }
@@ -29,7 +43,82 @@ export default function BackupPage() {
 
   return (
     <Layout>
-      {/* Container Utama - Dibatasi lebarnya agar tidak terlalu lebar di layar besar */}
+      {/* TOAST NOTIFIKASI */}
+      {toast.show && (
+        <div className={`fixed top-24 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl border-l-4 animate-in slide-in-from-right-8 fade-in duration-300 ${
+          toast.type === 'success' ? 'bg-white border-emerald-500 text-slate-800' : 'bg-white border-red-500 text-slate-800'
+        }`}>
+          <div className={`flex items-center justify-center w-10 h-10 rounded-full shrink-0 ${
+            toast.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
+          }`}>
+            {toast.type === 'success' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            )}
+          </div>
+          <div className="max-w-[300px]">
+            <p className="font-bold text-sm">{toast.type === 'success' ? 'Berhasil!' : 'Gagal!'}</p>
+            <p className="text-xs text-slate-500 mt-0.5 leading-snug">{toast.message}</p>
+          </div>
+          <button onClick={() => setToast({ ...toast, show: false })} className="ml-2 text-slate-400 hover:text-slate-600 cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* CUSTOM MODAL KONFIRMASI (DESAIN BARU LEBIH PREMIUM)      */}
+      {/* ======================================================== */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          
+          {/* Kotak Modal */}
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            
+            {/* Garis Aksen Atas (Warna Emerald) */}
+            <div className="h-2 w-full bg-emerald-500"></div>
+
+            <div className="p-8">
+              <div className="flex flex-col items-center text-center">
+                
+                {/* Ikon Animasi (Pulse) */}
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 bg-emerald-100 rounded-full animate-ping opacity-50"></div>
+                  <div className="relative w-20 h-20 bg-gradient-to-tr from-emerald-100 to-emerald-50 text-emerald-600 rounded-full flex items-center justify-center border-4 border-white shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                  </div>
+                </div>
+
+                {/* Teks */}
+                <h3 className="text-2xl font-extrabold text-slate-800 mb-2 tracking-tight">Mulai Backup Sekarang?</h3>
+                <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+                  Proses pencadangan data dan file lampiran akan dijalankan di server. Pastikan koneksi internet stabil sebelum melanjutkan.
+                </p>
+                
+                {/* Tombol Aksi */}
+                <div className="flex gap-3 w-full">
+                  <button 
+                    onClick={() => setShowConfirmModal(false)} 
+                    className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    onClick={executeBackup} 
+                    className="flex-1 px-4 py-3 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-lg shadow-emerald-200 hover:shadow-emerald-300 cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Ya, Lanjutkan
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Container Utama */}
       <div className="max-w-4xl mx-auto py-8">
         
         {/* Header Halaman */}
@@ -40,7 +129,7 @@ export default function BackupPage() {
           </p>
         </div>
 
-        {/* Grid Konten - Dibagi 2 Kolom di layar lebar */}
+        {/* Grid Konten */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
           {/* Kolom Kiri: Kartu Informasi */}
@@ -85,7 +174,7 @@ export default function BackupPage() {
               </div>
 
               <button
-                onClick={handleManualBackup}
+                onClick={() => setShowConfirmModal(true)}
                 disabled={isBackingUp}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none cursor-pointer"
               >
