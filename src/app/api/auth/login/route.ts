@@ -21,7 +21,9 @@ export async function POST(request: Request) {
         name: 'session_token',
         value: token,
         httpOnly: true,
-        secure: false, // <-- Biarkan false untuk development
+        // PERUBAHAN: Dinamis. Di Cloudflare (production) akan otomatis true,
+        // di localhost (development) akan otomatis false.
+        secure: process.env.NODE_ENV === 'production', 
         sameSite: 'lax',
         path: '/',
         maxAge: 60 * 60 * 8,

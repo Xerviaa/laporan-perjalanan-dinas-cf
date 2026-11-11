@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import Layout from '@/components/Layout';
-import Link from 'next/link';
 
 export default function BackupPage() {
   const [isBackingUp, setIsBackingUp] = useState(false);
@@ -136,7 +135,7 @@ export default function BackupPage() {
                 Jadwal Backup Otomatis
               </h2>
               <p className="text-sm text-slate-600 leading-relaxed relative z-10">
-                Proses backup berjalan otomatis setiap <strong className="text-blue-700">hari pukul 18:00 WITA</strong>.
+                Proses backup berjalan otomatis setiap <strong className="text-blue-700">hari Sabtu pukul 00:00 WITA</strong>.
               </p>
             </div>
 

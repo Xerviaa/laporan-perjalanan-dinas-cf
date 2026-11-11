@@ -78,7 +78,7 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
     e.preventDefault();
     setIsSubmitting(true);
 
-    let fullJenisKegiatan = jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Survailen' 
+    let fullJenisKegiatan = jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Surveilan' 
       ? `${jenisKegiatan} ${detailKegiatan}` 
       : jenisKegiatan;
 
@@ -140,14 +140,14 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
             <label className="text-xs text-slate-500 mb-1 block">Jenis</label>
             <select value={jenisKegiatan} onChange={(e) => setJenisKegiatan(e.target.value)} className="w-full border border-slate-300 rounded px-3 py-2 text-sm" required>
               <option value="">-- Pilih --</option>
-              {['Inspeksi', 'Survailen', 'Inpres', 'Selfdeclare Kapal'].map(j => <option key={j} value={j}>{j}</option>)}
+              {['Inspeksi', 'Surveilan', 'Inpres', 'Selfdeclare Kapal'].map(j => <option key={j} value={j}>{j}</option>)}
             </select>
           </div>
           <div>
             <label className="text-xs text-slate-500 mb-1 block">Detail</label>
             <select value={detailKegiatan} onChange={(e) => setDetailKegiatan(e.target.value)} className="w-full border border-slate-300 rounded px-3 py-2 text-sm" disabled={!jenisKegiatan || jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal'}>
               <option value="">-- Pilih --</option>
-              {(jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Survailen') && ['CPIB Kapal', 'CBIB', 'CPIB', 'HACCP', 'SKP', 'SPDI'].map(d => <option key={d} value={d}>{d}</option>)}
+              {(jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Surveilan') && ['CPIB Kapal', 'CBIB', 'CPIB', 'HACCP', 'SKP', 'SPDI'].map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
         </div>

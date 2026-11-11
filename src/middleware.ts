@@ -8,15 +8,22 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('session_token')?.value;
   const { pathname } = request.nextUrl;
 
-  // Proteksi seluruh area /admin
-  if (pathname.startsWith('/admin')) {
+  // Daftar rute yang HANYA boleh diakses Admin
+  // Pastikan /upload atau /arsip (guest) TIDAK masuk di sini
+  const protectedRoutes = ['/admin']; 
+  
+  // Cek apakah pathname saat ini termasuk rute yang diproteksi
+  const isProtected = protectedRoutes.some(route => pathname.startsWith(route));
+
+  if (isProtected) {
     if (!token) {
-      // Lempar ke halaman utama (karena login pakai modal)
+      // Jika tidak ada token, tendang ke halaman guest (dashboard)
       return NextResponse.redirect(new URL('/monitoring-dashboard', request.url));
     }
     try {
       await jwtVerify(token, SECRET_KEY);
     } catch (error) {
+      // Jika token tidak valid, hapus cookie & tendang ke guest
       const response = NextResponse.redirect(new URL('/monitoring-dashboard', request.url));
       response.cookies.delete('session_token');
       return response;
@@ -27,5 +34,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // HANYA jalankan middleware di rute /admin
   matcher: ['/admin/:path*'],
 };

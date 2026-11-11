@@ -24,13 +24,19 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
 
-  // --- CEK STATUS LOGIN ADMIN (Baca Cookie) ---
+  // --- CEK STATUS LOGIN ADMIN (MENGGUNAKAN API) ---
+  const checkAdminStatus = async () => {
+    try {
+      const res = await fetch('/api/auth/check');
+      const data = await res.json();
+      setIsAdmin(data.isAdmin);
+    } catch (error) {
+      setIsAdmin(false);
+    }
+  };
+
   useEffect(() => {
-    const token = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('session_token='))
-      ?.split('=')[1];
-    setIsAdmin(!!token);
+    checkAdminStatus();
   }, [pathname]);
 
   useEffect(() => {
@@ -73,7 +79,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   // --- EFEK SAAT PINDAH HALAMAN (PWA) ---
   useEffect(() => {
-    if ((pathname === '/arsip' || pathname === '/monitoring-dashboard' || pathname === '/admin/monitoring-dashboard') && deferredPrompt) {
+    if ((pathname === '/arsip' || pathname === '/monitoring-dashboard' || pathname === '/admin/admin-monitoring-dashboard') && deferredPrompt) {
       setShowInstallBtn(true);
     } else {
       setShowInstallBtn(false);
@@ -91,9 +97,25 @@ export default function Layout({ children }: { children: ReactNode }) {
     setShowInstallBtn(false);
   };
 
-  const handleLogout = () => {
-    document.cookie = "session_token=; path=/; max-age=0";
-    window.location.href = '/monitoring-dashboard'; // Kembali ke area user
+  // =======================================================
+  // FUNGSI LOGOUT (DIUBAH AGAR LANGSUNG KE GUEST DASHBOARD)
+  // =======================================================
+    const handleLogout = async () => {
+    try {
+      // 1. Panggil API logout untuk menghapus cookie dari sisi server
+      await fetch('/api/auth/logout', { method: 'POST' });
+
+      // 2. Hapus cache / storage lokal
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+    } catch (error) {
+      console.error("Gagal menghapus sesi:", error);
+    } finally {
+      // 3. Redirect dengan hard-reload agar tampilan langsung berubah
+      window.location.href = '/monitoring-dashboard'; 
+    }
   };
 
   // --- LOGIKA SUBMIT PIN ---
@@ -113,8 +135,10 @@ export default function Layout({ children }: { children: ReactNode }) {
       if (res.ok) {
         setIsLoginModalOpen(false);
         setPin('');
-        // Arahkan ke halaman Admin setelah login berhasil
-        window.location.href = '/admin/monitoring-dashboard'; 
+        
+        // Redirect ke halaman admin dashboard
+        router.push('/admin/admin-monitoring-dashboard'); 
+        router.refresh();
       } else {
         setLoginError(data.message || 'PIN Salah!');
       }
@@ -125,31 +149,30 @@ export default function Layout({ children }: { children: ReactNode }) {
     }
   };
 
+  // ==========================================
   // MENU ITEMS DINAMIS
+  // ==========================================
   const menuItems = isAdmin 
     ? [
         // --- MENU KHUSUS ADMIN ---
-        { name: 'Dashboard Admin', path: '/admin/monitoring-dashboard', icon: '📈' },
+        { name: 'Dashboard Monitoring', path: '/admin/admin-monitoring-dashboard', icon: '📈' },
+        { name: 'Upload Laporan', path: '/admin/upload', icon: '📤' },
         { name: 'Arsip Laporan', path: '/admin/arsip', icon: '📁' },
         { name: 'Monitoring Sertifikasi', path: '/admin/monitoring', icon: '📊' },
         { name: 'Backup Google Drive', path: '/admin/backup', icon: '☁️' },
       ]
     : [
-        // --- MENU USER (GUEST) ---
+        // --- MENU KHUSUS GUEST ---
         { name: 'Dashboard Monitoring', path: '/monitoring-dashboard', icon: '📈' },
         { name: 'Upload Laporan', path: '/upload', icon: '📤' },
-        { name: 'Arsip Laporan', path: '/arsip', icon: '📁' }, 
-        { name: 'Monitoring Sertifikasi', path: '/monitoring', icon: '📊' },
+        { name: 'Arsip Laporan', path: '/arsip', icon: '📁' },
       ];
 
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans relative overflow-x-hidden">
       
       {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-        ></div>
+        <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setIsMobileMenuOpen(false)}></div>
       )}
 
       {/* SIDEBAR */}
@@ -169,7 +192,17 @@ export default function Layout({ children }: { children: ReactNode }) {
 
         <nav className="flex-1 py-3 overflow-y-auto">
           {menuItems.map((item) => {
-            const isActive = pathname === item.path;
+            const isActive = !item.path.startsWith('http') && pathname === item.path;
+            
+            if (item.path.startsWith('http')) {
+               return (
+                <a key={item.name} href={item.path} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 px-4 py-3 transition-colors border-l-4 border-transparent text-slate-300 hover:bg-[#34495e] hover:text-white`}>
+                  <span className="text-base">{item.icon}</span>
+                  <span className="text-sm">{item.name}</span>
+                </a>
+               )
+            }
+
             return (
               <Link
                 key={item.path}
@@ -219,10 +252,6 @@ export default function Layout({ children }: { children: ReactNode }) {
             <div className="text-right hidden md:block border-r border-slate-600 pr-4">
               <p className="text-sm font-mono font-bold text-white tracking-widest">{currentTime || '...'}</p>
               <p className="text-[10px] text-slate-400">{currentDate}</p>
-            </div>
-            <div className="text-right hidden md:block">
-              <p className="text-xs font-bold text-white">{isAdmin ? 'ADMIN' : 'GUEST'}</p>
-              <p className="text-[10px] text-slate-400">{isAdmin ? 'admin.id' : 'Tamu'}</p>
             </div>
             <div className={`w-7 h-7 md:w-9 md:h-9 ${isAdmin ? 'bg-blue-600 ring-blue-400/50' : 'bg-slate-600 ring-slate-400/50'} text-white rounded-full flex items-center justify-center font-bold text-xs md:text-sm shadow-md ring-2`}>
               {isAdmin ? 'A' : 'G'}
