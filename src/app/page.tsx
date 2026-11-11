@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 
 export default function Home() {
-  redirect('/login');
+  // Otomatis arahkan ke dashboard guest saat link utama dibuka
+  redirect('/monitoring-dashboard');
 }
