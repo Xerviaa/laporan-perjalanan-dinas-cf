@@ -59,3 +59,12 @@ export const settings = pgTable("settings", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   logoUrl: text("logo_url"),
 });
+
+// ==========================================
+// TAMBAHAN BARU: TABEL PERUSAHAAN
+// ==========================================
+export const perusahaan = pgTable("perusahaan", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  nama: varchar("nama", { length: 255 }).notNull().unique(), // Unique agar tidak ada duplikat nama
+  alamat: text("alamat").notNull(),
+});

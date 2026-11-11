@@ -6,22 +6,18 @@ const SECRET_KEY = new TextEncoder().encode('rahasia-negara-laporan-dinas-2026')
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get('session_token')?.value;
+  const { pathname } = request.nextUrl;
 
-  // Jika tidak ada token dan mencoba akses halaman terlindungi
-  if (!token && !request.nextUrl.pathname.startsWith('/login')) {
-    return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  if (token) {
+  // Proteksi seluruh area /admin
+  if (pathname.startsWith('/admin')) {
+    if (!token) {
+      // Lempar ke halaman utama (karena login pakai modal)
+      return NextResponse.redirect(new URL('/monitoring-dashboard', request.url));
+    }
     try {
       await jwtVerify(token, SECRET_KEY);
-      
-      // Jika sudah login tapi buka halaman /login, lempar ke dashboard
-      if (request.nextUrl.pathname === '/login') {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
-      }
     } catch (error) {
-      const response = NextResponse.redirect(new URL('/login', request.url));
+      const response = NextResponse.redirect(new URL('/monitoring-dashboard', request.url));
       response.cookies.delete('session_token');
       return response;
     }
@@ -31,5 +27,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/upload/:path*', '/arsip/:path*', '/pengaturan/:path*', '/login'],
+  matcher: ['/admin/:path*'],
 };

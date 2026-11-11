@@ -89,6 +89,9 @@ export default function UploadPage() {
   // State Foto (Tetap Multiple)
   const [fotoFiles, setFotoFiles] = useState<File[]>([]);
   
+  // State untuk data perusahaan dari database
+  const [dbPerusahaan, setDbPerusahaan] = useState<any[]>([]);
+
   // ==========================================
   // STATE BERKAS (SEKARANG SEMUA FILE TUNGGAL)
   // ==========================================
@@ -117,12 +120,24 @@ export default function UploadPage() {
     setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 4000); 
   };
 
+  // Ambil data perusahaan dari database saat halaman dimuat
+  useEffect(() => {
+    fetch('/api/perusahaan')
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'success') {
+          setDbPerusahaan(data.data);
+        }
+      })
+      .catch(err => console.error("Gagal load perusahaan:", err));
+  }, []);
+
   // ==========================================
   // LOGIKA PENCARIAN ALAMAT OTOMATIS
   // ==========================================
   useEffect(() => {
     if (namaPerusahaan) {
-      const allPerusahaan = [...perusahaanHACCP, ...perusahaanSKP];
+      const allPerusahaan = [...perusahaanHACCP, ...perusahaanSKP, ...dbPerusahaan];
       // Mencari persis sama dengan nama yang ada di daftar
       const found = allPerusahaan.find(p => p.nama.toLowerCase() === namaPerusahaan.toLowerCase());
       
@@ -133,7 +148,7 @@ export default function UploadPage() {
     } else {
       setAlamatPerusahaan('');
     }
-  }, [namaPerusahaan]);
+  }, [namaPerusahaan, dbPerusahaan]);
 
   const handlePetugasChange = (index: number, field: string, value: string) => {
     const newList = [...petugasList];
@@ -194,6 +209,13 @@ export default function UploadPage() {
       if (res.ok) {
         showToast('Laporan berhasil diunggah!', 'success');
         
+        // Refresh data perusahaan dari DB agar perusahaan baru langsung muncul di dropdown
+        fetch('/api/perusahaan')
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === 'success') setDbPerusahaan(data.data);
+          });
+
         setJenisKegiatan(''); setDetailKegiatan(''); setNamaPerusahaan(''); setAlamatPerusahaan(''); setTanggal(''); setNoSurat('');
         setHasilKegiatan(''); setKendala(''); setPetugasList([{ nama: '', peran: '', customPeran: '', ttd: '' }]);
         setFotoFiles([]);
@@ -214,8 +236,8 @@ export default function UploadPage() {
     ? ['CPIB Kapal', 'CBIB', 'CPIB', 'HACCP', 'SKP', 'SPDI'] 
     : [];
 
-  // Menggabungkan data perusahaan dan menyaring agar unik
-  const allPerusahaan = [...perusahaanHACCP, ...perusahaanSKP];
+  // Menggabungkan data perusahaan dari HACCP, SKP, dan Database
+  const allPerusahaan = [...perusahaanHACCP, ...perusahaanSKP, ...dbPerusahaan];
   const perusahaanUnik = allPerusahaan.filter((v, i, a) => 
     a.findIndex(t => t.nama.toLowerCase() === v.nama.toLowerCase()) === i
   );

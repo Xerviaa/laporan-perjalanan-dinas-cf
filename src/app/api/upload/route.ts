@@ -1,6 +1,7 @@
 import { getDb } from "@/db";
-import { reports } from "@/db/schema";
+import { reports, perusahaan } from "@/db/schema";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { eq } from "drizzle-orm";
 
 export async function POST(request: Request) {
   try {
@@ -69,13 +70,13 @@ export async function POST(request: Request) {
       }
     }
 
-    // 6. Upload Surat Tugas (BARU)
+    // 6. Upload Surat Tugas
     let keySuratTugas = null;
     if (fileSuratTugas && fileSuratTugas.size > 0) {
       keySuratTugas = await uploadToR2(fileSuratTugas, 'surat-tugas');
     }
 
-    // 7. Upload Pemeriksaan Tindakan Perbaikan (BARU)
+    // 7. Upload Pemeriksaan Tindakan Perbaikan
     let keyPemeriksaan = null;
     if (filePemeriksaan && filePemeriksaan.size > 0) {
       keyPemeriksaan = await uploadToR2(filePemeriksaan, 'pemeriksaan-tindakan-perbaikan');
@@ -105,11 +106,34 @@ export async function POST(request: Request) {
       berkasKegiatan: JSON.stringify(keysBerkasKegiatan),
       berkasPerbaikan: JSON.stringify(keysBerkasPerbaikan),
       statusMonitoring: 'Berkas belum upload',
-      
-      // SIMPAN KEY FILE BARU DI SINI
       suratTugas: keySuratTugas,
       berkasPemeriksaanTindakanPerbaikan: keyPemeriksaan,
     });
+
+    // ==========================================================
+    // 9. SIMPAN PERUSAHAAN BARU KE DATABASE (JIKA BELUM ADA)
+    // ==========================================================
+    if (namaPerusahaan && alamatPerusahaan) {
+      try {
+        // Cek apakah perusahaan sudah ada di tabel perusahaan
+        const existingPerusahaan = await db
+          .select()
+          .from(perusahaan)
+          .where(eq(perusahaan.nama, namaPerusahaan));
+
+        // Jika belum ada, simpan data perusahaan baru
+        if (existingPerusahaan.length === 0) {
+          await db.insert(perusahaan).values({
+            nama: namaPerusahaan,
+            alamat: alamatPerusahaan,
+          });
+        }
+      } catch (err) {
+        // Error saat menyimpan perusahaan tidak akan menggagalkan proses upload laporan
+        console.error("Gagal menyimpan data perusahaan baru:", err);
+      }
+    }
+    // ==========================================================
 
     return Response.json({ status: "success", message: "Berhasil diunggah" });
   } catch (error: any) {
