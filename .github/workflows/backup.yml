@@ -2,8 +2,8 @@ name: Backup Supabase to Google Drive (Structured)
 
 on:
   schedule:
-    # Berjalan Senin-Jumat jam 10:00 UTC (18:00 WITA)
-    - cron: '0 10 * * 1-5' 
+    # Berjalan Setiap Hari Sabtu jam 00:00 WITA (Jumat 16:00 UTC)
+    - cron: '0 16 * * 5' 
   workflow_dispatch: {} # Tombol untuk menjalankan manual
   repository_dispatch:  # Untuk dipicu dari tombol aplikasi Monica
     types: [backup_trigger] 

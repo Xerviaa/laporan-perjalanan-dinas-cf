@@ -142,7 +142,7 @@ export default function BackupPage() {
                 Jadwal Otomatis
               </h2>
               <p className="text-sm text-blue-700 leading-relaxed">
-                Backup berjalan otomatis setiap <strong>hari Senin-Jumat pukul 18:00 WITA</strong>.
+                Backup berjalan otomatis setiap <strong>hari Sabtu pukul 00:00 WITA</strong>.
               </p>
             </div>
 
