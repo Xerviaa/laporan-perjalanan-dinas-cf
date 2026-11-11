@@ -67,15 +67,11 @@ export default function BackupPage() {
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* CUSTOM MODAL KONFIRMASI                                  */}
-      {/* ======================================================== */}
+      {/* CUSTOM MODAL KONFIRMASI */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
             <div className="h-2 w-full bg-emerald-500"></div>
-
             <div className="p-8">
               <div className="flex flex-col items-center text-center">
                 <div className="relative mb-6">
@@ -114,20 +110,21 @@ export default function BackupPage() {
       {/* Container Utama */}
       <div className="max-w-5xl mx-auto py-10 px-4">
         
-        {/* Header Halaman (Sederhana) */}
+        {/* Header Halaman (Sederhana & Bersih) */}
         <div className="mb-8 text-center md:text-left">
-          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Backup ke Google Drive</h1>
-          <p className="text-slate-500 mt-2">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Backup ke Google Drive</h1>
+          <p className="text-slate-500 mt-1 text-sm md:text-base">
             Sistem akan mencadangkan seluruh data laporan dan file lampiran ke Google Drive Anda secara aman.
           </p>
         </div>
 
         {/* Grid Konten */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
 
-          {/* Kolom Kiri: Kartu Informasi */}
+          {/* Kolom Kiri: Kartu Informasi & Akses */}
           <div className="md:col-span-1 space-y-6">
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            {/* Kartu 1: Jadwal */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
               <h2 className="font-bold text-slate-800 mb-3 flex items-center gap-3">
                 <span className="bg-blue-100 text-blue-600 p-2.5 rounded-xl shadow-sm">
@@ -140,65 +137,65 @@ export default function BackupPage() {
               </p>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+            {/* Kartu 2: Akses Backup */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-orange-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform"></div>
+              
               <h2 className="font-bold text-slate-800 mb-3 flex items-center gap-3">
-                <span className="bg-emerald-100 text-emerald-600 p-2.5 rounded-xl shadow-sm">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                <span className="bg-orange-100 text-orange-600 p-2.5 rounded-xl shadow-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                 </span>
-                Format File
+                Akses Backup
               </h2>
-              <p className="text-sm text-slate-600 leading-relaxed">
-                Backup berisi <strong className="text-emerald-700">lampiran PDF/Gambar asli</strong>, file <strong className="text-emerald-700">.csv</strong> (data excel), dan file database <strong className="text-emerald-700">.dump</strong>.
+              
+              <p className="text-sm text-slate-600 leading-relaxed mb-5">
+                Semua file backup akan disimpan secara otomatis ke dalam folder Google Drive Anda.
               </p>
+              
+              <a 
+                href="https://drive.google.com/drive/folders/1KB4yOsjA2SPYjlGF_4YaezMXZC66D4aP?usp=sharing" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="w-full bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 group/btn"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover/btn:translate-x-1 transition-transform"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                Buka Folder Google Drive
+              </a>
             </div>
           </div>
 
-          {/* Kolom Kanan: Area Tombol Aksi */}
+          {/* Kolom Kanan: Area Tombol Aksi Backup Manual */}
           <div className="md:col-span-2">
-            {/* Menghapus h-full dan mengecilkan padding */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg flex flex-col justify-center relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-xl flex flex-col justify-center relative overflow-hidden h-full min-h-[400px]">
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
               
-              <div className="text-center mb-6">
-                <div className="w-20 h-20 bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner border border-emerald-100">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+              <div className="text-center mb-10">
+                <div className="w-24 h-24 bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 </div>
                 <h3 className="text-2xl font-bold text-slate-800">Mulai Backup Manual</h3>
                 <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
-                  Klik tombol di bawah ini jika Anda ingin melakukan backup di luar jadwal otomatis.
+                  Klik tombol di bawah ini jika Anda ingin melakukan backup di luar jadwal otomatis. Proses akan berjalan di latar belakang.
                 </p>
               </div>
 
-              <div className="space-y-4">
-                <button
-                  onClick={() => setShowConfirmModal(true)}
-                  disabled={isBackingUp}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-emerald-200/50 flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none cursor-pointer transform hover:-translate-y-0.5"
-                >
-                  {isBackingUp ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                      Mengirim Sinyal...
-                    </>
-                  ) : (
-                    <>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                      Backup Sekarang
-                    </>
-                  )}
-                </button>
-
-                <a 
-                  href="https://drive.google.com/drive/u/4/folders/1KB4yOsjA2SPYjlGF_4YaezMXZC66D4aP" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-full bg-white border-2 border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 group"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:scale-110 transition-transform"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                  Buka Folder Google Drive
-                </a>
-              </div>
+              <button
+                onClick={() => setShowConfirmModal(true)}
+                disabled={isBackingUp}
+                className="w-full max-w-sm mx-auto bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-lg py-4 rounded-xl transition-all shadow-xl shadow-emerald-500/30 flex items-center justify-center gap-3 disabled:opacity-50 disabled:shadow-none cursor-pointer transform hover:-translate-y-1 hover:scale-[1.02]"
+              >
+                {isBackingUp ? (
+                  <>
+                    <svg className="animate-spin h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Mengirim Sinyal...
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Backup Sekarang
+                  </>
+                )}
+              </button>
 
             </div>
           </div>
