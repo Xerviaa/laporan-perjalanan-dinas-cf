@@ -81,7 +81,7 @@ export default function BackupPage() {
                   </div>
                 </div>
 
-                <h3 className="text-2xl font-extrabold text-slate-800 mb-2 tracking-tight">Mulai Backup Sekarang?</h3>
+                <h3 className="text-2xl font-extrabold text-slate-800 mb-2 tracking-tight">Mulai Back up Sekarang?</h3>
                 <p className="text-slate-500 text-sm mb-8 leading-relaxed">
                   Proses pencadangan data dan file lampiran akan dijalankan di server. Pastikan koneksi internet stabil sebelum melanjutkan.
                 </p>
@@ -114,7 +114,7 @@ export default function BackupPage() {
         <div className="mb-8 text-center md:text-left">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">Backup ke Google Drive</h1>
           <p className="text-slate-500 mt-1 text-sm md:text-base">
-            Sistem akan mencadangkan seluruh data laporan dan file lampiran ke Google Drive Anda secara aman.
+            Sistem akan mencadangkan seluruh data laporan dan file lampiran ke Google Drive secara aman.
           </p>
         </div>
 
@@ -130,10 +130,10 @@ export default function BackupPage() {
                 <span className="bg-blue-100 text-blue-600 p-2.5 rounded-xl shadow-sm">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                 </span>
-                Jadwal Otomatis
+                Jadwal Backup Otomatis
               </h2>
               <p className="text-sm text-slate-600 leading-relaxed">
-                Backup berjalan otomatis setiap <strong className="text-blue-700">hari Sabtu pukul 00:00 WITA</strong>.
+                Proses backup berjalan otomatis setiap <strong className="text-blue-700">hari Sabtu pukul 00:00 WITA</strong>.
               </p>
             </div>
 
@@ -145,11 +145,11 @@ export default function BackupPage() {
                 <span className="bg-orange-100 text-orange-600 p-2.5 rounded-xl shadow-sm">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
                 </span>
-                Akses Backup
+                GOOGLE DRIVE
               </h2>
               
               <p className="text-sm text-slate-600 leading-relaxed mb-5">
-                Semua file backup akan disimpan secara otomatis ke dalam folder Google Drive Anda.
+                Semua file backup akan disimpan secara otomatis ke dalam folder Google Drive.
               </p>
               
               <a 
@@ -159,12 +159,12 @@ export default function BackupPage() {
                 className="w-full bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 group/btn"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover/btn:translate-x-1 transition-transform"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                Buka Folder Google Drive
+                Buka Google Drive
               </a>
             </div>
           </div>
 
-          {/* Kolom Kanan: Area Tombol Aksi Backup Manual */}
+          {/* Kolom Kanan: Area Tombol Aksi Back up Manual */}
           <div className="md:col-span-2">
             <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-xl flex flex-col justify-center relative overflow-hidden h-full min-h-[400px]">
               <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
@@ -175,7 +175,7 @@ export default function BackupPage() {
                 </div>
                 <h3 className="text-2xl font-bold text-slate-800">Mulai Backup Manual</h3>
                 <p className="text-sm text-slate-500 mt-2 max-w-md mx-auto">
-                  Klik tombol di bawah ini jika Anda ingin melakukan backup di luar jadwal otomatis. Proses akan berjalan di latar belakang.
+                  Klik tombol di bawah ini jika Anda ingin melakukan back up di luar jadwal otomatis. Proses akan berjalan di latar belakang.
                 </p>
               </div>
 
@@ -192,7 +192,7 @@ export default function BackupPage() {
                 ) : (
                   <>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    Backup Sekarang
+                    Back up Sekarang
                   </>
                 )}
               </button>
