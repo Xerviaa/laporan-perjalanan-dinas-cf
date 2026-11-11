@@ -1,134 +1,213 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Link from 'next/link';
 
-export default function ArsipBackupPage() {
-  const [reports, setReports] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  // State untuk Accordion
-  const [openYears, setOpenYears] = useState<string[]>([]);
-  const [openMonths, setOpenMonths] = useState<string[]>([]);
-  const [openJenis, setOpenJenis] = useState<string[]>([]);
-  const [openDetails, setOpenDetails] = useState<string[]>([]);
+export default function BackupPage() {
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  useEffect(() => {
-    fetch('/api/reports')
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'success') setReports(data.data);
-        setLoading(false);
-      });
-  }, []);
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
+    show: false,
+    message: '',
+    type: 'success',
+  });
 
-  const toggle = (id: string, state: string[], setState: (val: string[]) => void) => {
-    if (state.includes(id)) setState(state.filter(item => item !== id));
-    else setState([...state, id]);
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 4000);
   };
 
-  // Mengelompokkan data: Tahun -> Bulan -> Jenis Kegiatan -> Detail
-  const groupedData = reports.reduce((acc, report) => {
-    const date = report.tanggal ? new Date(report.tanggal) : new Date(report.createdAt);
-    const year = date.getFullYear().toString();
-    const month = date.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  const executeBackup = async () => {
+    setShowConfirmModal(false);
+    setIsBackingUp(true);
     
-    const jenisParts = (report.jenisKegiatan || '').split(' ');
-    const jenisKegiatan = jenisParts.slice(1).join(' ') || jenisParts[0] || 'Lainnya';
-
-    if (!acc[year]) acc[year] = {};
-    if (!acc[year][month]) acc[year][month] = {};
-    if (!acc[year][month][jenisKegiatan]) acc[year][month][jenisKegiatan] = [];
-    
-    acc[year][month][jenisKegiatan].push(report);
-    return acc;
-  }, {} as Record<string, Record<string, Record<string, any[]>>>);
-
-  const sortedYears = Object.keys(groupedData).sort((a, b) => parseInt(b) - parseInt(a));
+    try {
+      const res = await fetch('/api/backup', { method: 'POST' });
+      const data = await res.json();
+      
+      if (res.ok) {
+        showToast('Perintah backup berhasil dikirim! Proses sedang berjalan di latar belakang. Silakan cek Google Drive Anda secara berkala.', 'success');
+      } else {
+        showToast('Gagal memicu backup: ' + (data.error || 'Terjadi kesalahan server.'), 'error');
+      }
+    } catch (err) {
+      showToast('Terjadi kesalahan jaringan. Pastikan koneksi internet stabil.', 'error');
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
 
   return (
     <Layout>
-      <div className="mb-6">
-        <Link href="/backup" className="text-blue-600 hover:underline text-sm mb-2 inline-block">&larr; Kembali ke Backup</Link>
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Arsip Backup Data</h1>
-        <p className="text-slate-500 mt-1">Telusuri data backup berdasarkan Tahun, Bulan, Jenis Kegiatan, dan Detail.</p>
-      </div>
-
-      {loading ? (
-        <div className="text-center p-8 text-slate-500">Memuat data...</div>
-      ) : sortedYears.length === 0 ? (
-        <div className="text-center p-8 text-slate-500">Belum ada data backup.</div>
-      ) : (
-        <div className="space-y-3">
-          {sortedYears.map(year => (
-            <div key={year} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-              <button onClick={() => toggle(year, openYears, setOpenYears)} className="w-full flex justify-between items-center p-4 bg-slate-50 hover:bg-slate-100 font-bold text-lg text-slate-800">
-                <span>📅 Tahun {year}</span>
-                <span>{openYears.includes(year) ? '▼' : '▶'}</span>
-              </button>
-
-              {openYears.includes(year) && (
-                <div className="p-4 space-y-2 bg-white">
-                  {Object.keys(groupedData[year]).map(month => (
-                    <div key={month} className="border border-slate-200 rounded-lg overflow-hidden">
-                      <button onClick={() => toggle(`${year}-${month}`, openMonths, setOpenMonths)} className="w-full flex justify-between items-center p-3 bg-white hover:bg-blue-50 font-semibold text-slate-700">
-                        <span>📁 {month}</span>
-                        <span>{openMonths.includes(`${year}-${month}`) ? '▼' : '▶'}</span>
-                      </button>
-
-                      {openMonths.includes(`${year}-${month}`) && (
-                        <div className="p-3 space-y-2 bg-slate-50">
-                          {Object.keys(groupedData[year][month]).map(jenis => (
-                            <div key={jenis} className="border border-slate-200 rounded-lg overflow-hidden">
-                              <button onClick={() => toggle(`${year}-${month}-${jenis}`, openJenis, setOpenJenis)} className="w-full flex justify-between items-center p-2.5 bg-white hover:bg-emerald-50 font-medium text-slate-700">
-                                <span>📂 {jenis}</span>
-                                <span className="text-xs bg-slate-100 px-2 py-0.5 rounded-full">{groupedData[year][month][jenis].length} Laporan</span>
-                              </button>
-
-                              {openJenis.includes(`${year}-${month}-${jenis}`) && (
-                                <div className="p-2 space-y-1 bg-white">
-                                  {groupedData[year][month][jenis].map((report: any) => (
-                                    <div key={report.id} className="border border-slate-100 rounded-md">
-                                      <button onClick={() => toggle(`detail-${report.id}`, openDetails, setOpenDetails)} className="w-full flex justify-between items-center p-2 text-sm text-slate-600 hover:bg-slate-50">
-                                        <span>📄 {report.namaPerusahaan || 'Tanpa Nama'} - {new Date(report.tanggal).toLocaleDateString('id-ID')}</span>
-                                        <span>{openDetails.includes(`detail-${report.id}`) ? '▼' : '▶'}</span>
-                                      </button>
-
-                                      {openDetails.includes(`detail-${report.id}`) && (
-                                        <div className="p-3 bg-slate-50 text-xs space-y-2 border-t border-slate-100">
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            {report.suratTugas && (
-                                              <a href={`/api/r2/${report.suratTugas}`} target="_blank" className="text-blue-600 hover:underline block">📎 Surat Tugas</a>
-                                            )}
-                                            {report.berkasKegiatan && report.berkasKegiatan !== '[]' && JSON.parse(report.berkasKegiatan).map((key: string, i: number) => (
-                                              <a key={i} href={`/api/r2/${key}`} target="_blank" className="text-blue-600 hover:underline block">📎 Berkas Kegiatan {i+1}</a>
-                                            ))}
-                                            {report.berkasPerbaikan && report.berkasPerbaikan !== '[]' && JSON.parse(report.berkasPerbaikan).map((key: string, i: number) => (
-                                              <a key={i} href={`/api/r2/${key}`} target="_blank" className="text-blue-600 hover:underline block">📎 Berkas Perbaikan {i+1}</a>
-                                            ))}
-                                            {report.berkasPemeriksaanTindakanPerbaikan && (
-                                              <a href={`/api/r2/${report.berkasPemeriksaanTindakanPerbaikan}`} target="_blank" className="text-blue-600 hover:underline block">📎 Pemeriksaan Perbaikan</a>
-                                            )}
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+      {/* TOAST NOTIFIKASI */}
+      {toast.show && (
+        <div className={`fixed top-24 right-6 z-50 flex items-center gap-3 px-5 py-4 rounded-xl shadow-2xl border-l-4 animate-in slide-in-from-right-8 fade-in duration-300 ${
+          toast.type === 'success' ? 'bg-white border-emerald-500 text-slate-800' : 'bg-white border-red-500 text-slate-800'
+        }`}>
+          <div className={`flex items-center justify-center w-10 h-10 rounded-full shrink-0 ${
+            toast.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
+          }`}>
+            {toast.type === 'success' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            )}
+          </div>
+          <div className="max-w-[300px]">
+            <p className="font-bold text-sm">{toast.type === 'success' ? 'Berhasil!' : 'Gagal!'}</p>
+            <p className="text-xs text-slate-500 mt-0.5 leading-snug">{toast.message}</p>
+          </div>
+          <button onClick={() => setToast({ ...toast, show: false })} className="ml-2 text-slate-400 hover:text-slate-600 cursor-pointer">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
         </div>
       )}
+
+      {/* ======================================================== */}
+      {/* CUSTOM MODAL KONFIRMASI                                  */}
+      {/* ======================================================== */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          
+          {/* Kotak Modal */}
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            
+            {/* Garis Aksen Atas (Warna Emerald) */}
+            <div className="h-2 w-full bg-emerald-500"></div>
+
+            <div className="p-8">
+              <div className="flex flex-col items-center text-center">
+                
+                {/* Ikon Animasi (Pulse) */}
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 bg-emerald-100 rounded-full animate-ping opacity-50"></div>
+                  <div className="relative w-20 h-20 bg-gradient-to-tr from-emerald-100 to-emerald-50 text-emerald-600 rounded-full flex items-center justify-center border-4 border-white shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                  </div>
+                </div>
+
+                {/* Teks */}
+                <h3 className="text-2xl font-extrabold text-slate-800 mb-2 tracking-tight">Mulai Backup Sekarang?</h3>
+                <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+                  Proses pencadangan data dan file lampiran akan dijalankan di server. Pastikan koneksi internet stabil sebelum melanjutkan.
+                </p>
+                
+                {/* Tombol Aksi */}
+                <div className="flex gap-3 w-full">
+                  <button 
+                    onClick={() => setShowConfirmModal(false)} 
+                    className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button 
+                    onClick={executeBackup} 
+                    className="flex-1 px-4 py-3 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-lg shadow-emerald-200 hover:shadow-emerald-300 cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    Ya, Lanjutkan
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Container Utama */}
+      <div className="max-w-4xl mx-auto py-8">
+        
+        {/* Header Halaman */}
+        <div className="mb-8 text-center md:text-left">
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Backup ke Google Drive</h1>
+          <p className="text-slate-500 mt-2">
+            Sistem akan mencadangkan seluruh data laporan dan file lampiran ke Google Drive Anda secara aman.
+          </p>
+        </div>
+
+        {/* Grid Konten */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+          {/* Kolom Kiri: Kartu Informasi */}
+          <div className="md:col-span-1 space-y-4">
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 shadow-sm">
+              <h2 className="font-bold text-blue-900 mb-4 flex items-center gap-2">
+                <span className="bg-blue-200 text-blue-700 p-1.5 rounded-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                </span>
+                Jadwal Otomatis
+              </h2>
+              <p className="text-sm text-blue-700 leading-relaxed">
+                Backup berjalan otomatis setiap <strong>hari Sabtu pukul 00:00 WITA</strong>.
+              </p>
+            </div>
+
+            <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-6 shadow-sm">
+              <h2 className="font-bold text-emerald-900 mb-4 flex items-center gap-2">
+                <span className="bg-emerald-200 text-emerald-700 p-1.5 rounded-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                </span>
+                Format File
+              </h2>
+              <p className="text-sm text-emerald-700 leading-relaxed">
+                Backup berupa folder berisi <strong>lampiran PDF/Gambar asli</strong>, file <strong>.csv</strong> (data excel), dan file database <strong>.dump</strong> (cadangan sistem).
+              </p>
+            </div>
+          </div>
+
+          {/* Kolom Kanan: Area Tombol Aksi */}
+          <div className="md:col-span-2">
+            <div className="bg-white border border-slate-200 rounded-2xl p-8 shadow-md h-full flex flex-col justify-center">
+              
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                </div>
+                <h3 className="text-xl font-bold text-slate-800">Mulai Backup Manual</h3>
+                <p className="text-sm text-slate-500 mt-2">
+                  Klik tombol di bawah ini jika Anda ingin melakukan backup di luar jadwal otomatis.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowConfirmModal(true)}
+                disabled={isBackingUp}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:shadow-none cursor-pointer"
+              >
+                {isBackingUp ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    Mengirim Sinyal...
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Backup Sekarang
+                  </>
+                )}
+              </button>
+
+              {/* TOMBOL GOOGLE DRIVE (Menggantikan Riwayat Arsip) */}
+              <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+                <a 
+                  href="https://drive.google.com/drive/u/4/folders/1KB4yOsjA2SPYjlGF_4YaezMXZC66D4aP" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-emerald-600 hover:text-emerald-700 font-bold text-sm flex items-center justify-center gap-2 transition-colors"
+                >
+                  🚀 Buka Folder Google Drive
+                </a>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
     </Layout>
   );
 }
