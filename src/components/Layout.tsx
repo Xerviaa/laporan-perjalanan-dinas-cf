@@ -9,6 +9,9 @@ export default function Layout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  
+  // STATE BARU UNTUK MENAHAN RENDER
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   // --- STATE UNTUK POPUP LOGIN PIN ---
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -24,7 +27,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
 
-  // --- CEK STATUS LOGIN ADMIN (MENGGUNAKAN API) ---
+  // --- CEK STATUS LOGIN ADMIN ---
   const checkAdminStatus = async () => {
     try {
       const res = await fetch('/api/auth/check');
@@ -32,6 +35,9 @@ export default function Layout({ children }: { children: ReactNode }) {
       setIsAdmin(data.isAdmin);
     } catch (error) {
       setIsAdmin(false);
+    } finally {
+      // Selesai mengecek, hilangkan blocker
+      setIsCheckingAuth(false); 
     }
   };
 
@@ -97,15 +103,10 @@ export default function Layout({ children }: { children: ReactNode }) {
     setShowInstallBtn(false);
   };
 
-  // =======================================================
-  // FUNGSI LOGOUT (DIUBAH AGAR LANGSUNG KE GUEST DASHBOARD)
-  // =======================================================
-    const handleLogout = async () => {
+  // --- FUNGSI LOGOUT ---
+  const handleLogout = async () => {
     try {
-      // 1. Panggil API logout untuk menghapus cookie dari sisi server
       await fetch('/api/auth/logout', { method: 'POST' });
-
-      // 2. Hapus cache / storage lokal
       if (typeof window !== 'undefined') {
         localStorage.clear();
         sessionStorage.clear();
@@ -113,7 +114,6 @@ export default function Layout({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Gagal menghapus sesi:", error);
     } finally {
-      // 3. Redirect dengan hard-reload agar tampilan langsung berubah
       window.location.href = '/monitoring-dashboard'; 
     }
   };
@@ -135,8 +135,6 @@ export default function Layout({ children }: { children: ReactNode }) {
       if (res.ok) {
         setIsLoginModalOpen(false);
         setPin('');
-        
-        // Redirect ke halaman admin dashboard
         router.push('/admin/admin-monitoring-dashboard'); 
         router.refresh();
       } else {
@@ -154,7 +152,6 @@ export default function Layout({ children }: { children: ReactNode }) {
   // ==========================================
   const menuItems = isAdmin 
     ? [
-        // --- MENU KHUSUS ADMIN ---
         { name: 'Dashboard Monitoring', path: '/admin/admin-monitoring-dashboard', icon: '📈' },
         { name: 'Upload Laporan', path: '/admin/upload', icon: '📤' },
         { name: 'Arsip Laporan', path: '/admin/arsip', icon: '📁' },
@@ -162,11 +159,25 @@ export default function Layout({ children }: { children: ReactNode }) {
         { name: 'Backup Google Drive', path: '/admin/backup', icon: '☁️' },
       ]
     : [
-        // --- MENU KHUSUS GUEST ---
         { name: 'Dashboard Monitoring', path: '/monitoring-dashboard', icon: '📈' },
         { name: 'Upload Laporan', path: '/upload', icon: '📤' },
         { name: 'Arsip Laporan', path: '/arsip', icon: '📁' },
+        { name: 'Google Drive', path: 'https://drive.google.com/drive/u/1/folders/1KB4yOsjA2SPYjlGF_4YaezMXZC66D4aP', icon: '☁️' },
       ];
+
+  // =======================================================
+  // BLOKIR RENDER JIKA MASIH MENGEcek SESI
+  // =======================================================
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-500 font-medium">Memeriksa Sesi...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans relative overflow-x-hidden">
