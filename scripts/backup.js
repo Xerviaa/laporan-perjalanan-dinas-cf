@@ -96,7 +96,7 @@ async function main() {
     }
 
     const year = date.getFullYear();
-    const month = date.toLocaleString('id-ID', { month: 'long' });
+    const month = date.toLocaleString('id-ID', { month: 'long', timeZone: 'Asia/Makassar' });
     
     // --- 1. TENTUKAN JENIS UTAMA (Anti-Typo) ---
     const rawJenis = (report.jenis_kegiatan || '').trim().toLowerCase();
@@ -130,8 +130,31 @@ async function main() {
     // Sanitasi nama folder
     const namaPerusahaan = (report.nama_perusahaan || `Laporan-ID-${report.id}`).replace(/[\/\\?%*:|"<>]/g, '-');
 
-    // STRUKTUR FOLDER FINAL
-    const folderPath = path.join(baseLocalFolder, String(year), month, jenisUtama, detailKegiatan, namaPerusahaan);
+    // --- LOGIKA BARU: MEMBUAT SUB-FOLDER TANGGAL & KETUA PETUGAS ---
+    // Format Tanggal untuk nama folder (DD-MM-YYYY)
+    const tglFolderStr = `${String(date.getDate()).padStart(2, '0')}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getFullYear()}`;
+    
+    // Ambil Nama Ketua dari data petugas (format string: "Nama (Ketua)|Nama2 (Anggota)")
+    let namaKetua = 'Tanpa-Ketua';
+    if (report.petugas_pelaksana) {
+      const petugasArr = String(report.petugas_pelaksana).split('|');
+      const ketuaData = petugasArr.find(p => p.toLowerCase().includes('(ketua)'));
+      if (ketuaData) {
+        namaKetua = ketuaData.split('(')[0].trim();
+      } else if (petugasArr.length > 0) {
+        // Jika tidak ada yang ditandai ketua, ambil nama pertama
+        namaKetua = petugasArr[0].split('(')[0].trim();
+      }
+    }
+    
+    // Sanitasi nama ketua untuk nama folder
+    namaKetua = namaKetua.replace(/[\/\\?%*:|"<>]/g, '-');
+
+    // Gabungkan menjadi nama sub-folder
+    const namaSubFolder = `${tglFolderStr}_${namaKetua}`;
+
+    // STRUKTUR FOLDER FINAL (Ditambah Sub-folder)
+    const folderPath = path.join(baseLocalFolder, String(year), month, jenisUtama, detailKegiatan, namaPerusahaan, namaSubFolder);
     
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
@@ -176,13 +199,15 @@ async function main() {
     }
 
     // --- 4. PROSES GENERATE PDF LAPORAN DARI TEMPLATE HTML ---
-    const pdfLaporanPath = path.join(folderPath, `Laporan_${namaPerusahaan}.pdf`);
+    // Kita tetap tambahkan ID di nama file agar jika ada 2 laporan di hari yang sama oleh ketua yang sama, tidak tertimpa
+    const namaFilePdf = `Laporan_${report.id}_${namaPerusahaan}.pdf`;
+    const pdfLaporanPath = path.join(folderPath, namaFilePdf);
     const urlCetak = `${cetakUrl}${report.id}`;
     
     try {
       console.log(`Membuat PDF Laporan dari ${urlCetak}...`);
       await generatePdfFromUrl(urlCetak, pdfLaporanPath);
-      console.log(`BERHASIL: Laporan_${namaPerusahaan}.pdf`);
+      console.log(`BERHASIL: ${namaFilePdf}`);
     } catch (error) {
       console.error(`Gagal membuat PDF Laporan: ${error.message}`);
     }
@@ -190,7 +215,8 @@ async function main() {
     // --- 5. BUAT FILE CSV ---
     const csvHeader = 'ID,Nama Perusahaan,Tanggal,Pelaksana,Hasil,Kendala\n';
     const csvRow = `"${report.id}","${report.nama_perusahaan || ''}","${report.tanggal || ''}","${report.petugas_pelaksana || ''}","${report.hasil_kegiatan || ''}","${report.kendala || ''}"`;
-    fs.writeFileSync(path.join(folderPath, 'data.csv'), csvHeader + csvRow, 'utf8');
+    const namaFileCsv = `data_${report.id}.csv`;
+    fs.writeFileSync(path.join(folderPath, namaFileCsv), csvHeader + csvRow, 'utf8');
   }
 
   await client.end();
