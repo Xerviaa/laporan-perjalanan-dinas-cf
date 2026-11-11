@@ -19,6 +19,9 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // --- STATE UNTUK POPUP SELAMAT DATANG ---
+  const [showWelcome, setShowWelcome] = useState(false);
+
   // --- STATE WAKTU REALTIME ---
   const [currentTime, setCurrentTime] = useState<string>('');
   const [currentDate, setCurrentDate] = useState<string>('');
@@ -44,6 +47,18 @@ export default function Layout({ children }: { children: ReactNode }) {
   useEffect(() => {
     checkAdminStatus();
   }, [pathname]);
+
+  // --- CEK POPUP SELAMAT DATANG (HANYA MUNCUL SETELAH LOGIN) ---
+  useEffect(() => {
+    if (isAdmin && sessionStorage.getItem('justLoggedIn') === 'true') {
+      setShowWelcome(true);
+      sessionStorage.removeItem('justLoggedIn'); // Hapus agar tidak muncul terus
+      
+      // Hilangkan pop-up setelah 3 detik
+      const timer = setTimeout(() => setShowWelcome(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
@@ -135,6 +150,10 @@ export default function Layout({ children }: { children: ReactNode }) {
       if (res.ok) {
         setIsLoginModalOpen(false);
         setPin('');
+        
+        // TANDAI BAHWA BARU SAJA LOGIN
+        sessionStorage.setItem('justLoggedIn', 'true');
+
         router.push('/admin/admin-monitoring-dashboard'); 
         router.refresh();
       } else {
@@ -286,6 +305,19 @@ export default function Layout({ children }: { children: ReactNode }) {
           {children}
         </div>
       </main>
+
+      {/* --- POPUP SELAMAT DATANG ADMIN --- */}
+      {showWelcome && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none bg-black/20 backdrop-blur-[1px] animate-in fade-in duration-300">
+          <div className="bg-white px-8 py-6 rounded-2xl shadow-2xl border border-emerald-200 flex flex-col items-center animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+            <h2 className="text-2xl font-bold text-slate-800 mb-1">Selamat Datang, Admin!</h2>
+            <p className="text-slate-500 text-sm text-center max-w-xs">Login berhasil. Anda sekarang memiliki akses penuh ke sistem.</p>
+          </div>
+        </div>
+      )}
 
       {/* --- POPUP INSTALL PWA --- */}
       {showInstallBtn && (
