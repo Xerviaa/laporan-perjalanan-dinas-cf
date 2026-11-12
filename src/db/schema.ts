@@ -53,6 +53,11 @@ export const reports = pgTable("reports", {
   // ==========================================
   suratTugas: text("surat_tugas"),
   berkasPemeriksaanTindakanPerbaikan: text("berkas_pemeriksaan_tindakan_perbaikan"),
+
+  // ==========================================
+  // TAMBAHAN BARU: LINK GOOGLE DRIVE (Untuk Backup Spesifik)
+  // ==========================================
+  driveLink: text("drive_link"),
 });
 
 export const settings = pgTable("settings", {
@@ -65,6 +70,24 @@ export const settings = pgTable("settings", {
 // ==========================================
 export const perusahaan = pgTable("perusahaan", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  nama: varchar("nama", { length: 255 }).notNull().unique(), // Unique agar tidak ada duplikat nama
+  nama: varchar("nama", { length: 255 }).notNull().unique(),
   alamat: text("alamat").notNull(),
+});
+
+// ==========================================
+// TAMBAHAN BARU: TABEL TARGET SERTIFIKASI
+// ==========================================
+export const targets = pgTable("targets", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  jenisKegiatan: varchar("jenis_kegiatan", { length: 100 }).notNull().unique(),
+  target: integer("target").notNull().default(30),
+});
+
+// ==========================================
+// TAMBAHAN BARU: TABEL PENGATURAN FORM
+// ==========================================
+export const pengaturanForm = pgTable("pengaturan_form", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  tipe: varchar("tipe", { length: 100 }).notNull().unique(),
+  nilai: text("nilai").notNull(),
 });

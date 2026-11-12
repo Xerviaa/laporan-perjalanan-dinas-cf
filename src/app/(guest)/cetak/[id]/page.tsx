@@ -17,12 +17,15 @@ export default async function CetakLaporan({
   searchParams 
 }: { 
   params: Promise<{ id: string }>,
-  searchParams: Promise<{ mode?: string }>
+  searchParams: Promise<{ mode?: string, tampilkanST?: string }>
 }) {
   const resolvedParams = await params;
   const resolvedSearchParams = await searchParams;
   const idLaporan = Number(resolvedParams.id);
   const isPdfMode = resolvedSearchParams.mode === 'pdf';
+  
+  // Surat Tugas HANYA muncul jika ada parameter "tampilkanST=true"
+  const skipSuratTugas = resolvedSearchParams.tampilkanST !== 'true';
 
   const db = getDb(); 
   const result = await db.select().from(reports).where(eq(reports.id, idLaporan));
@@ -101,57 +104,57 @@ export default async function CetakLaporan({
         style={{ overflow: 'visible' }}
       >
         
-        {/* 1. LAMPIRAN SURAT TUGAS (HALAMAN PERTAMA) */}
-        {data.suratTugas ? (
-          <div className="w-[21cm] h-[29.7cm] bg-white break-after-page print:block print:w-[21cm] print:h-[29.7cm] print:p-0 print:m-0 print:overflow-hidden flex flex-col">
-            
-            {isPdfSuratTugas ? (
-              <iframe 
-                src={`/api/r2/${data.suratTugas}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
-                className="w-full h-full border-0 block"
-                style={{ width: '100%', height: '100%' }}
-                title="Surat Tugas PDF"
-              />
-            ) : isImageSuratTugas ? (
-              <div className="w-full h-full flex items-center justify-center p-4">
-                <img 
-                  src={`/api/r2/${data.suratTugas}`} 
-                  alt="Surat Tugas" 
-                  className="max-w-full max-h-full object-contain"
-                  onError={(e) => {
-                    // Jika gambar error, ganti dengan kotak placeholder
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent) {
-                      parent.innerHTML = `
-                        <div class="text-center p-10 border-2 border-dashed border-red-300 rounded-lg bg-red-50 w-full">
-                          <p class="text-red-500 font-bold text-lg mb-2">⚠️ File Surat Tugas Tidak Ditemukan</p>
-                          <p class="text-slate-500 text-sm">Pastikan file sudah di-upload dengan benar ke sistem.</p>
-                        </div>
-                      `;
-                    }
-                  }}
+        {/* 1. LAMPIRAN SURAT TUGAS (HANYA JIKA tampilkanST=true) */}
+        {!skipSuratTugas && (
+          data.suratTugas ? (
+            <div className="w-[21cm] h-[29.7cm] bg-white break-after-page print:block print:w-[21cm] print:h-[29.7cm] print:p-0 print:m-0 print:overflow-hidden flex flex-col">
+              
+              {isPdfSuratTugas ? (
+                <iframe 
+                  src={`/api/r2/${data.suratTugas}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`} 
+                  className="w-full h-full border-0 block"
+                  style={{ width: '100%', height: '100%' }}
+                  title="Surat Tugas PDF"
                 />
-              </div>
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center p-10 text-center">
-                <p className="text-gray-500 mb-4">File Surat Tugas tidak dapat ditampilkan langsung.</p>
-                <a href={`/api/r2/${data.suratTugas}`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 text-white px-4 py-2 rounded">
-                  Buka File Surat Tugas
-                </a>
-              </div>
-            )}
-            
-          </div>
-        ) : (
-          // Jika suratTugas KOSONG di database, tampilkan pesan ini (bukan halaman kosong)
-          <div className="w-[21cm] h-[29.7cm] bg-white break-after-page print:block print:w-[21cm] print:h-[29.7cm] p-10 flex items-center justify-center">
-             <div className="text-center p-10 border-2 border-dashed border-red-300 rounded-lg bg-red-50 w-full">
-                <p className="text-red-500 font-bold text-lg mb-2">⚠️ Surat Tugas Belum Di-upload</p>
-                <p className="text-slate-500 text-sm">Data laporan ini belum memiliki file Surat Tugas.</p>
-             </div>
-          </div>
+              ) : isImageSuratTugas ? (
+                <div className="w-full h-full flex items-center justify-center p-4">
+                  <img 
+                    src={`/api/r2/${data.suratTugas}`} 
+                    alt="Surat Tugas" 
+                    className="max-w-full max-h-full object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent) {
+                        parent.innerHTML = `
+                          <div class="text-center p-10 border-2 border-dashed border-red-300 rounded-lg bg-red-50 w-full">
+                            <p class="text-red-500 font-bold text-lg mb-2">⚠️ File Surat Tugas Tidak Ditemukan</p>
+                            <p class="text-slate-500 text-sm">Pastikan file sudah di-upload dengan benar ke sistem.</p>
+                          </div>
+                        `;
+                      }
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center p-10 text-center">
+                  <p className="text-gray-500 mb-4">File Surat Tugas tidak dapat ditampilkan langsung.</p>
+                  <a href={`/api/r2/${data.suratTugas}`} target="_blank" rel="noopener noreferrer" className="bg-blue-600 text-white px-4 py-2 rounded">
+                    Buka File Surat Tugas
+                  </a>
+                </div>
+              )}
+              
+            </div>
+          ) : (
+            <div className="w-[21cm] h-[29.7cm] bg-white break-after-page print:block print:w-[21cm] print:h-[29.7cm] p-10 flex items-center justify-center">
+               <div className="text-center p-10 border-2 border-dashed border-red-300 rounded-lg bg-red-50 w-full">
+                  <p className="text-red-500 font-bold text-lg mb-2">⚠️ Surat Tugas Belum Di-upload</p>
+                  <p className="text-slate-500 text-sm">Data laporan ini belum memiliki file Surat Tugas.</p>
+               </div>
+            </div>
+          )
         )}
 
         {/* 2. ISI LAPORAN (COVER DLL) */}

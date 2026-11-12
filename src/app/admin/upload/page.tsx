@@ -41,22 +41,12 @@ const TtdPreview = ({ nama }: { nama: string }) => {
     const fallbackUrl = nama.toLowerCase().includes('drh') ? urlTanpaGelar : urlDenganGelar;
 
     checkImage(primaryUrl)
-      .then((validUrl) => {
-        setImgSrc(validUrl);
-        setHasError(false);
-      })
+      .then((validUrl) => { setImgSrc(validUrl); setHasError(false); })
       .catch(() => {
         checkImage(fallbackUrl)
-          .then((validUrl) => {
-            setImgSrc(validUrl);
-            setHasError(false);
-          })
-          .catch(() => {
-            setImgSrc(null);
-            setHasError(true);
-          });
+          .then((validUrl) => { setImgSrc(validUrl); setHasError(false); })
+          .catch(() => { setImgSrc(null); setHasError(true); });
       });
-
   }, [nama]);
 
   if (!nama) return <span className="text-xs text-slate-400 italic">Pilih nama dulu</span>;
@@ -66,7 +56,7 @@ const TtdPreview = ({ nama }: { nama: string }) => {
   return <img src={imgSrc} alt="TTD" className="h-10 object-contain" />;
 };
 
-export default function UploadPage() {
+export default function AdminUploadPage() {
   // State Data
   const [jenisKegiatan, setJenisKegiatan] = useState('');
   const [detailKegiatan, setDetailKegiatan] = useState('');
@@ -86,15 +76,13 @@ export default function UploadPage() {
   const [searchQuery, setSearchQuery] = useState<{ [key: number]: string }>({});
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
 
-  // State Foto (Tetap Multiple)
+  // State Foto
   const [fotoFiles, setFotoFiles] = useState<File[]>([]);
   
   // State untuk data perusahaan dari database
   const [dbPerusahaan, setDbPerusahaan] = useState<any[]>([]);
 
-  // ==========================================
-  // STATE BERKAS (SEKARANG SEMUA FILE TUNGGAL)
-  // ==========================================
+  // State Berkas
   const [suratTugas, setSuratTugas] = useState<File | null>(null);
   const [berkasKegiatan, setBerkasKegiatan] = useState<File | null>(null);
   const [berkasPerbaikan, setBerkasPerbaikan] = useState<File | null>(null);
@@ -120,7 +108,86 @@ export default function UploadPage() {
     setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 4000); 
   };
 
-  // Ambil data perusahaan dari database saat halaman dimuat
+  // ==========================================
+  // STATE & FUNGSI UNTUK PENGATURAN DINAMIS
+  // ==========================================
+  const [isSettingOpen, setIsSettingOpen] = useState(false);
+  const [listJenis, setListJenis] = useState<string[]>([]);
+  const [listDetail, setListDetail] = useState<string[]>([]);
+  const [aturanUpload, setAturanUpload] = useState({ maksFoto: 5, maksMb: 5 });
+  
+  // State untuk form edit pengaturan
+  const [editJenisText, setEditJenisText] = useState('');
+  const [editDetailText, setEditDetailText] = useState('');
+  const [editMaksFoto, setEditMaksFoto] = useState(5);
+  const [editMaksMb, setEditMaksMb] = useState(5);
+  const [isSavingSetting, setIsSavingSetting] = useState(false);
+
+  const fetchPengaturan = async () => {
+    try {
+      const res = await fetch('/api/pengaturan');
+      const data = await res.json();
+      if (data.status === 'success') {
+        const jenis = data.data.find((d: any) => d.tipe === 'jenis_kegiatan');
+        const detail = data.data.find((d: any) => d.tipe === 'detail_kegiatan');
+        const aturan = data.data.find((d: any) => d.tipe === 'aturan_upload');
+        
+        if (jenis) {
+          const parsed = JSON.parse(jenis.nilai);
+          setListJenis(parsed);
+          setEditJenisText(parsed.join(', '));
+        }
+        if (detail) {
+          const parsed = JSON.parse(detail.nilai);
+          setListDetail(parsed);
+          setEditDetailText(parsed.join(', '));
+        }
+        if (aturan) {
+          const parsed = JSON.parse(aturan.nilai);
+          setAturanUpload(parsed);
+          setEditMaksFoto(parsed.maksFoto);
+          setEditMaksMb(parsed.maksMb);
+        }
+      }
+    } catch (error) {
+      console.error("Gagal load pengaturan:", error);
+    }
+  };
+
+  const handleSavePengaturan = async () => {
+    setIsSavingSetting(true);
+    try {
+      const newJenis = editJenisText.split(',').map(s => s.trim()).filter(s => s !== '');
+      const newDetail = editDetailText.split(',').map(s => s.trim()).filter(s => s !== '');
+      const newAturan = { maksFoto: Number(editMaksFoto), maksMb: Number(editMaksMb) };
+
+      const res = await fetch('/api/pengaturan', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([
+          { tipe: 'jenis_kegiatan', nilai: JSON.stringify(newJenis) },
+          { tipe: 'detail_kegiatan', nilai: JSON.stringify(newDetail) },
+          { tipe: 'aturan_upload', nilai: JSON.stringify(newAturan) },
+        ])
+      });
+
+      if (res.ok) {
+        showToast('Pengaturan berhasil disimpan!', 'success');
+        setListJenis(newJenis);
+        setListDetail(newDetail);
+        setAturanUpload(newAturan);
+        setIsSettingOpen(false);
+      } else {
+        showToast('Gagal menyimpan pengaturan.', 'error');
+      }
+    } catch (error) {
+      showToast('Terjadi kesalahan jaringan.', 'error');
+    } finally {
+      setIsSavingSetting(false);
+    }
+  };
+
+  // Ambil data perusahaan & pengaturan saat halaman dimuat
   useEffect(() => {
     fetch('/api/perusahaan')
       .then(res => res.json())
@@ -130,21 +197,19 @@ export default function UploadPage() {
         }
       })
       .catch(err => console.error("Gagal load perusahaan:", err));
+
+    fetchPengaturan();
   }, []);
 
-  // ==========================================
-  // LOGIKA PENCARIAN ALAMAT OTOMATIS
-  // ==========================================
+  // Logika Pencarian Alamat Otomatis
   useEffect(() => {
     if (namaPerusahaan) {
       const allPerusahaan = [...perusahaanHACCP, ...perusahaanSKP, ...dbPerusahaan];
-      // Mencari persis sama dengan nama yang ada di daftar
       const found = allPerusahaan.find(p => p.nama.toLowerCase() === namaPerusahaan.toLowerCase());
       
       if (found) {
         setAlamatPerusahaan(found.alamat);
       }
-      // Jika tidak ditemukan (user mengetik nama baru), kita biarkan alamat yang sudah diketik user
     } else {
       setAlamatPerusahaan('');
     }
@@ -209,7 +274,6 @@ export default function UploadPage() {
       if (res.ok) {
         showToast('Laporan berhasil diunggah!', 'success');
         
-        // Refresh data perusahaan dari DB agar perusahaan baru langsung muncul di dropdown
         fetch('/api/perusahaan')
           .then(res => res.json())
           .then(data => {
@@ -230,13 +294,8 @@ export default function UploadPage() {
     }
   };
 
-  const opsiJenisKegiatan = ['Inspeksi', 'Surveilan', 'Inpres', 'Selfdeclare Kapal'];
-  
-  const getOpsiDetail = () => (jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Surveilan') 
-    ? ['CPIB Kapal', 'CBIB', 'CPIB', 'HACCP', 'SKP', 'SPDI'] 
-    : [];
+  const getOpsiDetail = () => (jenisKegiatan === 'Inspeksi' || jenisKegiatan === 'Surveilan') ? listDetail : [];
 
-  // Menggabungkan data perusahaan dari HACCP, SKP, dan Database
   const allPerusahaan = [...perusahaanHACCP, ...perusahaanSKP, ...dbPerusahaan];
   const perusahaanUnik = allPerusahaan.filter((v, i, a) => 
     a.findIndex(t => t.nama.toLowerCase() === v.nama.toLowerCase()) === i
@@ -254,9 +313,17 @@ export default function UploadPage() {
         </div>
       )}
 
-      <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Upload Laporan</h1>
-        <p className="text-slate-500 mt-1 text-sm md:text-base">Unggah data perjalanan dinas beserta dokumentasi.</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-800">Upload Laporan (Admin)</h1>
+          <p className="text-slate-500 mt-1 text-sm md:text-base">Unggah data perjalanan dinas beserta dokumentasi.</p>
+        </div>
+        <button 
+          onClick={() => setIsSettingOpen(true)} 
+          className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-md"
+        >
+          <span>⚙️</span> Pengaturan Form
+        </button>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6 max-w-4xl">
@@ -294,17 +361,14 @@ export default function UploadPage() {
           <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
             <label className="block text-sm font-semibold text-slate-700 mb-3">Jenis Kegiatan</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div><label className="text-xs text-slate-500 mb-1 block">Jenis</label><select value={jenisKegiatan} onChange={(e) => { setJenisKegiatan(e.target.value); setDetailKegiatan(''); }} className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white" required><option value="">-- Pilih Jenis --</option>{opsiJenisKegiatan.map(jenis => <option key={jenis} value={jenis}>{jenis}</option>)}</select></div>
+              <div><label className="text-xs text-slate-500 mb-1 block">Jenis</label><select value={jenisKegiatan} onChange={(e) => { setJenisKegiatan(e.target.value); setDetailKegiatan(''); }} className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white" required><option value="">-- Pilih Jenis --</option>{listJenis.map(jenis => <option key={jenis} value={jenis}>{jenis}</option>)}</select></div>
               <div><label className="text-xs text-slate-500 mb-1 block">Detail Kegiatan</label><select value={detailKegiatan} onChange={(e) => setDetailKegiatan(e.target.value)} className={`w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white ${(!jenisKegiatan || jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal') ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!jenisKegiatan || jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal'} required={jenisKegiatan !== 'Inpres' && jenisKegiatan !== 'Selfdeclare Kapal'}><option value="">{jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal' ? '-- Tidak ada detail --' : '-- Pilih Detail --'}</option>{getOpsiDetail().map(detail => <option key={detail} value={detail}>{detail}</option>)}</select></div>
             </div>
           </div>
 
-          {/* 3. DATA PERUSAHAAN & TANGGAL */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Perusahaan</label>
-              
-              {/* Custom Dropdown untuk Nama Perusahaan */}
               <div className="relative">
                 <input 
                   type="text"
@@ -312,20 +376,16 @@ export default function UploadPage() {
                   value={namaPerusahaan}
                   onChange={(e) => {
                     setNamaPerusahaan(e.target.value);
-                    setActiveDropdown(-1); // Gunakan -1 untuk menandai dropdown perusahaan terbuka
+                    setActiveDropdown(-1);
                   }}
                   onFocus={() => setActiveDropdown(-1)}
                   onBlur={() => setTimeout(() => setActiveDropdown(null), 200)}
                   className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none"
                   required
                 />
-                
-                {/* Ikon Panah Bawah */}
                 <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                   <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
-
-                {/* List Custom Dropdown */}
                 {activeDropdown === -1 && (
                   <div className="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                     {perusahaanUnik
@@ -367,17 +427,15 @@ export default function UploadPage() {
             <div><label className="block text-sm font-semibold text-slate-700 mb-1">No Surat</label><input type="text" value={noSurat} onChange={(e) => setNoSurat(e.target.value)} placeholder="Contoh: 123/BPPMHKP/2026" className="w-full border border-slate-300 rounded px-3 py-2 text-sm" /></div>
           </div>
 
-          {/* HASIL & KENDALA */}
           <div className="space-y-4">
             <div><label className="block text-sm font-semibold text-slate-700 mb-1">Hasil Kegiatan</label><textarea value={hasilKegiatan} onChange={(e) => setHasilKegiatan(e.target.value)} placeholder="Jelaskan hasil kegiatan..." className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"></textarea></div>
             <div><label className="block text-sm font-semibold text-slate-700 mb-1">Kendala</label><textarea value={kendala} onChange={(e) => setKendala(e.target.value)} placeholder="Jelaskan kendala..." className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"></textarea></div>
           </div>
 
-          {/* 4. FOTO DOKUMENTASI */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Foto Kegiatan (Maks. 5 file, 5MB/file)</label>
-            <div onClick={() => fotoInputRef.current?.click()} className="w-full border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors"><span className="text-3xl mb-2">📸</span><p className="text-sm font-semibold text-slate-700">Klik untuk tambah foto kegiatan ({fotoFiles.length}/5)</p><p className="text-xs text-slate-500 mt-1">Bisa pilih satu per satu</p></div>
-            <input type="file" multiple accept="image/*" ref={fotoInputRef} style={{ display: 'none' }} onChange={(e) => { if (e.target.files) { const files = Array.from(e.target.files); const validFiles = files.filter(f => f.size <= 5 * 1024 * 1024); if (validFiles.length !== files.length) showToast("Beberapa file melebihi 5MB.", 'error'); const combinedFiles = [...fotoFiles, ...validFiles].slice(0, 5); setFotoFiles(combinedFiles); e.target.value = ''; } }} />
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Foto Kegiatan (Maks. {aturanUpload.maksFoto} file, {aturanUpload.maksMb}MB/file)</label>
+            <div onClick={() => fotoInputRef.current?.click()} className="w-full border-2 border-dashed border-slate-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors"><span className="text-3xl mb-2">📸</span><p className="text-sm font-semibold text-slate-700">Klik untuk tambah foto kegiatan ({fotoFiles.length}/{aturanUpload.maksFoto})</p><p className="text-xs text-slate-500 mt-1">Bisa pilih satu per satu</p></div>
+            <input type="file" multiple accept="image/*" ref={fotoInputRef} style={{ display: 'none' }} onChange={(e) => { if (e.target.files) { const files = Array.from(e.target.files); const validFiles = files.filter(f => f.size <= aturanUpload.maksMb * 1024 * 1024); if (validFiles.length !== files.length) showToast(`Beberapa file melebihi ${aturanUpload.maksMb}MB.`, 'error'); const combinedFiles = [...fotoFiles, ...validFiles].slice(0, aturanUpload.maksFoto); setFotoFiles(combinedFiles); e.target.value = ''; } }} />
             {fotoFiles.length > 0 && <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">{fotoFiles.map((file, idx) => <div key={idx} className="relative bg-slate-50 border border-slate-200 rounded-lg p-2 flex flex-col items-center"><img src={URL.createObjectURL(file)} alt={`Preview ${idx}`} className="w-full h-32 object-cover rounded-md mb-2 border border-slate-200" /><div className="w-full flex justify-between items-center"><span className="text-[10px] text-slate-600 truncate max-w-[80%]">{file.name}</span><button type="button" onClick={(e) => { e.stopPropagation(); setFotoFiles(fotoFiles.filter((_, i) => i !== idx)); }} className="text-red-500 hover:text-red-700 font-bold bg-red-50 px-1.5 py-0.5 rounded text-xs" title="Hapus Foto">✕</button></div></div>)}</div>}
           </div>
 
@@ -426,6 +484,79 @@ export default function UploadPage() {
           </div>
         </form>
       </div>
+
+      {/* MODAL PENGATURAN FORM */}
+      {isSettingOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 max-h-[90vh] flex flex-col">
+            <div className="h-2 w-full bg-slate-800 shrink-0"></div>
+            <div className="p-6 overflow-y-auto">
+              <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                ⚙️ Pengaturan Form Upload
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Daftar Jenis Kegiatan (Pisahkan dengan koma)</label>
+                  <input 
+                    type="text" 
+                    value={editJenisText} 
+                    onChange={(e) => setEditJenisText(e.target.value)} 
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                    placeholder="Inspeksi, Surveilan, Inpres"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">Daftar Detail Kegiatan (Pisahkan dengan koma)</label>
+                  <input 
+                    type="text" 
+                    value={editDetailText} 
+                    onChange={(e) => setEditDetailText(e.target.value)} 
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                    placeholder="CPIB Kapal, CBIB, CPIB"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Maks. Foto</label>
+                    <input 
+                      type="number" 
+                      value={editMaksFoto} 
+                      onChange={(e) => setEditMaksFoto(Number(e.target.value))} 
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">Maks. Ukuran (MB)</label>
+                    <input 
+                      type="number" 
+                      value={editMaksMb} 
+                      onChange={(e) => setEditMaksMb(Number(e.target.value))} 
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-8">
+                <button 
+                  onClick={() => setIsSettingOpen(false)} 
+                  className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button 
+                  onClick={handleSavePengaturan} 
+                  disabled={isSavingSetting}
+                  className="flex-1 px-4 py-3 text-sm font-bold text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-all shadow-lg disabled:opacity-50 cursor-pointer"
+                >
+                  {isSavingSetting ? 'Menyimpan...' : 'Simpan Pengaturan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

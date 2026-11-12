@@ -19,9 +19,7 @@ export default function MonitoringPage() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [filesToDelete, setFilesToDelete] = useState<string[]>([]);
-
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [reportToDelete, setReportToDelete] = useState<any>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -32,6 +30,16 @@ export default function MonitoringPage() {
     type: 'success',
   });
 
+  // --- STATE UNTUK TOMBOL DINAMIS ---
+  const [daftarTombol, setDaftarTombol] = useState<any[]>([]);
+  const [isSettingOpen, setIsSettingOpen] = useState(false);
+  const [editTombol, setEditTombol] = useState<any[]>([]);
+  const [isSavingSetting, setIsSavingSetting] = useState(false);
+
+  // --- STATE UNTUK MODAL DOWNLOAD ---
+  const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
+  const [downloadReportId, setDownloadReportId] = useState<number | null>(null);
+
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ show: true, message, type });
     setTimeout(() => {
@@ -41,6 +49,7 @@ export default function MonitoringPage() {
 
   useEffect(() => {
     fetchReports();
+    fetchPengaturanTombol();
   }, []);
 
   const fetchReports = async () => {
@@ -55,6 +64,75 @@ export default function MonitoringPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchPengaturanTombol = async () => {
+    try {
+      const res = await fetch('/api/pengaturan');
+      const data = await res.json();
+      if (data.status === 'success') {
+        const tombol = data.data.find((d: any) => d.tipe === 'tombol_monitoring');
+        if (tombol) {
+          const parsed = JSON.parse(tombol.nilai);
+          setDaftarTombol(parsed);
+          setEditTombol(parsed); // Untuk modal edit
+        } else {
+          // URUTAN BARU: VIEW -> EDIT -> DOWNLOAD -> PRINT -> DELETE
+          const defaultTombol = [
+            { key: 'view', label: 'Lihat Detail', warna: 'bg-cyan-400', aktif: true },
+            { key: 'edit', label: 'Upload Berkas', warna: 'bg-yellow-400', aktif: true },
+            { key: 'download', label: 'Download File', warna: 'bg-indigo-500', aktif: true }, // Ganti label & posisi
+            { key: 'print', label: 'Cetak Monitoring', warna: 'bg-emerald-500', aktif: true },
+            { key: 'delete', label: 'Hapus Laporan', warna: 'bg-red-500', aktif: true },
+          ];
+          setDaftarTombol(defaultTombol);
+          setEditTombol(defaultTombol);
+        }
+      }
+    } catch (error) {
+      console.error("Gagal load pengaturan tombol:", error);
+    }
+  };
+
+  const handleSaveTombol = async () => {
+    setIsSavingSetting(true);
+    try {
+      const res = await fetch('/api/pengaturan', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([
+          { tipe: 'tombol_monitoring', nilai: JSON.stringify(editTombol) }
+        ])
+      });
+
+      if (res.ok) {
+        showToast('Pengaturan tombol berhasil disimpan!', 'success');
+        setDaftarTombol(editTombol);
+        setIsSettingOpen(false);
+      } else {
+        showToast('Gagal menyimpan pengaturan.', 'error');
+      }
+    } catch (error) {
+      showToast('Terjadi kesalahan jaringan.', 'error');
+    } finally {
+      setIsSavingSetting(false);
+    }
+  };
+
+  const handleDownloadClick = (id: number) => {
+    setDownloadReportId(id);
+    setIsDownloadModalOpen(true);
+  };
+
+  const handleDownloadAction = (action: string) => {
+    if (!downloadReportId) return;
+    
+    if (action === 'pdf-laporan') window.open(`/cetak/${downloadReportId}?mode=pdf`, '_blank');
+    if (action === 'pdf-monitoring') window.open(`/admin/monitoring/print/${downloadReportId}?mode=pdf`, '_blank');
+    if (action === 'zip-berkas') window.open(`/api/download-zip?id=${downloadReportId}&type=berkas`, '_blank');
+    if (action === 'zip-foto') window.open(`/api/download-zip?id=${downloadReportId}&type=foto`, '_blank');
+    
+    setIsDownloadModalOpen(false);
   };
 
   const getAutoStatus = (report: any) => {
@@ -213,13 +291,19 @@ export default function MonitoringPage() {
 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div><h1 className="text-2xl md:text-3xl font-bold text-slate-800">Monitoring Sertifikasi</h1></div>
-        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+        <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto items-center">
           <input type="text" placeholder="Cari kegiatan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-64 bg-white" />
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white cursor-pointer">
             <option value="Semua Status">Semua Status</option>
             <option value="Berkas Lengkap">Berkas Lengkap</option>
             <option value="Belum upload berkas">Belum upload berkas (Ada yang kosong)</option>
           </select>
+          <button 
+            onClick={() => setIsSettingOpen(true)} 
+            className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-md whitespace-nowrap"
+          >
+            <span>⚙️</span> Pengaturan Monitoring
+          </button>
         </div>
       </div>
 
@@ -277,12 +361,48 @@ export default function MonitoringPage() {
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex items-center justify-center gap-2">
-                          <button onClick={() => handleViewClick(report)} title="Lihat Detail" className="p-1.5 bg-cyan-400 text-white rounded hover:bg-cyan-500 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
-                          <button onClick={() => handleEditClick(report)} title="Upload Berkas" className="p-1.5 bg-yellow-400 text-white rounded hover:bg-yellow-500 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-                          <button onClick={() => handleDeleteClick(report)} title="Hapus Laporan" className="p-1.5 bg-red-500 text-white rounded hover:bg-red-600 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></button>
-                          
-                          {/* TOMBOL CETAK SUDAH DIPERBAIKI MENJADI /admin/monitoring/print/ */}
-                          <a href={`/admin/monitoring/print/${report.id}`} target="_blank" rel="noopener noreferrer" title="Cetak Laporan Monitoring" className="p-1.5 bg-emerald-500 text-white rounded hover:bg-emerald-600 cursor-pointer"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg></a>
+                          {daftarTombol.filter((t: any) => t.aktif).map((tombol: any) => {
+                            if (tombol.key === 'view') {
+                              return (
+                                <button key="view" onClick={() => handleViewClick(report)} title={tombol.label} className={`p-1.5 ${tombol.warna} text-white rounded hover:opacity-80 cursor-pointer`}>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                </button>
+                              );
+                            }
+                            if (tombol.key === 'edit') {
+                              return (
+                                <button key="edit" onClick={() => handleEditClick(report)} title={tombol.label} className={`p-1.5 ${tombol.warna} text-white rounded hover:opacity-80 cursor-pointer`}>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                </button>
+                              );
+                            }
+                            if (tombol.key === 'download') {
+                              return (
+                                <button key="download" onClick={() => handleDownloadClick(report.id)} title={tombol.label} className={`p-1.5 ${tombol.warna} text-white rounded hover:opacity-80 cursor-pointer`}>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                  </svg>
+                                </button>
+                              );
+                            }
+                            if (tombol.key === 'print') {
+                              return (
+                                <a key="print" href={`/admin/monitoring/print/${report.id}`} target="_blank" rel="noopener noreferrer" title={tombol.label} className={`p-1.5 ${tombol.warna} text-white rounded hover:opacity-80 cursor-pointer`}>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                                </a>
+                              );
+                            }
+                            if (tombol.key === 'delete') {
+                              return (
+                                <button key="delete" onClick={() => handleDeleteClick(report)} title={tombol.label} className={`p-1.5 ${tombol.warna} text-white rounded hover:opacity-80 cursor-pointer`}>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                                </button>
+                              );
+                            }
+                            return null;
+                          })}
                         </div>
                       </td>
                     </tr>
@@ -293,6 +413,99 @@ export default function MonitoringPage() {
           </table>
         </div>
       </div>
+
+      {/* MODAL PENGATURAN TOMBOL */}
+      {isSettingOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95">
+            <div className="h-2 w-full bg-slate-800"></div>
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                ⚙️ Pengaturan Tombol Monitoring
+              </h3>
+              <p className="text-xs text-slate-500 mb-4">Centang tombol yang ingin ditampilkan di tabel Monitoring Sertifikasi.</p>
+              
+              <div className="space-y-3">
+                {editTombol.map((tombol, idx) => (
+                  <label key={idx} className="flex items-center gap-3 text-sm text-slate-700 cursor-pointer p-2 border border-slate-200 rounded-lg hover:bg-slate-50">
+                    <input 
+                      type="checkbox" 
+                      checked={tombol.aktif}
+                      onChange={(e) => {
+                        const newList = [...editTombol];
+                        newList[idx] = { ...newList[idx], aktif: e.target.checked };
+                        setEditTombol(newList);
+                      }}
+                      className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <span className="font-medium">{tombol.label}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button 
+                  onClick={() => setIsSettingOpen(false)} 
+                  className="flex-1 px-4 py-3 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button 
+                  onClick={handleSaveTombol} 
+                  disabled={isSavingSetting}
+                  className="flex-1 px-4 py-3 text-sm font-bold text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-all shadow-lg disabled:opacity-50 cursor-pointer"
+                >
+                  {isSavingSetting ? 'Menyimpan...' : 'Simpan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PILIHAN DOWNLOAD */}
+      {isDownloadModalOpen && downloadReportId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="p-4 border-b border-slate-200 bg-slate-50">
+              <h3 className="text-lg font-bold text-slate-800">Pilih File yang Ingin Diunduh</h3>
+            </div>
+            <div className="p-4 space-y-3">
+              <button onClick={() => handleDownloadAction('pdf-laporan')} className="w-full text-left p-3 border border-slate-200 rounded-lg hover:bg-blue-50 flex items-center gap-3 cursor-pointer">
+                <span className="text-2xl">📄</span>
+                <div>
+                  <p className="font-bold text-slate-800">PDF Laporan Lengkap</p>
+                  <p className="text-xs text-slate-500">Cetak laporan beserta surat tugas</p>
+                </div>
+              </button>
+              <button onClick={() => handleDownloadAction('pdf-monitoring')} className="w-full text-left p-3 border border-slate-200 rounded-lg hover:bg-blue-50 flex items-center gap-3 cursor-pointer">
+                <span className="text-2xl">📊</span>
+                <div>
+                  <p className="font-bold text-slate-800">PDF Monitoring Sertifikasi</p>
+                  <p className="text-xs text-slate-500">Halaman print monitoring</p>
+                </div>
+              </button>
+              <button onClick={() => handleDownloadAction('zip-berkas')} className="w-full text-left p-3 border border-slate-200 rounded-lg hover:bg-blue-50 flex items-center gap-3 cursor-pointer">
+                <span className="text-2xl">📎</span>
+                <div>
+                  <p className="font-bold text-slate-800">Semua Berkas (ZIP)</p>
+                  <p className="text-xs text-slate-500">Surat tugas, berkas kegiatan, dll</p>
+                </div>
+              </button>
+              <button onClick={() => handleDownloadAction('zip-foto')} className="w-full text-left p-3 border border-slate-200 rounded-lg hover:bg-blue-50 flex items-center gap-3 cursor-pointer">
+                <span className="text-2xl">🖼️</span>
+                <div>
+                  <p className="font-bold text-slate-800">Dokumentasi Foto (ZIP)</p>
+                  <p className="text-xs text-slate-500">Semua foto kegiatan</p>
+                </div>
+              </button>
+            </div>
+            <div className="p-4 border-t border-slate-200 bg-slate-50 text-right">
+              <button onClick={() => setIsDownloadModalOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg cursor-pointer">Batal</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL EDIT (UPLOAD BERKAS) */}
       {isEditModalOpen && selectedReport && (

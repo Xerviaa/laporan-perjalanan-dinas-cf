@@ -1,48 +1,66 @@
 import { getDb } from "@/db";
 import { reports } from "@/db/schema";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { zipSync } from "fflate";
 
-export async function POST(request: Request) {
-  try {
-    const { ids } = await request.json();
-    if (!ids || ids.length === 0) {
-      return Response.json({ error: "Tidak ada file yang dipilih" }, { status: 400 });
-    }
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const id = Number(searchParams.get("id"));
+  const type = searchParams.get("type"); // 'berkas' atau 'foto'
 
-    const db = await getDb(process.env.DATABASE_URL!);
+  if (!id) return new Response("ID tidak valid", { status: 400 });
+
+  try {
+    const db = getDb();
+    const result = await db.select().from(reports).where(eq(reports.id, id));
+    const report = result[0];
+
+    if (!report) return new Response("Laporan tidak ditemukan", { status: 404 });
+
     const { env } = getCloudflareContext();
     const bucket = (env as any).MY_BUCKET as R2Bucket;
 
-    // Ambil data dari database berdasarkan ID yang dipilih
-    const selectedReports = await db.select().from(reports).where(inArray(reports.id, ids));
+    const filesToDownload: string[] = [];
+
+    if (type === 'foto' && report.fotoKegiatan) {
+      const parsed = JSON.parse(report.fotoKegiatan);
+      if (Array.isArray(parsed)) filesToDownload.push(...parsed);
+    } else if (type === 'berkas') {
+      if (report.suratTugas) filesToDownload.push(report.suratTugas);
+      if (report.berkasKegiatan) {
+        const parsed = JSON.parse(report.berkasKegiatan);
+        if (Array.isArray(parsed)) filesToDownload.push(...parsed);
+      }
+      if (report.berkasPerbaikan) {
+        const parsed = JSON.parse(report.berkasPerbaikan);
+        if (Array.isArray(parsed)) filesToDownload.push(...parsed);
+      }
+      if (report.berkasPemeriksaanTindakanPerbaikan) filesToDownload.push(report.berkasPemeriksaanTindakanPerbaikan);
+    }
+
+    if (filesToDownload.length === 0) {
+      return new Response("Tidak ada file untuk diunduh", { status: 404 });
+    }
 
     const zipData: Record<string, Uint8Array> = {};
-
-    // Loop setiap laporan, ambil dari R2, masukkan ke dalam ZIP
-    for (const report of selectedReports) {
-      const object = await bucket.get(report.fileKey);
+    for (const key of filesToDownload) {
+      const object = await bucket.get(key);
       if (object) {
         const arrayBuffer = await object.arrayBuffer();
-        // Beri nama file di dalam ZIP
-        const fileName = `${report.title.replace(/[^a-z0-9]/gi, '_')}.${report.fileKey.split('.').pop()}`;
-        zipData[fileName] = new Uint8Array(arrayBuffer);
+        zipData[key.split('/').pop() || key] = new Uint8Array(arrayBuffer);
       }
     }
 
-    // Buat file ZIP
     const zipped = zipSync(zipData);
 
-    // Kembalikan sebagai file unduhan
     return new Response(zipped, {
       headers: {
         "Content-Type": "application/zip",
-        "Content-Disposition": `attachment; filename="Laporan_Dinas_Terpilih.zip"`,
+        "Content-Disposition": `attachment; filename="Laporan_${id}_${type}.zip"`,
       },
     });
-
   } catch (error: any) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return new Response(error.message, { status: 500 });
   }
 }

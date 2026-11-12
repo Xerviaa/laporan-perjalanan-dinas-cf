@@ -88,8 +88,8 @@ export default function PrintMonitoringPage() {
         <TombolCetak />
       </div>
       
-      {/* Kertas Putih Utama */}
-      <div className="mx-auto w-[21cm] bg-white shadow-xl print:shadow-none print:w-full p-[2cm] print:p-0">
+      {/* Kertas Putih Utama (Ukuran A4 dengan margin 2cm) */}
+      <div className="mx-auto w-[21cm] bg-white shadow-xl print:shadow-none print:w-full p-[2cm] print:p-[2cm]">
         
         {/* HEADER ATAS (KOP SURAT) */}
         <div className="text-center mb-8">
@@ -109,7 +109,7 @@ export default function PrintMonitoringPage() {
         </div>
 
         <div className="space-y-6 text-sm">
-          {/* I. INFORMASI UMUM (TANPA TUJUAN & ALAMAT KARENA SUDAH ADA DI HEADER) */}
+          {/* I. INFORMASI UMUM */}
           <div>
             <h2 className="font-bold bg-gray-100 p-2 mb-3 border-l-4 border-black uppercase text-sm">I. INFORMASI UMUM</h2>
             <div className="grid grid-cols-2 gap-6 px-2">

@@ -16,6 +16,10 @@ export default function ArsipPage() {
   // --- STATE UNTUK MODAL EDIT ---
   const [editId, setEditId] = useState<number | null>(null);
 
+  // --- STATE UNTUK MODAL VIEW ---
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewReport, setViewReport] = useState<any>(null);
+
   // --- STATE UNTUK SCROLL TO TOP ---
   const [showScrollTop, setShowScrollTop] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
@@ -124,6 +128,12 @@ export default function ArsipPage() {
   // --- FUNGSI DOWNLOAD (BUKA HALAMAN CETAK MODE PDF) ---
   const handleDownload = (id: number) => {
     window.open(`/cetak/${id}?mode=pdf`, '_blank');
+  };
+
+  // --- FUNGSI VIEW DETAIL ---
+  const handleViewClick = (report: any) => {
+    setViewReport(report);
+    setIsViewModalOpen(true);
   };
 
   return (
@@ -235,15 +245,12 @@ export default function ArsipPage() {
                                 </thead>
                                 <tbody className="divide-y divide-slate-50">
                                   {(monthData.reports as any[]).map((report: any) => {
-                                    // PERUBAHAN: replace "Survailen" menjadi "Surveilan" untuk tampilan
                                     const jenisKegiatanTampil = (report.jenisKegiatan || '').replace(/Survailen/gi, 'Surveilan');
                                     
-                                    // LOGIKA MEMISAHKAN NAMA KEGIATAN & JENIS
                                     const parts = jenisKegiatanTampil.split(' ');
                                     const namaKegiatan = parts[0] || '-';
                                     const jenis = parts.slice(1).join(' ') || '-';
 
-                                    // LOGIKA HITUNG KETERLAMBATAN
                                     let statusTeks = "Tepat Waktu";
                                     let statusWarna = "text-emerald-600 bg-emerald-50 border-emerald-200";
 
@@ -262,22 +269,18 @@ export default function ArsipPage() {
                                     return (
                                       <tr key={report.id} className="hover:bg-slate-50 transition-colors">
                                         
-                                        {/* KOLOM 1: NAMA KEGIATAN */}
                                         <td className="px-4 py-3 text-slate-700 font-medium capitalize">
                                           {namaKegiatan}
                                         </td>
 
-                                        {/* KOLOM 2: TANGGAL */}
                                         <td className="px-4 py-3 text-slate-500 font-medium">
                                           {report.tanggal ? new Date(report.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
                                           
-                                          {/* BADGE STATUS */}
                                           <div className={`mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full inline-block border ${statusWarna}`}>
                                             {statusTeks}
                                           </div>
                                         </td>
 
-                                        {/* KOLOM 3: PELAKSANA */}
                                         <td className="px-4 py-3 text-slate-600 align-top">
                                           <div className="flex flex-col gap-1 min-w-[150px]">
                                             {report.petugasPelaksana ? (
@@ -295,15 +298,18 @@ export default function ArsipPage() {
                                           </div>
                                         </td>
 
-                                        {/* KOLOM 4: JENIS */}
                                         <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
                                           {jenis}
                                         </td>
 
-                                        {/* KOLOM 5: AKSI (TANPA TOMBOL HAPUS & COPY LINK) */}
                                         <td className="px-4 py-3">
                                           <div className="flex items-center justify-center gap-1 md:gap-2">
                                             
+                                            {/* TOMBOL VIEW (BARU) */}
+                                            <button onClick={() => handleViewClick(report)} title="Lihat Detail" className="p-1.5 bg-cyan-100 text-cyan-600 rounded-md hover:bg-cyan-200 cursor-pointer">
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                            </button>
+
                                             {/* TOMBOL EDIT (BUKA MODAL) */}
                                             <button onClick={() => setEditId(report.id)} title="Edit Laporan" className="p-1.5 bg-yellow-100 text-yellow-600 rounded-md hover:bg-yellow-200 cursor-pointer">
                                               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
@@ -350,6 +356,108 @@ export default function ArsipPage() {
         </button>
       )}
 
+      {/* MODAL VIEW DETAIL */}
+      {isViewModalOpen && viewReport && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="text-lg font-bold text-slate-800">Detail Laporan</h3>
+              <button onClick={() => setIsViewModalOpen(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-blue-50 p-4 rounded-lg border border-blue-100">
+                <div>
+                  <p className="text-slate-500 text-xs uppercase font-semibold">Nama Perusahaan</p>
+                  <p className="font-bold text-slate-800 text-base">{viewReport.namaPerusahaan || '-'}</p>
+                  <p className="text-xs text-slate-600 mt-1 italic">{viewReport.alamatPerusahaan || 'Alamat belum diisi'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-xs uppercase font-semibold">Jenis Kegiatan</p>
+                  <p className="font-bold text-slate-800 text-base">{viewReport.jenisKegiatan || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-xs uppercase font-semibold">Tanggal Pelaksanaan</p>
+                  <p className="font-medium text-slate-800">{viewReport.tanggal ? new Date(viewReport.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-'}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500 text-xs uppercase font-semibold">No Surat</p>
+                  <p className="font-medium text-slate-800">{viewReport.noSurat || '-'}</p>
+                </div>
+              </div>
+              <hr className="border-slate-100" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="font-semibold text-slate-700 mb-1">Hasil Kegiatan</p>
+                  <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200 whitespace-pre-wrap h-24 overflow-y-auto">{viewReport.hasilKegiatan || '-'}</div>
+                </div>
+                <div>
+                  <p className="font-semibold text-slate-700 mb-1">Kendala</p>
+                  <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-700 border border-slate-200 whitespace-pre-wrap h-24 overflow-y-auto">{viewReport.kendala || '-'}</div>
+                </div>
+              </div>
+              <hr className="border-slate-100" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">📄 Surat Tugas</p>
+                  {viewReport.suratTugas ? (<a href={`/api/r2/${viewReport.suratTugas}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">{viewReport.suratTugas.split('/').pop()}</a>) : (<p className="text-xs text-slate-400 italic">Tidak ada file.</p>)}
+                </div>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">📄 Berkas Kegiatan</p>
+                  {viewReport.berkasKegiatan && viewReport.berkasKegiatan !== '[]' ? (
+                    <div className="flex flex-col gap-1">
+                      {JSON.parse(viewReport.berkasKegiatan).map((key: string, idx: number) => (<a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">{key.split('/').pop()}</a>))}
+                    </div>
+                  ) : (<p className="text-xs text-slate-400 italic">Tidak ada file.</p>)}
+                </div>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">📄 Berkas Tindakan Perbaikan</p>
+                  {viewReport.berkasPerbaikan && viewReport.berkasPerbaikan !== '[]' ? (
+                    <div className="flex flex-col gap-1">
+                      {JSON.parse(viewReport.berkasPerbaikan).map((key: string, idx: number) => (<a key={idx} href={`/api/r2/${key}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">{key.split('/').pop()}</a>))}
+                    </div>
+                  ) : (<p className="text-xs text-slate-400 italic">Tidak ada file.</p>)}
+                </div>
+                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                  <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2">📄 Pemeriksaan Tindakan Perbaikan</p>
+                  {viewReport.berkasPemeriksaanTindakanPerbaikan ? (<a href={`/api/r2/${viewReport.berkasPemeriksaanTindakanPerbaikan}`} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">{viewReport.berkasPemeriksaanTindakanPerbaikan.split('/').pop()}</a>) : (<p className="text-xs text-slate-400 italic">Tidak ada file.</p>)}
+                </div>
+              </div>
+              <hr className="border-slate-100" />
+              <div className="mt-6">
+                <p className="font-bold text-slate-800 mb-6 uppercase tracking-wide border-l-4 border-slate-800 pl-3">V. Tanda Tangan Pelaksana</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                  {(viewReport.petugasPelaksana || '').split('|').map((petugas: string, idx: number) => {
+                    const parts = petugas.split('(');
+                    const namaLengkap = parts[0].trim(); 
+                    const jabatan = parts[1] ? parts[1].replace(')', '').trim() : 'Anggota Tim';
+                    let namaBersih = namaLengkap.split(',')[0].trim().toLowerCase();
+                    namaBersih = namaBersih.replace(/^drh\.\s*/i, ''); 
+                    namaBersih = namaBersih.replace(/[^a-z0-9\s-]/g, '');
+                    const namaFile = namaBersih.replace(/\s+/g, '-');
+                    
+                    return (
+                      <div key={idx} className="flex flex-col items-center justify-end text-center h-40">
+                        <div className="h-20 w-full flex items-end justify-center mb-2">
+                          <img src={`/tanda-tangan/${namaFile}.png`} alt={`TTD ${namaLengkap}`} className="max-h-20 object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        </div>
+                        <div className="w-full border-t-2 border-slate-800 mb-2"></div>
+                        <p className="font-bold text-sm text-slate-800">{namaLengkap}</p>
+                        <p className="text-xs text-slate-600">{jabatan}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="p-4 border-t border-slate-200 bg-slate-50 text-right">
+              <button onClick={() => setIsViewModalOpen(false)} className="px-4 py-2 text-sm font-medium text-white bg-slate-600 hover:bg-slate-700 rounded-lg cursor-pointer">Tutup</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL EDIT (FORM EDIT) - TETAP ADA */}
       {editId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -360,12 +468,11 @@ export default function ArsipPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </button>
             </div>
-            {/* PANGGIL KOMPONEN EDITFORM */}
             <EditForm 
               id={editId} 
               onSuccess={() => {
-                setEditId(null); // Tutup modal
-                fetchReports(); // Refresh data
+                setEditId(null); 
+                fetchReports(); 
               }} 
             />
           </div>
