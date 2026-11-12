@@ -24,8 +24,9 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
   const [existingBerkasPerbaikan, setExistingBerkasPerbaikan] = useState<string[]>([]);
   const [existingPemeriksaan, setExistingPemeriksaan] = useState<string | null>(null);
 
-  // STATE BARU UNTUK FOTO
+  // STATE UNTUK FOTO
   const [existingFoto, setExistingFoto] = useState<string[]>([]);
+  const [fotoToDelete, setFotoToDelete] = useState<string[]>([]);
 
   // State file baru
   const [suratTugas, setSuratTugas] = useState<File | null>(null);
@@ -103,8 +104,10 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
     // Kirim file foto baru
     fotoFiles.forEach(file => formData.append('foto', file));
 
-    // Kirim data foto lama yang dipertahankan (yang tidak dihapus)
-    formData.append('existingFoto', JSON.stringify(existingFoto));
+    // Kirim daftar foto yang ingin dihapus
+    if (fotoToDelete.length > 0) {
+      formData.append('fotoToDelete', JSON.stringify(fotoToDelete));
+    }
 
     try {
       const res = await fetch(`/api/reports/${id}`, {
@@ -211,7 +214,10 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
                 <img src={`/api/r2/${key}`} alt={`Foto ${idx}`} className="w-full h-24 object-cover rounded" />
                 <button 
                   type="button" 
-                  onClick={() => setExistingFoto(existingFoto.filter((_, i) => i !== idx))}
+                  onClick={() => {
+                    setFotoToDelete([...fotoToDelete, key]);
+                    setExistingFoto(existingFoto.filter((_, i) => i !== idx));
+                  }}
                   className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center shadow-md"
                   title="Hapus Foto"
                 >
