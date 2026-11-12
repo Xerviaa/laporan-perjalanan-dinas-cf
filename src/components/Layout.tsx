@@ -181,7 +181,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         { name: 'Dashboard Monitoring', path: '/monitoring-dashboard', icon: '📈' },
         { name: 'Upload Laporan', path: '/upload', icon: '📤' },
         { name: 'Arsip Laporan', path: '/arsip', icon: '📁' },
-        { name: 'Google Drive', path: 'https://drive.google.com/drive/u/1/folders/1KB4yOsjA2SPYjlGF_4YaezMXZC66D4aP', icon: '☁️' },
+        { name: 'Google Drive', path: 'https://drive.google.com/drive/u/1/folders/1zEFz1owxWBAC4prK4HY7ywP3Yc2zTg05', icon: '☁️' },
       ];
 
   // =======================================================

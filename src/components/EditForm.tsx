@@ -16,7 +16,6 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
   const [noSurat, setNoSurat] = useState('');
   const [hasilKegiatan, setHasilKegiatan] = useState('');
   const [kendala, setKendala] = useState('');
-  // TAMBAHAN: State untuk petugas pelaksana
   const [petugasPelaksana, setPetugasPelaksana] = useState('');
   
   // State untuk file lama
@@ -51,7 +50,6 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
           setHasilKegiatan(r.hasilKegiatan || '');
           setKendala(r.kendala || '');
           
-          // TAMBAHAN: Isi state petugasPelaksana
           setPetugasPelaksana(r.petugasPelaksana || '');
 
           // Ambil data file lama
@@ -90,7 +88,6 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
     formData.append('noSurat', noSurat);
     formData.append('hasilKegiatan', hasilKegiatan);
     formData.append('kendala', kendala);
-    // TAMBAHAN: Kirim petugasPelaksana
     formData.append('petugasPelaksana', petugasPelaksana);
     
     if (suratTugas) formData.append('suratTugas', suratTugas);
@@ -116,7 +113,7 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
     }
   };
 
-  // Fungsi membuka pratinjau (Kembali ke iframe)
+  // Fungsi membuka pratinjau
   const handlePreview = (url: string, title: string) => {
     const isPdf = url.toLowerCase().endsWith('.pdf');
     const finalUrl = isPdf 
@@ -157,10 +154,14 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Perusahaan</label>
-          <select value={namaPerusahaan} onChange={(e) => setNamaPerusahaan(e.target.value)} className="w-full border border-slate-300 rounded px-3 py-2 text-sm" required>
-            <option value="">-- Pilih --</option>
-            {[...perusahaanHACCP, ...perusahaanSKP].map((p, idx) => <option key={idx} value={p.nama}>{p.nama}</option>)}
-          </select>
+          {/* DIUBAH MENJADI READONLY */}
+          <input 
+            type="text" 
+            value={namaPerusahaan} 
+            readOnly 
+            className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-slate-100 text-slate-500 cursor-not-allowed" 
+            title="Nama perusahaan tidak dapat diubah"
+          />
         </div>
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-1">Tanggal</label>
@@ -172,7 +173,7 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
         </div>
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-1">Alamat</label>
-          <input type="text" value={alamatPerusahaan} readOnly className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-slate-100" />
+          <input type="text" value={alamatPerusahaan} readOnly className="w-full border border-slate-300 rounded px-3 py-2 text-sm bg-slate-100 text-slate-500 cursor-not-allowed" title="Alamat mengikuti nama perusahaan" />
         </div>
       </div>
 
@@ -188,7 +189,7 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
         </div>
       </div>
 
-      {/* BAGIAN BERKAS (DENGAN KLIK PRATINJAU) */}
+      {/* BAGIAN BERKAS */}
       <div>
         <h3 className="text-sm font-bold text-slate-800 mb-3 pb-2 border-b">Berkas Lampiran</h3>
         
