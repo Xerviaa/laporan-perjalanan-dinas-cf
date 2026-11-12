@@ -55,9 +55,14 @@ export async function PUT(
     const fileBerkasKegiatan = formData.get('berkasKegiatan') as File | null;
     const fileBerkasPerbaikan = formData.get('berkasPerbaikan') as File | null;
     const filePemeriksaan = formData.get('berkasPemeriksaanTindakanPerbaikan') as File | null;
-
-    // Ambil file foto baru (multiple)
     const newFotoFiles = formData.getAll('foto') as File[];
+    
+    // Ambil daftar foto yang ingin dihapus
+    const fotoToDeleteStr = formData.get('fotoToDelete') as string;
+    let fotoToDelete: string[] = [];
+    if (fotoToDeleteStr) {
+      try { fotoToDelete = JSON.parse(fotoToDeleteStr); } catch (e) {}
+    }
 
     const { env } = getCloudflareContext();
     const bucket = (env as any).MY_BUCKET as R2Bucket;
@@ -101,8 +106,10 @@ export async function PUT(
       updateData.berkasPemeriksaanTindakanPerbaikan = await uploadToR2(filePemeriksaan, 'pemeriksaan-tindakan-perbaikan');
     }
 
-    // Proses FOTO KEGIATAN (Gabungkan foto lama & baru)
-    // Ambil daftar foto lama dari database (jika ada)
+    // ==========================================================
+    // PROSES FOTO KEGIATAN (HAPUS & TAMBAH)
+    // ==========================================================
+    // 1. Ambil daftar foto lama dari database
     let existingFoto: string[] = [];
     if (currentReport.fotoKegiatan) {
       try {
@@ -111,7 +118,10 @@ export async function PUT(
       } catch (e) {}
     }
 
-    // Upload foto baru
+    // 2. Filter foto lama: buang yang ada di daftar `fotoToDelete`
+    const fotoSetelahDihapus = existingFoto.filter(key => !fotoToDelete.includes(key));
+
+    // 3. Upload foto baru (jika ada)
     const newFotoKeys: string[] = [];
     for (const file of newFotoFiles) {
       if (file.size > 0) {
@@ -120,10 +130,13 @@ export async function PUT(
       }
     }
 
-    // Gabungkan dengan foto lama
-    if (newFotoKeys.length > 0) {
-      updateData.fotoKegiatan = JSON.stringify([...existingFoto, ...newFotoKeys]);
+    // 4. Gabungkan foto yang tersisa + foto baru
+    if (fotoSetelahDihapus.length > 0 || newFotoKeys.length > 0) {
+      updateData.fotoKegiatan = JSON.stringify([...fotoSetelahDihapus, ...newFotoKeys]);
+    } else {
+      updateData.fotoKegiatan = '[]';
     }
+    // ==========================================================
 
     // Update database
     await db.update(reports).set(updateData).where(eq(reports.id, id));
