@@ -425,6 +425,31 @@ export default function ArsipPage() {
                 </div>
               </div>
               <hr className="border-slate-100" />
+              
+              {/* BAGIAN FOTO KEGIATAN (BARU) */}
+              <div className="mt-4">
+                <p className="font-bold text-slate-800 mb-3 uppercase tracking-wide border-l-4 border-slate-800 pl-3">Foto Kegiatan</p>
+                {viewReport.fotoKegiatan && viewReport.fotoKegiatan !== '[]' ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {JSON.parse(viewReport.fotoKegiatan).map((key: string, idx: number) => (
+                      <div key={idx} className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+                        <img 
+                          src={`/api/r2/${key}`} 
+                          alt={`Foto Kegiatan ${idx + 1}`} 
+                          className="w-full h-32 object-cover" 
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">Tidak ada foto kegiatan.</p>
+                )}
+              </div>
+              
+              <hr className="border-slate-100" />
               <div className="mt-6">
                 <p className="font-bold text-slate-800 mb-6 uppercase tracking-wide border-l-4 border-slate-800 pl-3">V. Tanda Tangan Pelaksana</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
