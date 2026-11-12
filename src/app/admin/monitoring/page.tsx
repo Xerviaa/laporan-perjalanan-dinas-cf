@@ -16,6 +16,11 @@ export default function MonitoringPage() {
   const [fileBerkasKegiatan, setFileBerkasKegiatan] = useState<File[]>([]);
   const [fileBerkasPerbaikan, setFileBerkasPerbaikan] = useState<File[]>([]);
   const [filePemeriksaan, setFilePemeriksaan] = useState<File[]>([]);
+  
+  // STATE BARU UNTUK FOTO
+  const [fileFoto, setFileFoto] = useState<File[]>([]);
+  const [fotoToDelete, setFotoToDelete] = useState<string[]>([]);
+  
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [filesToDelete, setFilesToDelete] = useState<string[]>([]);
@@ -75,13 +80,12 @@ export default function MonitoringPage() {
         if (tombol) {
           const parsed = JSON.parse(tombol.nilai);
           setDaftarTombol(parsed);
-          setEditTombol(parsed); // Untuk modal edit
+          setEditTombol(parsed);
         } else {
-          // URUTAN BARU: VIEW -> EDIT -> DOWNLOAD -> PRINT -> DELETE
           const defaultTombol = [
             { key: 'view', label: 'Lihat Detail', warna: 'bg-cyan-400', aktif: true },
             { key: 'edit', label: 'Upload Berkas', warna: 'bg-yellow-400', aktif: true },
-            { key: 'download', label: 'Download File', warna: 'bg-indigo-500', aktif: true }, // Ganti label & posisi
+            { key: 'download', label: 'Download File', warna: 'bg-indigo-500', aktif: true },
             { key: 'print', label: 'Cetak Monitoring', warna: 'bg-emerald-500', aktif: true },
             { key: 'delete', label: 'Hapus Laporan', warna: 'bg-red-500', aktif: true },
           ];
@@ -127,7 +131,7 @@ export default function MonitoringPage() {
   const handleDownloadAction = (action: string) => {
     if (!downloadReportId) return;
     
-    if (action === 'pdf-laporan') window.open(`/cetak/${downloadReportId}?mode=pdf`, '_blank');
+    if (action === 'pdf-laporan') window.open(`/cetak/${downloadReportId}?mode=pdf&skipST=true`, '_blank');
     if (action === 'pdf-monitoring') window.open(`/admin/monitoring/print/${downloadReportId}?mode=pdf`, '_blank');
     if (action === 'zip-berkas') window.open(`/api/download-zip?id=${downloadReportId}&type=berkas`, '_blank');
     if (action === 'zip-foto') window.open(`/api/download-zip?id=${downloadReportId}&type=foto`, '_blank');
@@ -170,6 +174,8 @@ export default function MonitoringPage() {
     setFileBerkasKegiatan([]);
     setFileBerkasPerbaikan([]);
     setFilePemeriksaan([]);
+    setFileFoto([]);
+    setFotoToDelete([]);
     setFilesToDelete([]); 
     setIsEditModalOpen(true);
   };
@@ -218,6 +224,12 @@ export default function MonitoringPage() {
     if (fileBerkasKegiatan.length > 0) fileBerkasKegiatan.forEach(file => formData.append('berkasKegiatan', file));
     if (fileBerkasPerbaikan.length > 0) fileBerkasPerbaikan.forEach(file => formData.append('berkasPerbaikan', file));
     if (filePemeriksaan.length > 0) filePemeriksaan.forEach(file => formData.append('berkasPemeriksaanTindakanPerbaikan', file));
+    
+    // Kirim file foto baru
+    if (fileFoto.length > 0) fileFoto.forEach(file => formData.append('foto', file));
+    
+    // Kirim daftar foto lama yang ingin dihapus
+    if (fotoToDelete.length > 0) formData.append('fotoToDelete', JSON.stringify(fotoToDelete));
 
     if (filesToDelete.length > 0) formData.append('filesToDelete', JSON.stringify(filesToDelete));
     
@@ -227,7 +239,7 @@ export default function MonitoringPage() {
     if (selectedReport.berkasPemeriksaanTindakanPerbaikan) formData.append('oldBerkasPemeriksaan', selectedReport.berkasPemeriksaanTindakanPerbaikan);
 
     try {
-      const res = await fetch(`/api/monitoring/${selectedReport.id}`, {
+      const res = await fetch(`/api/reports/${selectedReport.id}`, {
         method: 'PUT',
         body: formData,
       });
@@ -235,17 +247,7 @@ export default function MonitoringPage() {
       if (res.ok) {
         setIsEditModalOpen(false);
         showToast('Berkas berhasil di-upload!', 'success');
-        
-        const updatedReport = { ...selectedReport };
-        if (fileSuratTugas.length > 0) updatedReport.suratTugas = 'file-baru.pdf';
-        if (fileBerkasKegiatan.length > 0) updatedReport.berkasKegiatan = '["file-baru.pdf"]';
-        if (fileBerkasPerbaikan.length > 0) updatedReport.berkasPerbaikan = '["file-baru.pdf"]';
-        if (filePemeriksaan.length > 0) updatedReport.berkasPemeriksaanTindakanPerbaikan = 'file-baru.pdf';
-
-        setReports((prev) => 
-          prev.map((r) => r.id === selectedReport.id ? updatedReport : r)
-        );
-
+        fetchReports();
       } else {
         const errorData = await res.json();
         showToast(errorData.message || errorData.error || 'Gagal meng-upload berkas.', 'error');
@@ -574,6 +576,42 @@ export default function MonitoringPage() {
                       <div key={idx} className="mb-2 flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200"><span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span><button type="button" onClick={() => setFilePemeriksaan(filePemeriksaan.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button></div>
                     ))}
                     <input type="file" multiple onChange={(e) => { if (e.target.files) { const newFiles = Array.from(e.target.files); setFilePemeriksaan([...filePemeriksaan, ...newFiles]); e.target.value = ''; } }} className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" />
+                  </div>
+                  
+                  {/* 5. FOTO KEGIATAN */}
+                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 md:col-span-2">
+                    <p className="font-semibold text-slate-700 mb-2 flex items-center gap-2 text-sm">📸 Foto Kegiatan</p>
+                    
+                    {/* Grid Foto Lama */}
+                    {selectedReport.fotoKegiatan && selectedReport.fotoKegiatan !== '[]' && (
+                      <div className="mb-3 grid grid-cols-3 gap-2">
+                        {JSON.parse(selectedReport.fotoKegiatan).map((key: string, idx: number) => {
+                          if (fotoToDelete.includes(key)) return null;
+                          return (
+                            <div key={idx} className="relative bg-white border border-slate-200 rounded p-1">
+                              <img src={`/api/r2/${key}`} className="w-full h-20 object-cover rounded" />
+                              <button 
+                                type="button" 
+                                onClick={() => setFotoToDelete([...fotoToDelete, key])}
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* File Baru */}
+                    {fileFoto.length > 0 && fileFoto.map((file, idx) => (
+                      <div key={idx} className="mb-2 flex items-center justify-between bg-emerald-50 p-1.5 rounded border border-emerald-200">
+                        <span className="text-xs text-emerald-700 truncate max-w-[80%]">{file.name}</span>
+                        <button type="button" onClick={() => setFileFoto(fileFoto.filter((_, i) => i !== idx))} className="text-red-500 font-bold px-1 hover:bg-red-50 rounded">✕</button>
+                      </div>
+                    ))}
+                    
+                    <input type="file" multiple accept="image/*" onChange={(e) => { if (e.target.files) { const newFiles = Array.from(e.target.files); setFileFoto([...fileFoto, ...newFiles]); e.target.value = ''; } }} className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 border border-slate-300 rounded-md cursor-pointer bg-white" />
                   </div>
                 </div>
               </form>

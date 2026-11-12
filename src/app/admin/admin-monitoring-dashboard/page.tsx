@@ -1,373 +1,358 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
-import EditForm from '@/components/EditForm';
 
-export default function ArsipPage() {
+export default function MonitoringDashboardPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // State untuk Accordion
-  const [selectedYear, setSelectedYear] = useState<string | null>(null);
-  const [openMonths, setOpenMonths] = useState<string[]>([]);
+  // STATE UNTUK TOAST NOTIFIKASI
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
+    show: false,
+    message: '',
+    type: 'success',
+  });
 
-  // --- STATE UNTUK MODAL EDIT ---
-  const [editId, setEditId] = useState<number | null>(null);
+  // State untuk Filter Sertifikasi (Otomatis set ke bulan & tahun saat ini)
+  const now = new Date();
+  const [filterYear, setFilterYear] = useState<string>(now.getFullYear().toString());
+  const [filterMonth, setFilterMonth] = useState<string>(now.getMonth().toString());
 
-  // --- STATE UNTUK SCROLL TO TOP ---
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const topRef = useRef<HTMLDivElement>(null);
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 3000);
+  };
 
-  // --- STATE UNTUK FILTER TANGGAL ---
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
-
-  const fetchReports = () => {
-    setLoading(true);
-    fetch('/api/reports')
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'success') {
-          setReports(data.data);
-        }
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error fetching reports:", err);
-        setLoading(false);
-      });
+  const fetchReports = async () => {
+    try {
+      const res = await fetch('/api/reports');
+      const data = await res.json();
+      if (data.status === 'success') {
+        setReports(data.data);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Gagal mengambil data:", error);
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchReports();
   }, []);
 
-  // --- LOGIKA SCROLL TO TOP ---
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 300) {
-        setShowScrollTop(true);
-      } else {
-        setShowScrollTop(false);
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    topRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // Dapatkan Tahun dan Bulan dari Tanggal Dinas
-  const getReportDate = (report: any) => {
-    const dateToUse = report.tanggal ? new Date(report.tanggal) : new Date(report.createdAt);
-    return {
-      year: dateToUse.getFullYear().toString(),
-      month: dateToUse.toLocaleDateString('id-ID', { month: 'long' }),
-      fullMonth: dateToUse.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
-    };
-  };
-
-  // Filter Berdasarkan Pencarian dan Tanggal
-  const filteredReports = reports.filter(r => {
-    const matchSearch = (r.namaPerusahaan && r.namaPerusahaan.toLowerCase().includes(searchTerm.toLowerCase())) || 
-                        (r.uploadedBy && r.uploadedBy.toLowerCase().includes(searchTerm.toLowerCase()));
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    const success = await fetchReports();
     
-    let matchDate = true;
-    if (startDate || endDate) {
-      const reportDate = r.tanggal ? new Date(r.tanggal).getTime() : new Date(r.createdAt).getTime();
-      const start = startDate ? new Date(startDate).getTime() : 0;
-      const end = endDate ? new Date(endDate).getTime() : Infinity;
-      matchDate = reportDate >= start && reportDate <= end;
-    }
+    setTimeout(() => {
+      setIsRefreshing(false);
+      if (success) {
+        showToast('Data berhasil diperbarui!', 'success');
+      } else {
+        showToast('Gagal memperbarui data.', 'error');
+      }
+    }, 500);
+  };
 
-    return matchSearch && matchDate;
+  if (loading) return <Layout><div className="p-10 text-center text-slate-500 animate-pulse">Memuat Dashboard...</div></Layout>;
+
+  // --- LOGIKA PERHITUNGAN DATA ---
+  const totalKegiatan = reports.length;
+
+  let berkasLengkap = 0;
+  let belumAdaBerkas = 0;
+  let belumLengkap = 0;
+
+  reports.forEach((report) => {
+    const hasSuratTugas = report.suratTugas && report.suratTugas !== '[]';
+    const hasBerkasKegiatan = report.berkasKegiatan && report.berkasKegiatan !== '[]';
+    const hasBerkasPerbaikan = report.berkasPerbaikan && report.berkasPerbaikan !== '[]';
+    const hasPemeriksaan = report.berkasPemeriksaanTindakanPerbaikan && report.berkasPemeriksaanTindakanPerbaikan !== '[]';
+
+    const totalFileTerisi = [hasSuratTugas, hasBerkasKegiatan, hasBerkasPerbaikan, hasPemeriksaan].filter(Boolean).length;
+
+    if (totalFileTerisi === 4) {
+      berkasLengkap++;
+    } else if (totalFileTerisi === 0) {
+      belumAdaBerkas++;
+    } else {
+      belumLengkap++;
+    }
   });
 
-  // Mengelompokkan data per Tahun -> Bulan
-  const dataByYear = filteredReports.reduce((acc, report) => {
-    const { year, month, fullMonth } = getReportDate(report);
+  // --- LOGIKA FILTER ---
+  const availableYears = Array.from(new Set(reports.map((r: any) => {
+    const d = r.tanggal ? new Date(r.tanggal) : new Date(r.createdAt);
+    return d.getFullYear().toString();
+  }))).sort().reverse();
+
+  const monthsList = [
+    { val: '0', name: 'Januari' }, { val: '1', name: 'Februari' }, { val: '2', name: 'Maret' },
+    { val: '3', name: 'April' }, { val: '4', name: 'Mei' }, { val: '5', name: 'Juni' },
+    { val: '6', name: 'Juli' }, { val: '7', name: 'Agustus' }, { val: '8', name: 'September' },
+    { val: '9', name: 'Oktober' }, { val: '10', name: 'November' }, { val: '11', name: 'Desember' }
+  ];
+
+  const filteredSertifikasi = reports.filter((r: any) => {
+    if (!r.jenisKegiatan) return false;
     
-    if (!acc[year]) {
-      acc[year] = {};
-    }
-    if (!acc[year][month]) {
-      acc[year][month] = {
-        fullMonth,
-        reports: []
-      };
-    }
-    acc[year][month].reports.push(report);
-    return acc;
-  }, {} as Record<string, Record<string, { fullMonth: string, reports: any[] }>>);
+    const isSertifikasi = ['CBIB', 'CPIB', 'CPPIB', 'CPOIB', 'CDOIB', 'CPIB Kapal', 'HACCP', 'SKP', 'SPDI', 'Selfdecare Kapal', 'Inpres'].some(j => r.jenisKegiatan.includes(j));
+    if (!isSertifikasi) return false;
 
-  // Urutkan Tahun dari terbaru ke terlama
-  const sortedYears = Object.keys(dataByYear).sort((a, b) => parseInt(b) - parseInt(a));
+    const d = r.tanggal ? new Date(r.tanggal) : new Date(r.createdAt);
+    
+    const matchYear = filterYear === 'all' || d.getFullYear().toString() === filterYear;
+    const matchMonth = filterMonth === 'all' || d.getMonth().toString() === filterMonth;
+    
+    return matchYear && matchMonth;
+  });
 
-  const toggleYear = (year: string) => {
-    if (selectedYear === year) {
-      setSelectedYear(null);
-      setOpenMonths([]);
-    } else {
-      setSelectedYear(year);
-      setOpenMonths([]);
-    }
+  // Data Target Sertifikasi
+  const sertifikasiTargets: { [key: string]: number } = {
+    'CBIB': 30, 'CPIB': 30, 'CPPIB': 30, 'CPOIB': 30, 'CDOIB': 30, 
+    'CPIB Kapal': 30, 'HACCP': 30, 'SKP': 30, 'SPDI': 30,
+    'Selfdecare Kapal': 50, 'Inpres': 50
   };
+  
+  // Menggunakan `filteredSertifikasi` agar tabel kiri berubah sesuai filter kanan
+  const capaianSertifikasi = Object.keys(sertifikasiTargets).map((jenis) => {
+    const realisasi = filteredSertifikasi.filter((r) => r.jenisKegiatan?.includes(jenis)).length;
+    const target = sertifikasiTargets[jenis];
+    const persentase = target > 0 ? Math.round((realisasi / target) * 100) : 0;
+    return { jenis, target, realisasi, persentase };
+  });
 
-  const toggleMonth = (monthYear: string) => {
-    if (openMonths.includes(monthYear)) {
-      setOpenMonths(openMonths.filter(m => m !== monthYear));
-    } else {
-      setOpenMonths([...openMonths, monthYear]);
-    }
-  };
-
-  // --- FUNGSI DOWNLOAD (BUKA HALAMAN CETAK MODE PDF) ---
-  const handleDownload = (id: number) => {
-    window.open(`/cetak/${id}?mode=pdf`, '_blank');
+  // Komponen Donut Chart Sederhana
+  const DonutChart = ({ percentage, color }: { percentage: number, color: string }) => {
+    const radius = 28;
+    const circumference = 2 * Math.PI * radius;
+    const strokeDashoffset = circumference - (Math.min(percentage, 100) / 100) * circumference;
+    
+    return (
+      <div className="relative w-16 h-16 flex items-center justify-center">
+        <svg className="transform -rotate-90 w-16 h-16">
+          <circle cx="32" cy="32" r={radius} stroke="#f1f5f9" strokeWidth="6" fill="none" />
+          <circle 
+            cx="32" cy="32" r={radius} 
+            stroke={color} 
+            strokeWidth="6" fill="none" 
+            strokeDasharray={circumference} 
+            strokeDashoffset={strokeDashoffset} 
+            strokeLinecap="round"
+            className="transition-all duration-1000 ease-out"
+          />
+        </svg>
+        <div className="absolute text-xs font-bold text-slate-700">{percentage}%</div>
+      </div>
+    );
   };
 
   return (
     <Layout>
-      <div ref={topRef}></div>
-      
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-800">ARSIP LAPORAN</h1>
-          <p className="text-slate-500 mt-1 text-sm md:text-base">Seluruh riwayat perjalanan dinas</p>
+      {/* TOAST NOTIFIKASI */}
+      {toast.show && (
+        <div className={`fixed top-24 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border-l-4 animate-in slide-in-from-top-4 fade-in duration-300 ${
+          toast.type === 'success' ? 'bg-white border-emerald-500 text-slate-800' : 'bg-white border-red-500 text-slate-800'
+        }`}>
+          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
+            toast.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
+          }`}>
+            {toast.type === 'success' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            )}
+          </div>
+          <div>
+            <p className="font-bold text-sm">{toast.type === 'success' ? 'Berhasil!' : 'Gagal!'}</p>
+            <p className="text-xs text-slate-500">{toast.message}</p>
+          </div>
+          <button onClick={() => setToast({ ...toast, show: false })} className="ml-4 text-slate-400 hover:text-slate-600 cursor-pointer">
+            ✕
+          </button>
         </div>
-      </div>
+      )}
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6 mb-6">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <div className="w-1.5 h-6 bg-emerald-500 rounded-full"></div>
-            <h2 className="text-lg md:text-xl font-bold text-slate-800">Semua Data Laporan</h2>
+      {/* BACKGROUND GRADIENT HALUS DI AREA KONTEN */}
+      <div className="bg-slate-50/50 p-2 rounded-2xl -m-2">
+        
+        {/* HEADER TITLE DENGAN DATA TERKINI DI KANAN ATAS */}
+        <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black text-slate-800 tracking-tight">Monitoring Overview</h1>
+            <p className="text-slate-500 mt-1 text-sm font-medium">Pantau capaian sertifikasi dan status berkas secara real-time.</p>
           </div>
           
-          <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-            <input type="text" placeholder="🔍 Cari Nama/Perusahaan..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="border border-slate-300 px-4 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-64" />
+          <div className="flex items-center gap-3">
+            <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200 text-sm font-semibold text-slate-600 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Data Terkini
+            </div>
+            <button 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg shadow-sm border border-slate-200 text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isRefreshing ? "animate-spin" : ""}>
+                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
+                <path d="M21 3v5h-5"></path>
+              </svg>
+              {isRefreshing ? 'Memuat...' : 'Refresh'}
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-center gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-          <span className="text-sm font-semibold text-slate-600 whitespace-nowrap">Filter Tanggal Dinas:</span>
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border border-slate-300 px-3 py-1.5 rounded text-sm outline-none w-full md:w-auto" />
-            <span className="text-slate-400">s/d</span>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border border-slate-300 px-3 py-1.5 rounded text-sm outline-none w-full md:w-auto" />
+        {/* KARTU RINGKASAN */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {/* 1. Total */}
+          <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+            <div>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Kegiatan</p>
+              <p className="text-3xl font-black text-slate-800">{totalKegiatan}</p>
+            </div>
+            <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center text-xl">📋</div>
           </div>
-          {(startDate || endDate) && (
-            <button onClick={() => { setStartDate(''); setEndDate(''); }} className="text-xs text-red-500 font-semibold hover:underline cursor-pointer whitespace-nowrap">
-              Reset Filter
-            </button>
-          )}
+
+          {/* 2. Berkas Lengkap */}
+          <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
+            <div>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Berkas Lengkap</p>
+              <p className="text-3xl font-black text-slate-800">{berkasLengkap}</p>
+            </div>
+            <div className="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center text-xl">✅</div>
+          </div>
+
+          {/* 3. Belum Lengkap */}
+          <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>
+            <div>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Belum Lengkap</p>
+              <p className="text-3xl font-black text-slate-800">{belumLengkap}</p>
+            </div>
+            <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center text-xl">⏳</div>
+          </div>
+
+          {/* 4. Belum Ada Berkas */}
+          <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
+            <div>
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Belum Ada Berkas</p>
+              <p className="text-3xl font-black text-slate-800">{belumAdaBerkas}</p>
+            </div>
+            <div className="w-10 h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center text-xl">⚠️</div>
+          </div>
+        </div>
+
+        {/* GRID UNTUK TABEL & PANEL FILTER */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+          
+          {/* TABEL SERTIFIKASI (Lebih Besar, 2 Kolom) */}
+          <div className="xl:col-span-2 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+              <div>
+                <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                  <span className="w-6 h-6 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                      <path d="M4 22h16"></path>
+                      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+                      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+                      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+                    </svg>
+                  </span>
+                  Tabel Sertifikasi
+                </h2>
+                {/* Keterangan Periode */}
+                <p className="text-[11px] text-slate-500 mt-1 ml-8 font-medium">
+                  {filterYear === 'all' && filterMonth === 'all' 
+                    ? 'Semua Data Sertifikasi' 
+                    : `Periode: ${filterMonth !== 'all' ? monthsList.find(m => m.val === filterMonth)?.name : 'Semua Bulan'} ${filterYear !== 'all' ? filterYear : ''}`}
+                </p>
+              </div>
+            </div>
+            
+            <div className="overflow-y-auto max-h-[500px] custom-scrollbar">
+              <table className="w-full text-xs text-left relative">
+                <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider font-bold sticky top-0 z-10 shadow-sm">
+                  <tr>
+                    <th className="px-4 py-3">Jenis</th>
+                    <th className="px-4 py-3 text-center">Target</th>
+                    <th className="px-4 py-3 text-center">Real.</th>
+                    <th className="px-4 py-3 text-center">Capaian</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {capaianSertifikasi.map((item, idx) => {
+                    let strokeColor = '#ef4444'; 
+                    if (item.persentase >= 80) strokeColor = '#10b981'; 
+                    else if (item.persentase >= 40) strokeColor = '#f59e0b'; 
+
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-4 py-2 font-bold text-slate-700">{item.jenis}</td>
+                        <td className="px-4 py-2 text-center text-slate-500 font-medium">{item.target}</td>
+                        <td className="px-4 py-2 text-center font-bold text-slate-800">{item.realisasi}</td>
+                        <td className="px-4 py-2 flex justify-center">
+                           <DonutChart percentage={item.persentase} color={strokeColor} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* PANEL FILTER SERTIFIKASI (Lebih Kecil, 1 Kolom) */}
+          <div className="xl:col-span-1 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden flex flex-col sticky top-24">
+            <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+              <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <span className="w-6 h-6 rounded bg-rose-100 text-rose-600 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                </span>
+                Filter Data
+              </h2>
+            </div>
+            
+            <div className="p-4 flex flex-col gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1">Tahun</label>
+                <select 
+                  value={filterYear} 
+                  onChange={(e) => setFilterYear(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                >
+                  <option value="all">Semua Tahun</option>
+                  {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1">Bulan</label>
+                <select 
+                  value={filterMonth} 
+                  onChange={(e) => setFilterMonth(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                >
+                  <option value="all">Semua Bulan</option>
+                  {monthsList.map(m => <option key={m.val} value={m.val}>{m.name}</option>)}
+                </select>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
-
-      {loading ? (
-        <div className="text-center p-8 text-slate-500">Memuat data...</div>
-      ) : sortedYears.length === 0 ? (
-        <div className="text-center p-8 text-slate-500">Tidak ada laporan yang ditemukan.</div>
-      ) : (
-        <div className="space-y-3">
-          {/* LOOPING TAHUN */}
-          {sortedYears.map((year) => {
-            const isYearOpen = selectedYear === year;
-            const monthsInYear = dataByYear[year];
-            const totalReportsInYear = Object.values(monthsInYear).reduce((sum: number, m: any) => sum + m.reports.length, 0);
-            
-            const monthOrder = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
-            const sortedMonthsInYear: string[] = Object.keys(monthsInYear).sort((a: string, b: string) => monthOrder.indexOf(a) - monthOrder.indexOf(b));
-
-            return (
-              <div key={year} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                {/* HEADER TAHUN */}
-                <button 
-                  onClick={() => toggleYear(year)}
-                  className="w-full flex items-center justify-between p-4 bg-white hover:bg-slate-50 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-emerald-600 text-xl font-bold">📅</span>
-                    <h3 className="text-lg font-bold text-slate-800">{year}</h3>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-slate-500">{totalReportsInYear} Laporan</span>
-                    <span className={`text-slate-400 transition-transform ${isYearOpen ? 'rotate-180' : ''}`}>▼</span>
-                  </div>
-                </button>
-
-                {/* DAFTAR BULAN */}
-                {isYearOpen && (
-                  <div className="bg-slate-50 border-t border-slate-200 p-3 space-y-2">
-                    {sortedMonthsInYear.map((month: string) => {
-                      const monthData = monthsInYear[month];
-                      const isMonthOpen = openMonths.includes(monthData.fullMonth);
-
-                      return (
-                        <div key={month} className="bg-white border border-slate-200 rounded-lg overflow-hidden">
-                          {/* HEADER BULAN */}
-                          <button 
-                            onClick={() => toggleMonth(monthData.fullMonth)}
-                            className="w-full flex items-center justify-between p-3 bg-white hover:bg-blue-50 transition-colors cursor-pointer"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="text-blue-500">📁</span>
-                              <span className="font-semibold text-slate-700">{monthData.fullMonth}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">{monthData.reports.length} Laporan</span>
-                              <span className={`text-slate-400 text-xs transition-transform ${isMonthOpen ? 'rotate-180' : ''}`}>▼</span>
-                            </div>
-                          </button>
-
-                          {/* TABEL LAPORAN */}
-                          {isMonthOpen && (
-                            <div className="border-t border-slate-100 overflow-x-auto">
-                              <table className="w-full text-sm text-left whitespace-nowrap md:whitespace-normal">
-                                <thead className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold text-xs">
-                                  <tr>
-                                    <th className="px-4 py-3">Nama Kegiatan</th>
-                                    <th className="px-4 py-3">Tanggal</th>
-                                    <th className="px-4 py-3">Pelaksana</th>
-                                    <th className="px-4 py-3">Jenis</th>
-                                    <th className="px-4 py-3 text-center">Aksi</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-50">
-                                  {(monthData.reports as any[]).map((report: any) => {
-                                    const jenisKegiatanTampil = (report.jenisKegiatan || '').replace(/Survailen/gi, 'Surveilan');
-                                    
-                                    const parts = jenisKegiatanTampil.split(' ');
-                                    const namaKegiatan = parts[0] || '-';
-                                    const jenis = parts.slice(1).join(' ') || '-';
-
-                                    // LOGIKA HITUNG KETERLAMBATAN
-                                    let statusTeks = "Tepat Waktu";
-                                    let statusWarna = "text-emerald-600 bg-emerald-50 border-emerald-200";
-
-                                    if (report.tanggal && report.createdAt) {
-                                      const tglDinas = new Date(report.tanggal);
-                                      const tglUpload = new Date(report.createdAt);
-                                      const selisihWaktu = tglUpload.getTime() - tglDinas.getTime();
-                                      const selisihHari = Math.floor(selisihWaktu / (1000 * 3600 * 24));
-                                      
-                                      if (selisihHari > 3) {
-                                        statusTeks = "Terlambat";
-                                        statusWarna = "text-red-600 bg-red-50 border-red-200";
-                                      }
-                                    }
-
-                                    return (
-                                      <tr key={report.id} className="hover:bg-slate-50 transition-colors">
-                                        
-                                        <td className="px-4 py-3 text-slate-700 font-medium capitalize">
-                                          {namaKegiatan}
-                                        </td>
-
-                                        <td className="px-4 py-3 text-slate-500 font-medium">
-                                          {report.tanggal ? new Date(report.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
-                                          
-                                          <div className={`mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full inline-block border ${statusWarna}`}>
-                                            {statusTeks}
-                                          </div>
-                                        </td>
-
-                                        <td className="px-4 py-3 text-slate-600 align-top">
-                                          <div className="flex flex-col gap-1 min-w-[150px]">
-                                            {report.petugasPelaksana ? (
-                                              report.petugasPelaksana.split('|').map((petugas: string, idx: number) => {
-                                                const namaSaja = petugas.split('(')[0].trim();
-                                                return (
-                                                  <span key={idx} className="text-xs md:text-sm leading-tight block border-b border-slate-100 last:border-0 pb-1 last:pb-0">
-                                                    {namaSaja}
-                                                  </span>
-                                                );
-                                              })
-                                            ) : (
-                                              <span className="text-xs md:text-sm">-</span>
-                                            )}
-                                          </div>
-                                        </td>
-
-                                        <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
-                                          {jenis}
-                                        </td>
-
-                                        <td className="px-4 py-3">
-                                          <div className="flex items-center justify-center gap-1 md:gap-2">
-                                            
-                                            {/* TOMBOL EDIT (BUKA MODAL) */}
-                                            <button onClick={() => setEditId(report.id)} title="Edit Laporan" className="p-1.5 bg-yellow-100 text-yellow-600 rounded-md hover:bg-yellow-200 cursor-pointer">
-                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                            </button>
-
-                                            {/* TOMBOL DOWNLOAD (PRINT PDF) */}
-                                            <button onClick={() => handleDownload(report.id)} title="Download PDF" className="p-1.5 bg-emerald-100 text-emerald-600 rounded-md hover:bg-emerald-200 cursor-pointer">
-                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                            </button>
-
-                                            {/* TOMBOL CETAK (PRINTER) */}
-                                            <a href={`/cetak/${report.id}`} target="_blank" title="Cetak Laporan" className="bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 font-medium text-xs transition-colors flex items-center gap-1 cursor-pointer">
-                                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-                                              <span className="hidden md:inline">Cetak</span>
-                                            </a>
-                                          </div>
-                                        </td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* --- TOMBOL SCROLL TO TOP --- */}
-      {showScrollTop && (
-        <button 
-          onClick={scrollToTop}
-          className="fixed bottom-24 right-6 z-40 bg-slate-800 text-white p-3 rounded-full shadow-lg hover:bg-slate-700 transition-all duration-300 cursor-pointer"
-          title="Kembali ke Atas"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-        </button>
-      )}
-
-      {/* MODAL EDIT (FORM EDIT) - TETAP ADA */}
-      {editId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="text-lg font-bold text-slate-800">Edit Laporan</h3>
-              <button onClick={() => setEditId(null)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              </button>
-            </div>
-            {/* PANGGIL KOMPONEN EDITFORM */}
-            <EditForm 
-              id={editId} 
-              onSuccess={() => {
-                setEditId(null); // Tutup modal
-                fetchReports(); // Refresh data
-              }} 
-            />
-          </div>
-        </div>
-      )}
-
     </Layout>
   );
 }

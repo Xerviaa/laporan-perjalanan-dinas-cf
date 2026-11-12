@@ -27,7 +27,7 @@ export async function GET(
   }
 }
 
-// PUT: Memperbarui data laporan (termasuk upload berkas)
+// PUT: Memperbarui data laporan (termasuk upload/kelola berkas & foto)
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -55,6 +55,9 @@ export async function PUT(
     const fileBerkasKegiatan = formData.get('berkasKegiatan') as File | null;
     const fileBerkasPerbaikan = formData.get('berkasPerbaikan') as File | null;
     const filePemeriksaan = formData.get('berkasPemeriksaanTindakanPerbaikan') as File | null;
+
+    // Ambil file foto baru (multiple)
+    const newFotoFiles = formData.getAll('foto') as File[];
 
     const { env } = getCloudflareContext();
     const bucket = (env as any).MY_BUCKET as R2Bucket;
@@ -98,6 +101,31 @@ export async function PUT(
       updateData.berkasPemeriksaanTindakanPerbaikan = await uploadToR2(filePemeriksaan, 'pemeriksaan-tindakan-perbaikan');
     }
 
+    // Proses FOTO KEGIATAN (Gabungkan foto lama & baru)
+    // Ambil daftar foto lama dari database (jika ada)
+    let existingFoto: string[] = [];
+    if (currentReport.fotoKegiatan) {
+      try {
+        const parsed = JSON.parse(currentReport.fotoKegiatan);
+        if (Array.isArray(parsed)) existingFoto = parsed;
+      } catch (e) {}
+    }
+
+    // Upload foto baru
+    const newFotoKeys: string[] = [];
+    for (const file of newFotoFiles) {
+      if (file.size > 0) {
+        const key = await uploadToR2(file, 'foto-kegiatan');
+        newFotoKeys.push(key);
+      }
+    }
+
+    // Gabungkan dengan foto lama
+    if (newFotoKeys.length > 0) {
+      updateData.fotoKegiatan = JSON.stringify([...existingFoto, ...newFotoKeys]);
+    }
+
+    // Update database
     await db.update(reports).set(updateData).where(eq(reports.id, id));
     
     return Response.json({ status: "success", message: "Laporan berhasil diperbarui" });

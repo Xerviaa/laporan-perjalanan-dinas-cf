@@ -24,11 +24,15 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
   const [existingBerkasPerbaikan, setExistingBerkasPerbaikan] = useState<string[]>([]);
   const [existingPemeriksaan, setExistingPemeriksaan] = useState<string | null>(null);
 
+  // STATE BARU UNTUK FOTO
+  const [existingFoto, setExistingFoto] = useState<string[]>([]);
+
   // State file baru
   const [suratTugas, setSuratTugas] = useState<File | null>(null);
   const [berkasKegiatan, setBerkasKegiatan] = useState<File[]>([]);
   const [berkasPerbaikan, setBerkasPerbaikan] = useState<File[]>([]);
   const [berkasPemeriksaanTindakanPerbaikan, setBerkasPemeriksaanTindakanPerbaikan] = useState<File | null>(null);
+  const [fotoFiles, setFotoFiles] = useState<File[]>([]);
 
   // --- STATE UNTUK PRATINJAU FILE ---
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -56,16 +60,17 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
           setExistingSuratTugas(r.suratTugas);
           
           if (r.berkasKegiatan) {
-            try {
-              setExistingBerkasKegiatan(JSON.parse(r.berkasKegiatan));
-            } catch (e) {}
+            try { setExistingBerkasKegiatan(JSON.parse(r.berkasKegiatan)); } catch (e) {}
           }
           if (r.berkasPerbaikan) {
-            try {
-              setExistingBerkasPerbaikan(JSON.parse(r.berkasPerbaikan));
-            } catch (e) {}
+            try { setExistingBerkasPerbaikan(JSON.parse(r.berkasPerbaikan)); } catch (e) {}
           }
           setExistingPemeriksaan(r.berkasPemeriksaanTindakanPerbaikan);
+
+          // Ambil data foto lama
+          if (r.fotoKegiatan) {
+            try { setExistingFoto(JSON.parse(r.fotoKegiatan)); } catch (e) {}
+          }
         }
         setLoading(false);
       })
@@ -94,6 +99,12 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
     berkasKegiatan.forEach(file => formData.append('berkasKegiatan', file));
     berkasPerbaikan.forEach(file => formData.append('berkasPerbaikan', file));
     if (berkasPemeriksaanTindakanPerbaikan) formData.append('berkasPemeriksaanTindakanPerbaikan', berkasPemeriksaanTindakanPerbaikan);
+    
+    // Kirim file foto baru
+    fotoFiles.forEach(file => formData.append('foto', file));
+
+    // Kirim data foto lama yang dipertahankan (yang tidak dihapus)
+    formData.append('existingFoto', JSON.stringify(existingFoto));
 
     try {
       const res = await fetch(`/api/reports/${id}`, {
@@ -154,7 +165,6 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-1">Nama Perusahaan</label>
-          {/* DIUBAH MENJADI READONLY */}
           <input 
             type="text" 
             value={namaPerusahaan} 
@@ -186,6 +196,42 @@ export default function EditForm({ id, onSuccess }: { id: number, onSuccess: () 
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-1">Kendala</label>
           <textarea value={kendala} onChange={(e) => setKendala(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm h-24 resize-none"></textarea>
+        </div>
+      </div>
+
+      {/* BAGIAN FOTO KEGIATAN */}
+      <div>
+        <h3 className="text-sm font-bold text-slate-800 mb-3 pb-2 border-b">Foto Kegiatan</h3>
+        
+        {/* Tampilkan Foto Lama */}
+        {existingFoto.length > 0 && (
+          <div className="mb-4 grid grid-cols-3 gap-2">
+            {existingFoto.map((key, idx) => (
+              <div key={idx} className="relative bg-slate-50 border border-slate-200 rounded-lg p-1">
+                <img src={`/api/r2/${key}`} alt={`Foto ${idx}`} className="w-full h-24 object-cover rounded" />
+                <button 
+                  type="button" 
+                  onClick={() => setExistingFoto(existingFoto.filter((_, i) => i !== idx))}
+                  className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center shadow-md"
+                  title="Hapus Foto"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Input File Foto Baru */}
+        <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center">
+          <input 
+            type="file" 
+            multiple 
+            accept="image/*" 
+            onChange={(e) => { if (e.target.files) setFotoFiles(Array.from(e.target.files)); }} 
+            className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" 
+          />
+          {fotoFiles.length > 0 && <p className="text-xs text-emerald-600 mt-2">{fotoFiles.length} foto baru dipilih</p>}
         </div>
       </div>
 
