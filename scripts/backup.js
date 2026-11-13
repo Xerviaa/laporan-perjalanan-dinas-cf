@@ -224,7 +224,8 @@ async function main() {
 
   console.log('Mengunggah ke Google Drive...');
   try {
-    execSync(`rclone copy ${baseLocalFolder} gdrive:supabase-backups`, { stdio: 'inherit' });
+    // PERUBAHAN ADA DI BARIS INI (Ditambah tanda kutip dua karena ada spasi)
+    execSync(`rclone copy ${baseLocalFolder} "gdrive:BACKUP MONICA IMUT"`, { stdio: 'inherit' });
     console.log('Upload ke Google Drive BERHASIL!');
   } catch (error) {
     console.error('Gagal upload ke Google Drive:', error.message);

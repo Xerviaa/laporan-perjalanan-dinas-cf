@@ -135,7 +135,7 @@ export default function BackupPage() {
                 Jadwal Backup Otomatis
               </h2>
               <p className="text-sm text-slate-600 leading-relaxed relative z-10">
-                Proses backup berjalan otomatis setiap <strong className="text-blue-700">hari Sabtu pukul 00:00 WITA</strong>.
+                Proses backup berjalan otomatis setiap <strong className="text-blue-700">hari pukul 18:00 WITA</strong>.
               </p>
             </div>
 
@@ -152,7 +152,7 @@ export default function BackupPage() {
                 Semua file backup akan disimpan secara otomatis ke dalam folder Google Drive.
               </p>
               <a 
-                href="https://drive.google.com/drive/u/1/folders/1zEFz1owxWBAC4prK4HY7ywP3Yc2zTg05" 
+                href="https://drive.google.com/drive/u/1/folders/1zaOFLHvfNDE2dhGdmn_g6xrRWKLg2UVp" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 group/btn relative z-10"
