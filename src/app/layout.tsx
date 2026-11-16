@@ -5,9 +5,13 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Laporan Perjalanan Dinas",
-  description: "Sistem Informasi Pelaporan BPPMHKP Denpasar",
+  title: "MONICA IMUT - Sistem Informasi Pelaporan",
+  description: "Monitoring Capaian Sertifikasi Mutu Terpadu BPPMHKP Denpasar",
   manifest: "/manifest.json",
+  // TAMBAHKAN KONFIGURASI IKON DI SINI
+  icons: {
+    icon: "/logo-monica.png",
+  },
 };
 
 export default function RootLayout({
