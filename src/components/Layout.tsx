@@ -39,7 +39,6 @@ export default function Layout({ children }: { children: ReactNode }) {
     } catch (error) {
       setIsAdmin(false);
     } finally {
-      // Selesai mengecek, hilangkan blocker
       setIsCheckingAuth(false); 
     }
   };
@@ -48,13 +47,11 @@ export default function Layout({ children }: { children: ReactNode }) {
     checkAdminStatus();
   }, [pathname]);
 
-  // --- CEK POPUP SELAMAT DATANG (HANYA MUNCUL SETELAH LOGIN) ---
+  // --- CEK POPUP SELAMAT DATANG ---
   useEffect(() => {
     if (isAdmin && sessionStorage.getItem('justLoggedIn') === 'true') {
       setShowWelcome(true);
-      sessionStorage.removeItem('justLoggedIn'); // Hapus agar tidak muncul terus
-      
-      // Hilangkan pop-up setelah 3 detik
+      sessionStorage.removeItem('justLoggedIn'); 
       const timer = setTimeout(() => setShowWelcome(false), 3000);
       return () => clearTimeout(timer);
     }
@@ -64,7 +61,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  // --- LOGIKA WAKTU REALTIME (HH:mm:ss) ---
+  // --- LOGIKA WAKTU REALTIME ---
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -80,25 +77,21 @@ export default function Layout({ children }: { children: ReactNode }) {
     return () => clearInterval(timer);
   }, []);
 
-  // --- LOGIKA PWA (TANGKAP EVENT SAJA) ---
+  // --- LOGIKA PWA ---
   useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration failed:', err));
     }
-
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
     };
-
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
 
-  // --- EFEK SAAT PINDAH HALAMAN (PWA) ---
   useEffect(() => {
     if ((pathname === '/arsip' || pathname === '/monitoring-dashboard' || pathname === '/admin/admin-monitoring-dashboard') && deferredPrompt) {
       setShowInstallBtn(true);
@@ -118,8 +111,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     setShowInstallBtn(false);
   };
 
-  // --- FUNGSI LOGOUT ---
-  const handleLogout = async () => {
+  // --- FUNGSI LOGOUT UNTUK ADMIN (PIN) ---
+  const handleLogoutAdmin = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       if (typeof window !== 'undefined') {
@@ -130,6 +123,21 @@ export default function Layout({ children }: { children: ReactNode }) {
       console.error("Gagal menghapus sesi:", error);
     } finally {
       window.location.href = '/monitoring-dashboard'; 
+    }
+  };
+
+  // --- FUNGSI LOGOUT UNTUK PEGAWAI (SUPABASE) ---
+  const handleLogoutPegawai = async () => {
+    try {
+      await fetch('/api/auth/signout', { method: 'POST' });
+      if (typeof window !== 'undefined') {
+        localStorage.clear();
+        sessionStorage.clear();
+      }
+    } catch (error) {
+      console.error("Gagal menghapus sesi Supabase:", error);
+    } finally {
+      window.location.href = '/login'; 
     }
   };
 
@@ -150,10 +158,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       if (res.ok) {
         setIsLoginModalOpen(false);
         setPin('');
-        
-        // TANDAI BAHWA BARU SAJA LOGIN
         sessionStorage.setItem('justLoggedIn', 'true');
-
         router.push('/admin/admin-monitoring-dashboard'); 
         router.refresh();
       } else {
@@ -184,9 +189,6 @@ export default function Layout({ children }: { children: ReactNode }) {
         { name: 'Google Drive', path: 'https://drive.google.com/drive/u/1/folders/1zEFz1owxWBAC4prK4HY7ywP3Yc2zTg05', icon: '☁️' },
       ];
 
-  // =======================================================
-  // BLOKIR RENDER JIKA MASIH MENGEcek SESI
-  // =======================================================
   if (isCheckingAuth) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center font-sans">
@@ -249,20 +251,29 @@ export default function Layout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* BAGIAN BAWAH: TOMBOL LOGIN / LOGOUT */}
-        <div className="p-3 border-t border-slate-600/50">
+        <div className="p-3 border-t border-slate-600/50 flex flex-col gap-2">
           {isAdmin ? (
-            <button onClick={handleLogout} className="flex items-center gap-3 w-full px-4 py-2.5 text-red-300 hover:bg-red-500/20 hover:text-red-200 rounded transition-colors cursor-pointer">
+            <button onClick={handleLogoutAdmin} className="flex items-center gap-3 w-full px-4 py-2.5 text-red-300 hover:bg-red-500/20 hover:text-red-200 rounded transition-colors cursor-pointer">
               <span>🚪</span>
-              <span className="text-sm font-semibold">Keluar</span>
+              <span className="text-sm font-semibold">Keluar Admin</span>
             </button>
           ) : (
-            <button 
-              onClick={() => setIsLoginModalOpen(true)}
-              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded transition-colors shadow-md cursor-pointer"
-            >
-              <span>🔑</span>
-              <span>Login Admin</span>
-            </button>
+            <>
+              <button 
+                onClick={() => setIsLoginModalOpen(true)}
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded transition-colors shadow-md cursor-pointer"
+              >
+                <span>🔑</span>
+                <span>Login Admin</span>
+              </button>
+              <button 
+                onClick={handleLogoutPegawai} 
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-bold rounded transition-colors shadow-md cursor-pointer"
+              >
+                <span>🚪</span>
+                <span>Keluar</span>
+              </button>
+            </>
           )}
         </div>
       </aside>

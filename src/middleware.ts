@@ -11,6 +11,7 @@ export async function middleware(request: NextRequest) {
   // ========================================================
   // 1. PROTEKSI HALAMAN PEGAWAI (Supabase Auth)
   // ========================================================
+  // Rute /upload dan /arsip hanya bisa diakses jika sudah login via Supabase
   if (pathname.startsWith('/upload') || pathname.startsWith('/arsip')) {
     let response = NextResponse.next();
     const supabase = createServerClient(
@@ -35,6 +36,7 @@ export async function middleware(request: NextRequest) {
 
     const { data: { session } } = await supabase.auth.getSession();
 
+    // Jika belum login, lempar ke halaman login
     if (!session) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
@@ -45,13 +47,12 @@ export async function middleware(request: NextRequest) {
   // 2. PROTEKSI HALAMAN ADMIN (PIN JWT)
   // ========================================================
   if (pathname.startsWith('/admin')) {
-    // PENTING: Jangan proteksi halaman login PIN itu sendiri
-    if (pathname === '/admin/login-pin') {
-      return NextResponse.next();
-    }
+    // Halaman login PIN tidak boleh diproteksi oleh dirinya sendiri
+    if (pathname === '/admin/login-pin') return NextResponse.next();
 
     const token = request.cookies.get('session_token')?.value;
 
+    // Jika tidak ada PIN token, lempar ke halaman login PIN
     if (!token) {
       return NextResponse.redirect(new URL('/admin/login-pin', request.url));
     }
@@ -59,6 +60,7 @@ export async function middleware(request: NextRequest) {
     try {
       await jwtVerify(token, SECRET_KEY);
     } catch (error) {
+      // Jika token PIN tidak valid, hapus dan lempar ke login PIN
       const response = NextResponse.redirect(new URL('/admin/login-pin', request.url));
       response.cookies.delete('session_token');
       return response;
@@ -69,5 +71,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Jalankan middleware di rute admin, upload, dan arsip
   matcher: ['/admin/:path*', '/upload/:path*', '/arsip/:path*'],
 };
