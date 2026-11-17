@@ -37,7 +37,7 @@
 			"localConnectionString": "postgres://unused:unused@127.0.0.1:5432/unused"
 		}
 	],
-	// TAMBAHKAN BAGIAN INI UNTUK MENGAKTIFKAN LOGS
+	// PERBAIKAN: Menghapus "issue_detection" yang tidak valid
 	"observability": {
 		"logs": {
 			"enabled": true,
@@ -46,9 +46,6 @@
 			"persist": true
 		},
 		"traces": {
-			"enabled": false
-		},
-		"issue_detection": {
 			"enabled": false
 		}
 	}
