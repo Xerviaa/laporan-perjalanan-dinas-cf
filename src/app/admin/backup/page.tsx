@@ -152,7 +152,7 @@ export default function BackupPage() {
                 Semua file backup akan disimpan secara otomatis ke dalam folder Google Drive.
               </p>
               <a 
-                href="https://drive.google.com/drive/u/1/folders/1zaOFLHvfNDE2dhGdmn_g6xrRWKLg2UVp" 
+                href="https://drive.google.com/drive/u/1/folders/18AeC2O2DGvx1zAoiZmHoExFiQsMXoHdv" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-full bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 group/btn relative z-10"

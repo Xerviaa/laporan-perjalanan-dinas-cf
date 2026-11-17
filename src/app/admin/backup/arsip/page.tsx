@@ -194,7 +194,7 @@ export default function BackupPage() {
               {/* TOMBOL GOOGLE DRIVE (Menggantikan Riwayat Arsip) */}
               <div className="mt-8 pt-6 border-t border-slate-100 text-center">
                 <a 
-                  href="https://drive.google.com/drive/u/4/folders/1KB4yOsjA2SPYjlGF_4YaezMXZC66D4aP" 
+                  href="https://drive.google.com/drive/u/1/folders/18AeC2O2DGvx1zAoiZmHoExFiQsMXoHdv" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-emerald-600 hover:text-emerald-700 font-bold text-sm flex items-center justify-center gap-2 transition-colors"
