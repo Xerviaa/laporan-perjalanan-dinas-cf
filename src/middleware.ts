@@ -9,6 +9,14 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ========================================================
+  // 0. PENGECUALIAN RUTE PUBLIK (Reset Password & Lupa Password)
+  // ========================================================
+  // Rute ini harus bisa diakses tanpa login agar link dari email bisa diproses
+  if (pathname.startsWith('/reset-password') || pathname.startsWith('/forgot-password')) {
+    return NextResponse.next();
+  }
+
+  // ========================================================
   // 1. PROTEKSI HALAMAN PEGAWAI (Supabase Auth)
   // ========================================================
   // Rute /upload dan /arsip hanya bisa diakses jika sudah login via Supabase
@@ -71,6 +79,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Jalankan middleware di rute admin, upload, dan arsip
-  matcher: ['/admin/:path*', '/upload/:path*', '/arsip/:path*'],
+  // Jalankan middleware di semua rute KECUALI file statis dan API
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
