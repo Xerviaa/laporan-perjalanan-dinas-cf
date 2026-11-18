@@ -18,25 +18,36 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
+    // Menggunakan AbortController untuk mencegah loading menggantung (timeout 10 detik)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const data = await res.json();
 
       if (res.ok && data.status === "success") {
-        // Diubah ke halaman guest / upload terlebih dahulu
         router.push('/upload'); 
         router.refresh();
       } else {
         setError(data.message || 'Email atau password salah.');
         setLoading(false);
       }
-    } catch (err) {
-      setError('Terjadi kesalahan pada server.');
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      if (err.name === 'AbortError') {
+        setError('Koneksi timeout: Server terlalu lama merespons.');
+      } else {
+        setError('Terjadi kesalahan pada server.');
+      }
       setLoading(false);
     }
   };
@@ -85,7 +96,7 @@ export default function LoginPage() {
               <label className="block text-sm font-bold text-slate-700 mb-1">Email</label>
               <input 
                 type="email" 
-                autoComplete="off"
+                autoComplete="email"
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-blue-50/50 placeholder:text-slate-400 placeholder:opacity-70 placeholder:italic" 
@@ -98,7 +109,7 @@ export default function LoginPage() {
               <div className="relative">
                 <input 
                   type={showPassword ? "text" : "password"}
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
                   className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-blue-50/50 placeholder:text-slate-400 placeholder:opacity-70 placeholder:italic" 

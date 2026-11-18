@@ -1,77 +1,48 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
 
 const SECRET_KEY = new TextEncoder().encode('rahasia-negara-laporan-dinas-2026');
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // 0. PENGECUALIAN RUTE PUBLIK
-  if (pathname.startsWith('/reset-password') || pathname.startsWith('/forgot-password')) {
+  // 1. PENGECUALIAN RUTE PUBLIK (Bebas diakses tanpa login)
+  if (
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register') ||
+    pathname.startsWith('/reset-password') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/api/') ||
+    pathname.startsWith('/_next') ||
+    pathname.includes('favicon.ico')
+  ) {
     return NextResponse.next();
   }
 
-  // ========================================================
-  // 1. PROTEKSI HALAMAN PEGAWAI (Supabase Auth) - DIPERBARUI
-  // ========================================================
-  if (pathname.startsWith('/upload') || pathname.startsWith('/arsip') || pathname.startsWith('/guest-monitoring-dashboard')) {
-    let response = NextResponse.next();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) { return request.cookies.get(name)?.value },
-          set(name: string, value: string, options: CookieOptions) {
-            request.cookies.set({ name, value, ...options });
-            response = NextResponse.next({ request: { headers: request.headers } });
-            response.cookies.set({ name, value, ...options });
-          },
-          remove(name: string, options: CookieOptions) {
-            request.cookies.set({ name, value: '', ...options });
-            response = NextResponse.next({ request: { headers: request.headers } });
-            response.cookies.set({ name, value: '', ...options });
-          },
-        },
-      }
-    );
+  // 2. PROTEKSI HALAMAN UTAMA / UPLOAD / ARSIP / ADMIN
+  // Semua halaman ini sekarang dilindungi oleh session_token JWT kustom kita
+  if (
+    pathname.startsWith('/upload') ||
+    pathname.startsWith('/arsip') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/guest-monitoring-dashboard') ||
+    pathname === '/'
+  ) {
+    const token = request.cookies.get('session_token')?.value;
 
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
+    // Jika tidak ada token, tendang ke halaman login
+    if (!token) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // --- TAMBAHAN: Cek Role untuk mencegah Guest masuk ke Admin ---
-    // Asumsi: Anda menyimpan role di user_metadata Supabase, misal: session.user.user_metadata.role
-    const userRole = session.user.user_metadata?.role || 'guest'; 
-
-    // Jika Guest mencoba mengakses halaman admin lewat URL, tendang ke dashboard guest
-    if (pathname.startsWith('/admin') && userRole !== 'admin') {
-       return NextResponse.redirect(new URL('/guest-monitoring-dashboard', request.url));
-    }
-
-    return response;
-  }
-
-  // ========================================================
-  // 2. PROTEKSI HALAMAN ADMIN (PIN JWT)
-  // ========================================================
-  if (pathname.startsWith('/admin')) {
-    if (pathname === '/admin/login-pin') return NextResponse.next();
-
-    const token = request.cookies.get('session_token')?.value;
-
-    if (!token) {
-      return NextResponse.redirect(new URL('/admin/login-pin', request.url));
-    }
-
     try {
+      // Verifikasi keabsahan token JWT
       await jwtVerify(token, SECRET_KEY);
+      return NextResponse.next();
     } catch (error) {
-      const response = NextResponse.redirect(new URL('/admin/login-pin', request.url));
+      // Jika token invalid atau kadaluarsa, hapus cookie dan arahkan ke login
+      const response = NextResponse.redirect(new URL('/login', request.url));
       response.cookies.delete('session_token');
       return response;
     }
@@ -81,5 +52,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
