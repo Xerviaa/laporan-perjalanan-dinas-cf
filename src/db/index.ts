@@ -7,17 +7,25 @@ import { getCloudflareContext } from "@opennextjs/cloudflare";
 export const getDb = cache(() => {
   let connectionString;
 
-  // Paksa pakai .env jika di lokal
-  if (process.env.NODE_ENV === "development") {
-    connectionString = process.env.DIRECT_URL;
-  } else {
-    // Jika di Cloudflare (production)
-    const { env } = getCloudflareContext();
-    connectionString = (env as any)?.HYPERDRIVE?.connectionString || process.env.DIRECT_URL;
+  try {
+    const { env } = getCloudflareContext() as { env: any };
+    // Cek apakah Hyperdrive terbaca di env Cloudflare
+    if (env?.HYPERDRIVE?.connectionString) {
+      connectionString = env.HYPERDRIVE.connectionString;
+      console.log("Menggunakan koneksi: HYPERDRIVE");
+    }
+  } catch (e) {
+    console.log("Gagal memuat Cloudflare context, fallback ke lokal/env");
+  }
+
+  // Jika tidak ada dari Hyperdrive (atau sedang di lokal), gunakan DIRECT_URL / .env
+  if (!connectionString) {
+    connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
+    console.log("Menggunakan koneksi: DIRECT_URL / Environment");
   }
 
   if (!connectionString) {
-    throw new Error("Connection string tidak ditemukan!");
+    throw new Error("Connection string database tidak ditemukan sama sekali!");
   }
 
   const pool = new Pool({ 
