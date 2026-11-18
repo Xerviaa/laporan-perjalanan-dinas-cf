@@ -8,19 +8,15 @@ const SECRET_KEY = new TextEncoder().encode('rahasia-negara-laporan-dinas-2026')
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ========================================================
-  // 0. PENGECUALIAN RUTE PUBLIK (Reset Password & Lupa Password)
-  // ========================================================
-  // Rute ini harus bisa diakses tanpa login agar link dari email bisa diproses
+  // 0. PENGECUALIAN RUTE PUBLIK
   if (pathname.startsWith('/reset-password') || pathname.startsWith('/forgot-password')) {
     return NextResponse.next();
   }
 
   // ========================================================
-  // 1. PROTEKSI HALAMAN PEGAWAI (Supabase Auth)
+  // 1. PROTEKSI HALAMAN PEGAWAI (Supabase Auth) - DIPERBARUI
   // ========================================================
-  // Rute /upload dan /arsip hanya bisa diakses jika sudah login via Supabase
-  if (pathname.startsWith('/upload') || pathname.startsWith('/arsip')) {
+  if (pathname.startsWith('/upload') || pathname.startsWith('/arsip') || pathname.startsWith('/guest-monitoring-dashboard')) {
     let response = NextResponse.next();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,10 +40,19 @@ export async function middleware(request: NextRequest) {
 
     const { data: { session } } = await supabase.auth.getSession();
 
-    // Jika belum login, lempar ke halaman login
     if (!session) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
+
+    // --- TAMBAHAN: Cek Role untuk mencegah Guest masuk ke Admin ---
+    // Asumsi: Anda menyimpan role di user_metadata Supabase, misal: session.user.user_metadata.role
+    const userRole = session.user.user_metadata?.role || 'guest'; 
+
+    // Jika Guest mencoba mengakses halaman admin lewat URL, tendang ke dashboard guest
+    if (pathname.startsWith('/admin') && userRole !== 'admin') {
+       return NextResponse.redirect(new URL('/guest-monitoring-dashboard', request.url));
+    }
+
     return response;
   }
 
@@ -55,12 +60,10 @@ export async function middleware(request: NextRequest) {
   // 2. PROTEKSI HALAMAN ADMIN (PIN JWT)
   // ========================================================
   if (pathname.startsWith('/admin')) {
-    // Halaman login PIN tidak boleh diproteksi oleh dirinya sendiri
     if (pathname === '/admin/login-pin') return NextResponse.next();
 
     const token = request.cookies.get('session_token')?.value;
 
-    // Jika tidak ada PIN token, lempar ke halaman login PIN
     if (!token) {
       return NextResponse.redirect(new URL('/admin/login-pin', request.url));
     }
@@ -68,7 +71,6 @@ export async function middleware(request: NextRequest) {
     try {
       await jwtVerify(token, SECRET_KEY);
     } catch (error) {
-      // Jika token PIN tidak valid, hapus dan lempar ke login PIN
       const response = NextResponse.redirect(new URL('/admin/login-pin', request.url));
       response.cookies.delete('session_token');
       return response;
@@ -79,6 +81,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Jalankan middleware di semua rute KECUALI file statis dan API
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
