@@ -1,5 +1,5 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import * as schema from "./schema";
 import { cache } from "react";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
@@ -20,8 +20,10 @@ export const getDb = cache(() => {
     throw new Error("Connection string tidak ditemukan!");
   }
 
-  // Gunakan postgres-js dengan opsi ssl dan non-prepared statements (aman untuk pooler/edge)
-  const client = postgres(connectionString, { ssl: 'require', prepare: false });
+  const pool = new Pool({ 
+    connectionString,
+    ssl: { rejectUnauthorized: false }
+  });
 
-  return drizzle(client, { schema });
+  return drizzle({ client: pool, schema });
 });
