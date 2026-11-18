@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -14,24 +13,31 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (error) {
-      setError('Email atau password salah.');
+      const data = await res.json();
+
+      if (res.ok && data.status === "success") {
+        // Login berhasil, arahkan ke halaman utama/monitoring
+        router.push('/admin/monitoring'); 
+        router.refresh();
+      } else {
+        setError(data.message || 'Email atau password salah.');
+        setLoading(false);
+      }
+    } catch (err) {
+      setError('Terjadi kesalahan pada server.');
       setLoading(false);
-    } else {
-      router.push('/upload');
-      router.refresh();
     }
   };
 
@@ -83,7 +89,7 @@ export default function LoginPage() {
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-blue-50/50 placeholder:text-slate-400 placeholder:opacity-70 placeholder:italic" 
-                placeholder="Gunakan email anda (contoh@gmail.com)" 
+                placeholder="Gunakan email anda (contoh@bppmhkp.go.id)" 
                 required 
               />
             </div>
@@ -113,7 +119,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* --- FITUR LUPA PASSWORD DITAMBAHKAN DI SINI --- */}
             <div className="flex justify-end">
               <Link href="/forgot-password" className="text-sm text-blue-600 hover:text-blue-800 font-semibold hover:underline">
                 Lupa password?

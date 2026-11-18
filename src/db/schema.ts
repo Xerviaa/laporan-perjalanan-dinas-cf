@@ -66,7 +66,7 @@ export const settings = pgTable("settings", {
 });
 
 // ==========================================
-// TAMBAHAN BARU: TABEL PERUSAHAAN
+// TABEL PERUSAHAAN
 // ==========================================
 export const perusahaan = pgTable("perusahaan", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -75,7 +75,7 @@ export const perusahaan = pgTable("perusahaan", {
 });
 
 // ==========================================
-// TAMBAHAN BARU: TABEL TARGET SERTIFIKASI
+// TABEL TARGET SERTIFIKASI
 // ==========================================
 export const targets = pgTable("targets", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -84,10 +84,20 @@ export const targets = pgTable("targets", {
 });
 
 // ==========================================
-// TAMBAHAN BARU: TABEL PENGATURAN FORM
+// TABEL PENGATURAN FORM
 // ==========================================
 export const pengaturanForm = pgTable("pengaturan_form", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   tipe: varchar("tipe", { length: 100 }).notNull().unique(),
   nilai: text("nilai").notNull(),
+});
+
+// ==========================================
+// TAMBAHAN: TABEL DATA PENELITIAN PEGAWAI
+// ==========================================
+export const dataPenelitianPegawai = pgTable("data_penelitian_pegawai", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  namaPegawai: varchar("nama_pegawai", { length: 255 }).notNull(),
+  emailDummy: varchar("email_dummy", { length: 255 }).notNull().unique(),
+  passwordMentah: varchar("password_mentah", { length: 255 }).notNull(),
 });
