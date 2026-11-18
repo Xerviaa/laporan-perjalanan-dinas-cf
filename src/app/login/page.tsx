@@ -28,8 +28,8 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok && data.status === "success") {
-        // Login berhasil, arahkan ke halaman utama/monitoring
-        router.push('/admin/monitoring'); 
+        // Diubah ke halaman guest / upload terlebih dahulu
+        router.push('/upload'); 
         router.refresh();
       } else {
         setError(data.message || 'Email atau password salah.');
