@@ -16,6 +16,7 @@ export default function DataPegawaiPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [totalPegawai, setTotalPegawai] = useState(0);
+  const [dbError, setDbError] = useState(''); // State baru untuk menampilkan error
 
   // Inisialisasi Supabase Client
   const supabase = createBrowserClient(
@@ -23,15 +24,19 @@ export default function DataPegawaiPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Fungsi untuk mengambil total data (untuk kartu ringkasan)
+  // Fungsi untuk mengambil total data
   const fetchTotal = async () => {
-    // Ambil semua data untuk menghitung total yang unik
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('data_penelitian_pegawai')
       .select('email_dummy');
       
+    if (error) {
+      console.error("Gagal ambil total:", error);
+      setDbError(`Gagal mengambil data: ${error.message}. Pastikan RLS sudah diatur.`);
+      return;
+    }
+
     if (data) {
-      // Filter duplikat untuk menghitung total yang benar (44, bukan 50)
       const uniqueEmails = new Set(data.map(item => item.email_dummy));
       setTotalPegawai(uniqueEmails.size);
     }
@@ -40,32 +45,32 @@ export default function DataPegawaiPage() {
   // Mengambil data dari database dengan pencarian
   const fetchPegawai = async (query: string) => {
     setLoading(true);
+    setDbError('');
     let dbQuery = supabase.from('data_penelitian_pegawai').select('id, nama_pegawai, email_dummy');
 
-    // Jika ada kata kunci pencarian, filter berdasarkan nama atau email
     if (query) {
       dbQuery = dbQuery.ilike('nama_pegawai', `%${query}%`).or(`email_dummy.ilike.%${query}%`);
     }
 
-    // Ambil data tanpa limit agar semua bisa difilter
-    const { data, error } = await dbQuery; 
+    // Ambil data dengan urutan ID
+    const { data, error } = await dbQuery.order('id', { ascending: true }).limit(100); 
 
-    if (!error && data) {
-      // TRIK: Membuang data ganda berdasarkan email
+    if (error) {
+      console.error("Gagal ambil pegawai:", error);
+      setDbError(`Error Database: ${error.message}`);
+      setPegawai([]);
+    } else if (data) {
+      // Filter data ganda
       const uniquePegawai = data.filter((v, i, a) => a.findIndex(v2 => (v2.email_dummy === v.email_dummy)) === i);
-      
-      // Batasi tampilan maksimal 50 data setelah difilter
       setPegawai(uniquePegawai.slice(0, 50));
     }
     setLoading(false);
   };
 
-  // Jalankan fetch saat pertama kali load
   useEffect(() => {
     fetchTotal();
   }, []);
 
-  // Jalankan pencarian saat searchTerm berubah (dengan delay debounce)
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchPegawai(searchTerm);
@@ -74,7 +79,6 @@ export default function DataPegawaiPage() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
-  // Fungsi untuk menyalin email ke clipboard
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     alert(`Email ${text} berhasil disalin!`);
@@ -95,6 +99,14 @@ export default function DataPegawaiPage() {
             Kembali
           </Link>
         </div>
+
+        {/* TAMPILAN ERROR DATABASE */}
+        {dbError && (
+          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-xl mb-6 shadow-sm">
+            <p className="font-bold">Terjadi Masalah Koneksi</p>
+            <p className="text-sm">{dbError}</p>
+          </div>
+        )}
 
         {/* Kartu Ringkasan & Pencarian */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
