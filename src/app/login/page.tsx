@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -13,10 +13,83 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // --- STATE & REF UNTUK CANVAS CAPTCHA ---
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [captchaCode, setCaptchaCode] = useState('');
+  const [captchaInput, setCaptchaInput] = useState('');
+
+  // Fungsi untuk menghasilkan teks acak dan menggambarnya ke Canvas
+  const generateCanvasCaptcha = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Karakter yang jelas (tanpa huruf/angka yang mirip seperti 0/O, 1/I)
+    let result = '';
+    for (let i = 0; i < 4; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setCaptchaCode(result);
+    setCaptchaInput('');
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Bersihkan canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Latar belakang gradasi/warna lembut
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Tambahkan garis-garis noise (gangguan) agar sulit dibaca bot OCR
+    for (let i = 0; i < 6; i++) {
+      ctx.strokeStyle = `rgba(${Math.random() * 150}, ${Math.random() * 150}, ${Math.random() * 150}, 0.5)`;
+      ctx.lineWidth = Math.random() * 2 + 1;
+      ctx.beginPath();
+      ctx.moveTo(Math.random() * canvas.width, Math.random() * canvas.height);
+      ctx.lineTo(Math.random() * canvas.width, Math.random() * canvas.height);
+      ctx.stroke();
+    }
+
+    // Tambahkan titik-titik noise
+    for (let i = 0; i < 30; i++) {
+      ctx.fillStyle = `rgba(${Math.random() * 200}, ${Math.random() * 200}, ${Math.random() * 200}, 0.7)`;
+      ctx.beginPath();
+      ctx.arc(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 2 + 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Gambar teks karakter satu per satu dengan sedikit kemiringan (rotation)
+    ctx.font = 'bold 28px monospace';
+    for (let i = 0; i < result.length; i++) {
+      ctx.save();
+      const x = 25 + i * 30;
+      const y = 32 + (Math.random() * 8 - 4);
+      
+      ctx.translate(x, y);
+      ctx.rotate((Math.random() - 0.5) * 0.4); // Miringkan sedikit
+      
+      ctx.fillStyle = '#1e293b';
+      ctx.fillText(result[i], 0, 0);
+      ctx.restore();
+    }
+  };
+
+  useEffect(() => {
+    generateCanvasCaptcha();
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // 1. VALIDASI CAPTCHA
+    if (captchaInput.trim().toUpperCase() !== captchaCode.toUpperCase()) {
+      setError('Kode Verifikasi CAPTCHA salah! Silakan coba lagi.');
+      generateCanvasCaptcha(); // Buat captcha baru
+      setLoading(false);
+      return;
+    }
 
     // Menggunakan AbortController untuk mencegah loading menggantung (timeout 10 detik)
     const controller = new AbortController();
@@ -39,6 +112,7 @@ export default function LoginPage() {
         router.refresh();
       } else {
         setError(data.message || 'Email atau password salah.');
+        generateCanvasCaptcha(); // Reset captcha jika login gagal dari server
         setLoading(false);
       }
     } catch (err: any) {
@@ -48,6 +122,7 @@ export default function LoginPage() {
       } else {
         setError('Terjadi kesalahan pada server.');
       }
+      generateCanvasCaptcha();
       setLoading(false);
     }
   };
@@ -135,6 +210,45 @@ export default function LoginPage() {
                 Lupa password?
               </Link>
             </div>
+
+            {/* --- KOTAK CANVAS CAPTCHA --- */}
+            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+              <label className="block text-xs font-bold text-slate-700 uppercase">
+                Verifikasi Keamanan (CAPTCHA)
+              </label>
+              
+              <div className="flex items-center gap-3">
+                {/* Elemen HTML5 Canvas untuk Gambar Captcha Ber-noise */}
+                <canvas 
+                  ref={canvasRef} 
+                  width={140} 
+                  height={45} 
+                  className="rounded-lg border border-slate-300 shadow-inner bg-white cursor-pointer"
+                  onClick={generateCanvasCaptcha}
+                  title="Klik untuk memuat ulang gambar"
+                />
+                
+                <button
+                  type="button"
+                  onClick={generateCanvasCaptcha}
+                  className="px-3 py-2 text-slate-600 hover:text-blue-600 bg-white border border-slate-300 rounded-xl transition-colors text-xs font-semibold shadow-sm flex items-center gap-1.5"
+                  title="Ganti Gambar"
+                >
+                  🔄 Refresh
+                </button>
+              </div>
+
+              <input
+                type="text"
+                value={captchaInput}
+                onChange={(e) => setCaptchaInput(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none text-sm font-mono uppercase bg-white tracking-widest placeholder:tracking-normal placeholder:normal-case placeholder:font-sans"
+                placeholder="Masukkan 4 karakter di atas"
+                maxLength={4}
+                required
+              />
+            </div>
+            {/* --------------------------- */}
 
             <button 
               type="submit" 

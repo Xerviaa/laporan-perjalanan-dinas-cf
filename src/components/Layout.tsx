@@ -33,7 +33,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   // --- CEK STATUS LOGIN ADMIN ---
   const checkAdminStatus = async () => {
     try {
-      const res = await fetch('/api/auth/check');
+      // DITAMBAHKAN { cache: 'no-store' } AGAR TIDAK TERSIMPAN DI CACHE NEXT.JS
+      const res = await fetch('/api/auth/check', { cache: 'no-store' });
       const data = await res.json();
       setIsAdmin(data.isAdmin);
     } catch (error) {
@@ -180,7 +181,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         { name: 'Upload Laporan', path: '/admin/upload', icon: '📤' },
         { name: 'Arsip Laporan', path: '/admin/arsip', icon: '📁' },
         { name: 'Monitoring Sertifikasi', path: '/admin/monitoring', icon: '📊' },
-        { name: 'Cari Data Pegawai', path: '/admin/data-pegawai', icon: '🔍' }, // <-- MENU BARU UNTUK PENCARIAN
+        { name: 'Cari Data Pegawai', path: '/admin/data-pegawai', icon: '🔍' },
         { name: 'Backup Google Drive', path: '/admin/backup', icon: '☁️' },
       ]
     : [
