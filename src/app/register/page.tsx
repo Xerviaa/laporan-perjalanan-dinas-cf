@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -9,36 +8,37 @@ import Image from 'next/image';
 export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // State baru
+  const [showPassword, setShowPassword] = useState(false);
   const [nama, setNama] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const router = useRouter();
-
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { nama_lengkap: nama, role: 'pegawai' }
-      }
-    });
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nama, email, password }),
+      });
 
-    if (error) {
-      setMessage(`Gagal mendaftar: ${error.message}`);
-    } else {
-      router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
+      const data = await res.json();
+
+      if (res.ok && data.status === "success") {
+        // Jika berhasil mendaftar, arahkan ke halaman login
+        router.push('/login');
+      } else {
+        setMessage(data.message || 'Gagal mendaftar.');
+        setLoading(false);
+      }
+    } catch (err) {
+      setMessage('Terjadi kesalahan pada server.');
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -109,16 +109,15 @@ export default function RegisterPage() {
               <label className="block text-sm font-bold text-slate-700 mb-1">Password</label>
               <div className="relative">
                 <input 
-                  type={showPassword ? "text" : "password"} // Tipe dinamis
+                  type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  value={password} 
+                  value= {password} 
                   onChange={(e) => setPassword(e.target.value)} 
                   className="w-full px-4 py-3 pr-12 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none transition-all bg-blue-50/50 placeholder:text-slate-400 placeholder:opacity-70 placeholder:italic" 
                   placeholder="••••••••" 
                   required 
                   minLength={6} 
                 />
-                {/* Tombol Mata */}
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -137,7 +136,7 @@ export default function RegisterPage() {
               disabled={loading} 
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-blue-200 disabled:opacity-50 mt-2"
             >
-              {loading ? 'Memproses...' : 'Daftar & Kirim OTP'}
+              {loading ? 'Memproses...' : 'Daftar Akun'}
             </button>
           </form>
           
