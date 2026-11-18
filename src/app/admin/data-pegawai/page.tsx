@@ -16,7 +16,13 @@ export default function DataPegawaiPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [totalPegawai, setTotalPegawai] = useState(0);
-  const [dbError, setDbError] = useState(''); // State baru untuk menampilkan error
+  const [dbError, setDbError] = useState('');
+  
+  // STATE UNTUK TOAST NOTIFIKASI
+  const [toast, setToast] = useState<{ show: boolean; message: string }>({
+    show: false,
+    message: '',
+  });
 
   // Inisialisasi Supabase Client
   const supabase = createBrowserClient(
@@ -79,13 +85,36 @@ export default function DataPegawaiPage() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
+  // FUNGSI COPY YANG SUDAH DIPERBARUI
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert(`Email ${text} berhasil disalin!`);
+    setToast({ show: true, message: `Email ${text} berhasil disalin!` });
+    setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 3000); // Notifikasi hilang setelah 3 detik
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8">
+    <div className="min-h-screen bg-slate-50 p-4 md:p-8 relative">
+      
+      {/* TOAST NOTIFIKASI MODERN */}
+      {toast.show && (
+        <div className="fixed top-24 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border-l-4 border-emerald-500 bg-white text-slate-800 animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-600">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div>
+            <p className="font-bold text-sm">Berhasil!</p>
+            <p className="text-xs text-slate-500">{toast.message}</p>
+          </div>
+          <button onClick={() => setToast({ ...toast, show: false })} className="ml-4 text-slate-400 hover:text-slate-600 cursor-pointer">
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto">
         
         {/* Header Halaman */}
