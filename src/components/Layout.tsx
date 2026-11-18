@@ -180,6 +180,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         { name: 'Upload Laporan', path: '/admin/upload', icon: '📤' },
         { name: 'Arsip Laporan', path: '/admin/arsip', icon: '📁' },
         { name: 'Monitoring Sertifikasi', path: '/admin/monitoring', icon: '📊' },
+        { name: 'Cari Data Pegawai', path: '/admin/data-pegawai', icon: '🔍' }, // <-- MENU BARU UNTUK PENCARIAN
         { name: 'Backup Google Drive', path: '/admin/backup', icon: '☁️' },
       ]
     : [
