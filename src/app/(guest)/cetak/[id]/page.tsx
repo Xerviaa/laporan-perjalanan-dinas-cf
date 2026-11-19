@@ -7,6 +7,7 @@ import TemplateInspeksiCPIB from "@/components/cetak/TemplateInspeksiCPIB";
 import TemplateInspeksiCBIB from "@/components/cetak/TemplateInspeksiCBIB";
 import TemplateSurveilanCBIB from "@/components/cetak/TemplateSurveilanCBIB";
 import TemplateSurveilanCPIB from "@/components/cetak/TemplateSurveilanCPIB";
+import TemplateInpres from "@/components/cetak/TemplateInpres";
 
 import { getDb } from "@/db";
 import { reports } from "@/db/schema";
@@ -47,7 +48,10 @@ export default async function CetakLaporan({
   
   const jenis = data.jenisKegiatan?.toLowerCase() || "";
 
-  if (jenis.includes("surveilan cbib") || jenis.includes("survailen cbib")) {
+  if (jenis.includes("inpres")) {
+    kontenLaporan = <TemplateInpres data={data} />;
+  }
+  else if (jenis.includes("surveilan cbib") || jenis.includes("survailen cbib")) {
     kontenLaporan = <TemplateSurveilanCBIB data={data} />;
   }
   else if (jenis.includes("inspeksi cbib")) {
