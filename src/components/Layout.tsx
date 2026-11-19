@@ -188,6 +188,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         { name: 'Dashboard Monitoring', path: '/monitoring-dashboard', icon: '📈' },
         { name: 'Upload Laporan', path: '/upload', icon: '📤' },
         { name: 'Arsip Laporan', path: '/arsip', icon: '📁' },
+        { name: 'Monitoring Sertifikasi', path: '/guest-monitoring', icon: '📊' },
         { name: 'Google Drive', path: 'https://drive.google.com/drive/u/1/folders/18AeC2O2DGvx1zAoiZmHoExFiQsMXoHdv', icon: '☁️' },
       ];
 
