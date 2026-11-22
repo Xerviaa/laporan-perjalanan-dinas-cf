@@ -232,15 +232,7 @@ e. ...`;
 
         <table className="w-full border-collapse border border-black text-[11pt]">
           <thead>
-            <tr
-              className="bg-neutral-800 text-white"
-              style={{
-                backgroundColor: '#262626',
-                color: '#ffffff',
-                printColorAdjust: 'exact',
-                WebkitPrintColorAdjust: 'exact',
-              }}
-            >
+            <tr className="bg-white text-black">
               <th
                 colSpan={2}
                 className="border border-black px-3 py-2 text-center font-bold uppercase text-[10.5pt] leading-snug"

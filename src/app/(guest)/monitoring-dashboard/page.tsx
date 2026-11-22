@@ -15,10 +15,11 @@ export default function MonitoringDashboardPage() {
     type: 'success',
   });
 
-  // State untuk Filter Sertifikasi (Otomatis set ke bulan & tahun saat ini)
+  // State untuk Filter Sertifikasi
   const now = new Date();
   const [filterYear, setFilterYear] = useState<string>(now.getFullYear().toString());
-  const [filterMonth, setFilterMonth] = useState<string>(now.getMonth().toString());
+  const [filterPeriodType, setFilterPeriodType] = useState<string>('bulanan'); 
+  const [filterPeriodValue, setFilterPeriodValue] = useState<string>(now.getMonth().toString());
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ show: true, message, type });
@@ -108,11 +109,28 @@ export default function MonitoringDashboardPage() {
     if (!isSertifikasi) return false;
 
     const d = r.tanggal ? new Date(r.tanggal) : new Date(r.createdAt);
-    
-    const matchYear = filterYear === 'all' || d.getFullYear().toString() === filterYear;
-    const matchMonth = filterMonth === 'all' || d.getMonth().toString() === filterMonth;
-    
-    return matchYear && matchMonth;
+    const reportYear = d.getFullYear().toString();
+    const reportMonth = d.getMonth();
+
+    // 1. Cek Tahun
+    if (filterYear !== 'all' && reportYear !== filterYear) return false;
+
+    // 2. Cek Periode
+    if (filterPeriodType === 'bulanan') {
+      if (filterPeriodValue !== 'all' && reportMonth.toString() !== filterPeriodValue) return false;
+    } else if (filterPeriodType === 'triwulan') {
+      const q = parseInt(filterPeriodValue);
+      const startMonth = (q - 1) * 3;
+      const endMonth = startMonth + 2;
+      if (reportMonth < startMonth || reportMonth > endMonth) return false;
+    } else if (filterPeriodType === 'semester') {
+      const s = parseInt(filterPeriodValue);
+      const startMonth = (s - 1) * 6;
+      const endMonth = startMonth + 5;
+      if (reportMonth < startMonth || reportMonth > endMonth) return false;
+    }
+
+    return true;
   });
 
   // Data Target Sertifikasi
@@ -122,7 +140,6 @@ export default function MonitoringDashboardPage() {
     'Selfdecare Kapal': 50, 'Inpres': 50
   };
   
-  // Menggunakan `filteredSertifikasi` agar tabel kiri berubah sesuai filter kanan
   const capaianSertifikasi = Object.keys(sertifikasiTargets).map((jenis) => {
     const realisasi = filteredSertifikasi.filter((r) => r.jenisKegiatan?.includes(jenis)).length;
     const target = sertifikasiTargets[jenis];
@@ -155,6 +172,18 @@ export default function MonitoringDashboardPage() {
     );
   };
 
+  // Helper untuk Label Periode
+  const getPeriodLabel = () => {
+    if (filterYear === 'all' && filterPeriodType === 'bulanan' && filterPeriodValue === 'all') return 'Semua Data Sertifikasi';
+    let label = `Periode: `;
+    if (filterPeriodType === 'bulanan') label += (filterPeriodValue !== 'all' ? monthsList.find(m => m.val === filterPeriodValue)?.name : 'Semua Bulan');
+    else if (filterPeriodType === 'triwulan') label += `Triwulan ${filterPeriodValue}`;
+    else if (filterPeriodType === 'semester') label += `Semester ${filterPeriodValue}`;
+    else label += 'Tahunan';
+    if (filterYear !== 'all') label += ` ${filterYear}`;
+    return label;
+  };
+
   return (
     <Layout>
       {/* TOAST NOTIFIKASI */}
@@ -184,7 +213,7 @@ export default function MonitoringDashboardPage() {
       {/* BACKGROUND GRADIENT HALUS DI AREA KONTEN */}
       <div className="bg-slate-50/50 p-2 rounded-2xl -m-2">
         
-        {/* HEADER TITLE DENGAN DATA TERKINI DI KANAN ATAS */}
+        {/* HEADER TITLE */}
         <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black text-slate-800 tracking-tight">Monitoring Overview</h1>
@@ -256,7 +285,7 @@ export default function MonitoringDashboardPage() {
         {/* GRID UNTUK TABEL & PANEL FILTER */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
           
-          {/* TABEL SERTIFIKASI (Lebih Besar, 2 Kolom) */}
+          {/* TABEL SERTIFIKASI */}
           <div className="xl:col-span-2 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
               <div>
@@ -273,11 +302,8 @@ export default function MonitoringDashboardPage() {
                   </span>
                   Tabel Sertifikasi
                 </h2>
-                {/* Keterangan Periode */}
                 <p className="text-[11px] text-slate-500 mt-1 ml-8 font-medium">
-                  {filterYear === 'all' && filterMonth === 'all' 
-                    ? 'Semua Data Sertifikasi' 
-                    : `Periode: ${filterMonth !== 'all' ? monthsList.find(m => m.val === filterMonth)?.name : 'Semua Bulan'} ${filterYear !== 'all' ? filterYear : ''}`}
+                  {getPeriodLabel()}
                 </p>
               </div>
             </div>
@@ -314,7 +340,7 @@ export default function MonitoringDashboardPage() {
             </div>
           </div>
 
-          {/* PANEL FILTER SERTIFIKASI (Lebih Kecil, 1 Kolom) */}
+          {/* PANEL FILTER SERTIFIKASI */}
           <div className="xl:col-span-1 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden flex flex-col sticky top-24">
             <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
               <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -337,17 +363,56 @@ export default function MonitoringDashboardPage() {
                   {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                 </select>
               </div>
+
+              {/* Tipe Periode */}
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Bulan</label>
-                <select 
-                  value={filterMonth} 
-                  onChange={(e) => setFilterMonth(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
-                >
-                  <option value="all">Semua Bulan</option>
-                  {monthsList.map(m => <option key={m.val} value={m.val}>{m.name}</option>)}
+                <label className="block text-xs font-bold text-slate-500 mb-1">Tipe Periode</label>
+                <select value={filterPeriodType} onChange={(e) => { setFilterPeriodType(e.target.value); setFilterPeriodValue('1'); }} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                  <option value="bulanan">Bulanan</option>
+                  <option value="triwulan">Triwulan</option>
+                  <option value="semester">Semester</option>
+                  <option value="tahunan">Tahunan</option>
                 </select>
               </div>
+
+              {/* Nilai Periode (Dinamis) */}
+              {filterPeriodType === 'bulanan' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Bulan</label>
+                  <select value={filterPeriodValue} onChange={(e) => setFilterPeriodValue(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                    <option value="all">Semua Bulan</option>
+                    {monthsList.map(m => <option key={m.val} value={m.val}>{m.name}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {filterPeriodType === 'triwulan' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Triwulan</label>
+                  <select value={filterPeriodValue} onChange={(e) => setFilterPeriodValue(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                    <option value="1">Triwulan 1 (Jan - Mar)</option>
+                    <option value="2">Triwulan 2 (Apr - Jun)</option>
+                    <option value="3">Triwulan 3 (Jul - Sep)</option>
+                    <option value="4">Triwulan 4 (Okt - Des)</option>
+                  </select>
+                </div>
+              )}
+
+              {filterPeriodType === 'semester' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Semester</label>
+                  <select value={filterPeriodValue} onChange={(e) => setFilterPeriodValue(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                    <option value="1">Semester 1 (Jan - Jun)</option>
+                    <option value="2">Semester 2 (Jul - Des)</option>
+                  </select>
+                </div>
+              )}
+
+              {filterPeriodType === 'tahunan' && (
+                <div className="text-xs text-slate-500 italic p-2 bg-slate-50 rounded border border-slate-100">
+                  Menampilkan data sepanjang tahun {filterYear === 'all' ? 'yang dipilih' : filterYear}.
+                </div>
+              )}
             </div>
           </div>
 
