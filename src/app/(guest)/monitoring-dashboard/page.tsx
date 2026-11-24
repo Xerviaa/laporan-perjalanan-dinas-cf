@@ -7,18 +7,17 @@ export default function MonitoringDashboardPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
-  // STATE UNTUK TOAST NOTIFIKASI
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
     show: false,
     message: '',
     type: 'success',
   });
 
-  // State untuk Filter Sertifikasi
   const now = new Date();
   const [filterYear, setFilterYear] = useState<string>(now.getFullYear().toString());
-  const [filterPeriodType, setFilterPeriodType] = useState<string>('bulanan'); 
+  const [filterPeriodType, setFilterPeriodType] = useState<string>('bulanan');
   const [filterPeriodValue, setFilterPeriodValue] = useState<string>(now.getMonth().toString());
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -38,7 +37,7 @@ export default function MonitoringDashboardPage() {
       }
       return false;
     } catch (error) {
-      console.error("Gagal mengambil data:", error);
+      console.error('Gagal mengambil data:', error);
       return false;
     } finally {
       setLoading(false);
@@ -52,7 +51,6 @@ export default function MonitoringDashboardPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     const success = await fetchReports();
-    
     setTimeout(() => {
       setIsRefreshing(false);
       if (success) {
@@ -60,14 +58,28 @@ export default function MonitoringDashboardPage() {
       } else {
         showToast('Gagal memperbarui data.', 'error');
       }
-    }, 500);
+    }, 400);
   };
 
-  if (loading) return <Layout><div className="p-10 text-center text-slate-500 animate-pulse">Memuat Dashboard...</div></Layout>;
+  const handleResetFilter = () => {
+    setFilterYear(now.getFullYear().toString());
+    setFilterPeriodType('bulanan');
+    setFilterPeriodValue(now.getMonth().toString());
+  };
 
-  // --- LOGIKA PERHITUNGAN DATA ---
+  if (loading) {
+    return (
+      <Layout>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center gap-2.5 text-sm text-slate-500">
+          <span className="w-7 h-7 rounded-full border-2 border-indigo-200 border-t-indigo-600 animate-spin" />
+          <span>Menyiapkan workspace monitoring...</span>
+        </div>
+      </Layout>
+    );
+  }
+
+  // --- PERHITUNGAN STATUS BERKAS ---
   const totalKegiatan = reports.length;
-
   let berkasLengkap = 0;
   let belumAdaBerkas = 0;
   let belumLengkap = 0;
@@ -76,46 +88,77 @@ export default function MonitoringDashboardPage() {
     const hasSuratTugas = report.suratTugas && report.suratTugas !== '[]';
     const hasBerkasKegiatan = report.berkasKegiatan && report.berkasKegiatan !== '[]';
     const hasBerkasPerbaikan = report.berkasPerbaikan && report.berkasPerbaikan !== '[]';
-    const hasPemeriksaan = report.berkasPemeriksaanTindakanPerbaikan && report.berkasPemeriksaanTindakanPerbaikan !== '[]';
+    const hasPemeriksaan =
+      report.berkasPemeriksaanTindakanPerbaikan &&
+      report.berkasPemeriksaanTindakanPerbaikan !== '[]';
 
-    const totalFileTerisi = [hasSuratTugas, hasBerkasKegiatan, hasBerkasPerbaikan, hasPemeriksaan].filter(Boolean).length;
+    const totalFileTerisi = [
+      hasSuratTugas,
+      hasBerkasKegiatan,
+      hasBerkasPerbaikan,
+      hasPemeriksaan,
+    ].filter(Boolean).length;
 
-    if (totalFileTerisi === 4) {
-      berkasLengkap++;
-    } else if (totalFileTerisi === 0) {
-      belumAdaBerkas++;
-    } else {
-      belumLengkap++;
-    }
+    if (totalFileTerisi === 4) berkasLengkap++;
+    else if (totalFileTerisi === 0) belumAdaBerkas++;
+    else belumLengkap++;
   });
 
+  const wLengkap = totalKegiatan > 0 ? (berkasLengkap / totalKegiatan) * 100 : 0;
+  const wBelumLengkap = totalKegiatan > 0 ? (belumLengkap / totalKegiatan) * 100 : 0;
+  const wBelumAda = totalKegiatan > 0 ? (belumAdaBerkas / totalKegiatan) * 100 : 0;
+  const rasioKepatuhan = totalKegiatan > 0 ? Math.round(wLengkap) : 0;
+
   // --- LOGIKA FILTER ---
-  const availableYears = Array.from(new Set(reports.map((r: any) => {
-    const d = r.tanggal ? new Date(r.tanggal) : new Date(r.createdAt);
-    return d.getFullYear().toString();
-  }))).sort().reverse();
+  const availableYears = Array.from(
+    new Set(
+      reports.map((r: any) => {
+        const d = r.tanggal ? new Date(r.tanggal) : new Date(r.createdAt);
+        return d.getFullYear().toString();
+      })
+    )
+  )
+    .sort()
+    .reverse();
 
   const monthsList = [
-    { val: '0', name: 'Januari' }, { val: '1', name: 'Februari' }, { val: '2', name: 'Maret' },
-    { val: '3', name: 'April' }, { val: '4', name: 'Mei' }, { val: '5', name: 'Juni' },
-    { val: '6', name: 'Juli' }, { val: '7', name: 'Agustus' }, { val: '8', name: 'September' },
-    { val: '9', name: 'Oktober' }, { val: '10', name: 'November' }, { val: '11', name: 'Desember' }
+    { val: '0', name: 'Januari' },
+    { val: '1', name: 'Februari' },
+    { val: '2', name: 'Maret' },
+    { val: '3', name: 'April' },
+    { val: '4', name: 'Mei' },
+    { val: '5', name: 'Juni' },
+    { val: '6', name: 'Juli' },
+    { val: '7', name: 'Agustus' },
+    { val: '8', name: 'September' },
+    { val: '9', name: 'Oktober' },
+    { val: '10', name: 'November' },
+    { val: '11', name: 'Desember' },
   ];
 
   const filteredSertifikasi = reports.filter((r: any) => {
     if (!r.jenisKegiatan) return false;
-    
-    const isSertifikasi = ['CBIB', 'CPIB', 'CPPIB', 'CPOIB', 'CDOIB', 'CPIB Kapal', 'HACCP', 'SKP', 'SPDI', 'Selfdecare Kapal', 'Inpres'].some(j => r.jenisKegiatan.includes(j));
+    const isSertifikasi = [
+      'CBIB',
+      'CPIB',
+      'CPPIB',
+      'CPOIB',
+      'CDOIB',
+      'CPIB Kapal',
+      'HACCP',
+      'SKP',
+      'SPDI',
+      'Selfdecare Kapal',
+      'Inpres',
+    ].some((j) => r.jenisKegiatan.includes(j));
     if (!isSertifikasi) return false;
 
     const d = r.tanggal ? new Date(r.tanggal) : new Date(r.createdAt);
     const reportYear = d.getFullYear().toString();
     const reportMonth = d.getMonth();
 
-    // 1. Cek Tahun
     if (filterYear !== 'all' && reportYear !== filterYear) return false;
 
-    // 2. Cek Periode
     if (filterPeriodType === 'bulanan') {
       if (filterPeriodValue !== 'all' && reportMonth.toString() !== filterPeriodValue) return false;
     } else if (filterPeriodType === 'triwulan') {
@@ -133,13 +176,20 @@ export default function MonitoringDashboardPage() {
     return true;
   });
 
-  // Data Target Sertifikasi
   const sertifikasiTargets: { [key: string]: number } = {
-    'CBIB': 30, 'CPIB': 30, 'CPPIB': 30, 'CPOIB': 30, 'CDOIB': 30, 
-    'CPIB Kapal': 30, 'HACCP': 30, 'SKP': 30, 'SPDI': 30,
-    'Selfdecare Kapal': 50, 'Inpres': 50
+    CBIB: 30,
+    CPIB: 30,
+    CPPIB: 30,
+    CPOIB: 30,
+    CDOIB: 30,
+    'CPIB Kapal': 30,
+    HACCP: 30,
+    SKP: 30,
+    SPDI: 30,
+    'Selfdecare Kapal': 50,
+    Inpres: 50,
   };
-  
+
   const capaianSertifikasi = Object.keys(sertifikasiTargets).map((jenis) => {
     const realisasi = filteredSertifikasi.filter((r) => r.jenisKegiatan?.includes(jenis)).length;
     const target = sertifikasiTargets[jenis];
@@ -147,275 +197,458 @@ export default function MonitoringDashboardPage() {
     return { jenis, target, realisasi, persentase };
   });
 
-  // Komponen Donut Chart Sederhana
-  const DonutChart = ({ percentage, color }: { percentage: number, color: string }) => {
-    const radius = 28;
-    const circumference = 2 * Math.PI * radius;
-    const strokeDashoffset = circumference - (Math.min(percentage, 100) / 100) * circumference;
-    
-    return (
-      <div className="relative w-16 h-16 flex items-center justify-center">
-        <svg className="transform -rotate-90 w-16 h-16">
-          <circle cx="32" cy="32" r={radius} stroke="#f1f5f9" strokeWidth="6" fill="none" />
-          <circle 
-            cx="32" cy="32" r={radius} 
-            stroke={color} 
-            strokeWidth="6" fill="none" 
-            strokeDasharray={circumference} 
-            strokeDashoffset={strokeDashoffset} 
-            strokeLinecap="round"
-            className="transition-all duration-1000 ease-out"
-          />
-        </svg>
-        <div className="absolute text-xs font-bold text-slate-700">{percentage}%</div>
-      </div>
-    );
-  };
+  const jenisBerjalan = capaianSertifikasi.filter((item) => item.realisasi > 0).length;
 
-  // Helper untuk Label Periode
   const getPeriodLabel = () => {
-    if (filterYear === 'all' && filterPeriodType === 'bulanan' && filterPeriodValue === 'all') return 'Semua Data Sertifikasi';
-    let label = `Periode: `;
-    if (filterPeriodType === 'bulanan') label += (filterPeriodValue !== 'all' ? monthsList.find(m => m.val === filterPeriodValue)?.name : 'Semua Bulan');
-    else if (filterPeriodType === 'triwulan') label += `Triwulan ${filterPeriodValue}`;
-    else if (filterPeriodType === 'semester') label += `Semester ${filterPeriodValue}`;
-    else label += 'Tahunan';
+    if (filterYear === 'all' && filterPeriodType === 'bulanan' && filterPeriodValue === 'all') {
+      return 'Semua Data';
+    }
+    let label = '';
+    if (filterPeriodType === 'bulanan') {
+      label +=
+        filterPeriodValue !== 'all'
+          ? monthsList.find((m) => m.val === filterPeriodValue)?.name
+          : 'Semua Bulan';
+    } else if (filterPeriodType === 'triwulan') {
+      label += `Triwulan ${filterPeriodValue}`;
+    } else if (filterPeriodType === 'semester') {
+      label += `Semester ${filterPeriodValue}`;
+    } else {
+      label += 'Tahunan';
+    }
     if (filterYear !== 'all') label += ` ${filterYear}`;
-    return label;
+    return label.trim();
   };
 
   return (
     <Layout>
-      {/* TOAST NOTIFIKASI */}
       {toast.show && (
-        <div className={`fixed top-24 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-xl border-l-4 animate-in slide-in-from-top-4 fade-in duration-300 ${
-          toast.type === 'success' ? 'bg-white border-emerald-500 text-slate-800' : 'bg-white border-red-500 text-slate-800'
-        }`}>
-          <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-            toast.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
-          }`}>
-            {toast.type === 'success' ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            )}
-          </div>
-          <div>
-            <p className="font-bold text-sm">{toast.type === 'success' ? 'Berhasil!' : 'Gagal!'}</p>
-            <p className="text-xs text-slate-500">{toast.message}</p>
-          </div>
-          <button onClick={() => setToast({ ...toast, show: false })} className="ml-4 text-slate-400 hover:text-slate-600 cursor-pointer">
-            ✕
-          </button>
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white rounded-full shadow-xl border border-slate-700/80 px-4 py-2.5 flex items-center gap-2.5 text-xs font-medium">
+          <span
+            className={`w-2 h-2 rounded-full ${
+              toast.type === 'success' ? 'bg-emerald-400' : 'bg-rose-400'
+            }`}
+          />
+          <span>{toast.message}</span>
         </div>
       )}
 
-      {/* BACKGROUND GRADIENT HALUS DI AREA KONTEN */}
-      <div className="bg-slate-50/50 p-2 rounded-2xl -m-2">
-        
-        {/* HEADER TITLE */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <div className="space-y-6">
+        {/* TOP COMMAND BAR */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight">Monitoring Overview</h1>
-            <p className="text-slate-500 mt-1 text-sm font-medium">Pantau capaian sertifikasi dan status berkas secara real-time.</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-indigo-600">
+              Pusat Kendali Laporan
+            </p>
+            <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight mt-0.5">
+              Monitoring Overview
+            </h1>
           </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200 text-sm font-semibold text-slate-600 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              Data Terkini
+
+          <div className="flex items-center gap-2.5">
+            <div className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-full bg-white border border-slate-200/90 shadow-2xs text-xs text-slate-600">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Sinkron Aktif</span>
+              <span className="text-slate-300">•</span>
+              <span className="font-semibold text-slate-900">{getPeriodLabel()}</span>
             </div>
-            <button 
+
+            <button
+              type="button"
               onClick={handleRefresh}
               disabled={isRefreshing}
-              className="bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg shadow-sm border border-slate-200 text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer disabled:opacity-50 shadow-sm"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isRefreshing ? "animate-spin" : ""}>
-                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"></path>
-                <path d="M21 3v5h-5"></path>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={isRefreshing ? 'animate-spin' : ''}
+              >
+                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
               </svg>
               {isRefreshing ? 'Memuat...' : 'Refresh'}
             </button>
           </div>
         </div>
 
-        {/* KARTU RINGKASAN */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {/* 1. Total */}
-          <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-            <div>
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Total Kegiatan</p>
-              <p className="text-3xl font-black text-slate-800">{totalKegiatan}</p>
-            </div>
-            <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center text-xl">📋</div>
-          </div>
+        {/* ASYMMETRIC SPLIT TOP: DISTRIBUSI BERKAS + FILTER INTERAKTIF */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
+          {/* KIRI (7 KOLOM): DISTRIBUSI KELENGKAPAN BERKAS */}
+          <div className="xl:col-span-7 relative overflow-hidden bg-white rounded-2xl border border-slate-200/90 p-5 md:p-6 shadow-2xs flex flex-col justify-between gap-5">
+            <div className="pointer-events-none absolute -top-20 -right-20 w-52 h-52 rounded-full bg-indigo-500/5 blur-2xl" />
 
-          {/* 2. Berkas Lengkap */}
-          <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500"></div>
-            <div>
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Berkas Lengkap</p>
-              <p className="text-3xl font-black text-slate-800">{berkasLengkap}</p>
-            </div>
-            <div className="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center text-xl">✅</div>
-          </div>
-
-          {/* 3. Belum Lengkap */}
-          <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-amber-400"></div>
-            <div>
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Belum Lengkap</p>
-              <p className="text-3xl font-black text-slate-800">{belumLengkap}</p>
-            </div>
-            <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center text-xl">⏳</div>
-          </div>
-
-          {/* 4. Belum Ada Berkas */}
-          <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 flex items-center justify-between relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
-            <div>
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">Belum Ada Berkas</p>
-              <p className="text-3xl font-black text-slate-800">{belumAdaBerkas}</p>
-            </div>
-            <div className="w-10 h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center text-xl">⚠️</div>
-          </div>
-        </div>
-
-        {/* GRID UNTUK TABEL & PANEL FILTER */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-          
-          {/* TABEL SERTIFIKASI */}
-          <div className="xl:col-span-2 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+            <div className="relative flex items-start justify-between gap-4">
               <div>
-                <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                  <span className="w-6 h-6 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-                      <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-                      <path d="M4 22h16"></path>
-                      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
-                      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
-                      <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
-                    </svg>
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Status Administrasi
+                </span>
+                <div className="flex items-baseline gap-3 mt-1">
+                  <span className="text-4xl font-extrabold text-slate-900 tabular-nums tracking-tight">
+                    {totalKegiatan}
                   </span>
-                  Tabel Sertifikasi
-                </h2>
-                <p className="text-[11px] text-slate-500 mt-1 ml-8 font-medium">
-                  {getPeriodLabel()}
-                </p>
+                  <span className="text-sm text-slate-500">total kegiatan terdata</span>
+                </div>
+              </div>
+
+              <div className="inline-flex items-center gap-2.5 bg-emerald-500/10 border border-emerald-500/25 rounded-full px-3.5 py-1.5 shrink-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-xs font-medium text-emerald-800">Berkas Tuntas</span>
+                <span className="text-sm font-extrabold text-emerald-900 tabular-nums">
+                  {rasioKepatuhan}%
+                </span>
               </div>
             </div>
-            
-            <div className="overflow-y-auto max-h-[500px] custom-scrollbar">
-              <table className="w-full text-xs text-left relative">
-                <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider font-bold sticky top-0 z-10 shadow-sm">
-                  <tr>
-                    <th className="px-4 py-3">Jenis</th>
-                    <th className="px-4 py-3 text-center">Target</th>
-                    <th className="px-4 py-3 text-center">Real.</th>
-                    <th className="px-4 py-3 text-center">Capaian</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {capaianSertifikasi.map((item, idx) => {
-                    let strokeColor = '#ef4444'; 
-                    if (item.persentase >= 80) strokeColor = '#10b981'; 
-                    else if (item.persentase >= 40) strokeColor = '#f59e0b'; 
 
-                    return (
-                      <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
-                        <td className="px-4 py-2 font-bold text-slate-700">{item.jenis}</td>
-                        <td className="px-4 py-2 text-center text-slate-500 font-medium">{item.target}</td>
-                        <td className="px-4 py-2 text-center font-bold text-slate-800">{item.realisasi}</td>
-                        <td className="px-4 py-2 flex justify-center">
-                           <DonutChart percentage={item.persentase} color={strokeColor} />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            {/* STACKED SEGMENTED BAR */}
+            <div className="relative space-y-2">
+              <div className="w-full h-3.5 rounded-full bg-slate-100 overflow-hidden flex gap-0.5 p-0.5 ring-1 ring-inset ring-slate-200/60">
+                {wLengkap > 0 && (
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
+                    style={{ width: `${wLengkap}%` }}
+                    title={`Berkas Lengkap: ${berkasLengkap}`}
+                  />
+                )}
+                {wBelumLengkap > 0 && (
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-400 transition-all duration-500"
+                    style={{ width: `${wBelumLengkap}%` }}
+                    title={`Belum Lengkap: ${belumLengkap}`}
+                  />
+                )}
+                {wBelumAda > 0 && (
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-rose-500 to-pink-500 transition-all duration-500"
+                    style={{ width: `${wBelumAda}%` }}
+                    title={`Belum Ada Berkas: ${belumAdaBerkas}`}
+                  />
+                )}
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+                <span>Kelengkapan dokumen tiap laporan</span>
+                <span className="tabular-nums font-medium text-slate-600">
+                  {berkasLengkap + belumLengkap + belumAdaBerkas} terklasifikasi
+                </span>
+              </div>
+            </div>
+
+            {/* 3 BREAKDOWN CHIPS */}
+            <div className="relative grid grid-cols-3 gap-3 pt-1">
+              <div className="rounded-xl bg-slate-50/90 border border-slate-200/80 border-l-4 border-l-emerald-500 p-3">
+                <div className="text-[11px] font-semibold text-slate-600">Lengkap</div>
+                <div className="text-xl font-extrabold text-slate-900 mt-1 tabular-nums">
+                  {berkasLengkap}
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-slate-50/90 border border-slate-200/80 border-l-4 border-l-amber-400 p-3">
+                <div className="text-[11px] font-semibold text-slate-600">Belum Lengkap</div>
+                <div className="text-xl font-extrabold text-slate-900 mt-1 tabular-nums">
+                  {belumLengkap}
+                </div>
+              </div>
+
+              <div className="rounded-xl bg-slate-50/90 border border-slate-200/80 border-l-4 border-l-rose-500 p-3">
+                <div className="text-[11px] font-semibold text-slate-600">Tanpa Berkas</div>
+                <div className="text-xl font-extrabold text-slate-900 mt-1 tabular-nums">
+                  {belumAdaBerkas}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* PANEL FILTER SERTIFIKASI */}
-          <div className="xl:col-span-1 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 overflow-hidden flex flex-col sticky top-24">
-            <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-              <h2 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-                <span className="w-6 h-6 rounded bg-rose-100 text-rose-600 flex items-center justify-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                </span>
-                Filter Data
-              </h2>
-            </div>
-            
-            <div className="p-4 flex flex-col gap-4">
+          {/* KANAN (5 KOLOM): PANEL FILTER INTERAKTIF */}
+          <div className="xl:col-span-5 bg-white rounded-2xl border border-slate-200/90 p-5 md:p-6 shadow-2xs flex flex-col justify-between gap-4">
+            <div className="flex items-center justify-between">
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Tahun</label>
-                <select 
-                  value={filterYear} 
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  Penyaringan Periode
+                </span>
+                <h2 className="text-base font-bold text-slate-900 mt-0.5">Filter Sertifikasi</h2>
+              </div>
+              <button
+                type="button"
+                onClick={handleResetFilter}
+                className="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+              >
+                Reset
+              </button>
+            </div>
+
+            {/* SEGMENTED TIPE PERIODE */}
+            <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-slate-100 border border-slate-200/70">
+              {[
+                { id: 'bulanan', label: 'Bulan' },
+                { id: 'triwulan', label: 'Triwulan' },
+                { id: 'semester', label: 'Semester' },
+                { id: 'tahunan', label: 'Tahun' },
+              ].map((tab) => {
+                const active = filterPeriodType === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => {
+                      setFilterPeriodType(tab.id);
+                      setFilterPeriodValue(tab.id === 'bulanan' ? now.getMonth().toString() : '1');
+                    }}
+                    className={`py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      active
+                        ? 'bg-white text-indigo-700 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* DROPDOWN TAHUN + PERIODE SPESIFIK */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                  Tahun
+                </label>
+                <select
+                  value={filterYear}
                   onChange={(e) => setFilterYear(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white px-3 py-2 text-xs sm:text-sm font-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer transition-all"
                 >
                   <option value="all">Semua Tahun</option>
-                  {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                  {availableYears.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              {/* Tipe Periode */}
-              <div>
-                <label className="block text-xs font-bold text-slate-500 mb-1">Tipe Periode</label>
-                <select value={filterPeriodType} onChange={(e) => { setFilterPeriodType(e.target.value); setFilterPeriodValue('1'); }} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
-                  <option value="bulanan">Bulanan</option>
-                  <option value="triwulan">Triwulan</option>
-                  <option value="semester">Semester</option>
-                  <option value="tahunan">Tahunan</option>
-                </select>
-              </div>
-
-              {/* Nilai Periode (Dinamis) */}
               {filterPeriodType === 'bulanan' && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1">Bulan</label>
-                  <select value={filterPeriodValue} onChange={(e) => setFilterPeriodValue(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
+                  <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                    Bulan
+                  </label>
+                  <select
+                    value={filterPeriodValue}
+                    onChange={(e) => setFilterPeriodValue(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white px-3 py-2 text-xs sm:text-sm font-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer transition-all"
+                  >
                     <option value="all">Semua Bulan</option>
-                    {monthsList.map(m => <option key={m.val} value={m.val}>{m.name}</option>)}
+                    {monthsList.map((m) => (
+                      <option key={m.val} value={m.val}>
+                        {m.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
 
               {filterPeriodType === 'triwulan' && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1">Triwulan</label>
-                  <select value={filterPeriodValue} onChange={(e) => setFilterPeriodValue(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
-                    <option value="1">Triwulan 1 (Jan - Mar)</option>
-                    <option value="2">Triwulan 2 (Apr - Jun)</option>
-                    <option value="3">Triwulan 3 (Jul - Sep)</option>
-                    <option value="4">Triwulan 4 (Okt - Des)</option>
+                  <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                    Triwulan
+                  </label>
+                  <select
+                    value={filterPeriodValue}
+                    onChange={(e) => setFilterPeriodValue(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white px-3 py-2 text-xs sm:text-sm font-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer transition-all"
+                  >
+                    <option value="1">Triwulan 1 (Jan–Mar)</option>
+                    <option value="2">Triwulan 2 (Apr–Jun)</option>
+                    <option value="3">Triwulan 3 (Jul–Sep)</option>
+                    <option value="4">Triwulan 4 (Okt–Des)</option>
                   </select>
                 </div>
               )}
 
               {filterPeriodType === 'semester' && (
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-1">Semester</label>
-                  <select value={filterPeriodValue} onChange={(e) => setFilterPeriodValue(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer">
-                    <option value="1">Semester 1 (Jan - Jun)</option>
-                    <option value="2">Semester 2 (Jul - Des)</option>
+                  <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                    Semester
+                  </label>
+                  <select
+                    value={filterPeriodValue}
+                    onChange={(e) => setFilterPeriodValue(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white px-3 py-2 text-xs sm:text-sm font-medium text-slate-800 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none cursor-pointer transition-all"
+                  >
+                    <option value="1">Semester 1 (Jan–Jun)</option>
+                    <option value="2">Semester 2 (Jul–Des)</option>
                   </select>
                 </div>
               )}
 
               {filterPeriodType === 'tahunan' && (
-                <div className="text-xs text-slate-500 italic p-2 bg-slate-50 rounded border border-slate-100">
-                  Menampilkan data sepanjang tahun {filterYear === 'all' ? 'yang dipilih' : filterYear}.
+                <div className="flex items-end">
+                  <div className="w-full rounded-xl bg-indigo-50/70 border border-indigo-100 px-3 py-2 text-xs text-indigo-800 font-medium">
+                    Akumulasi 12 bulan penuh
+                  </div>
                 </div>
               )}
             </div>
+
+            <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span className="text-slate-500">
+                <strong className="text-slate-700">{jenisBerjalan}</strong> dari{' '}
+                {capaianSertifikasi.length} jenis ada realisasi
+              </span>
+              <span className="font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-2.5 py-0.5 rounded-full tabular-nums">
+                {filteredSertifikasi.length} laporan
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION SERTIFIKASI: MODE KARTU GRID / TABEL RINGKAS */}
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 md:p-6 shadow-2xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-base md:text-lg font-bold text-slate-900">
+                Capaian Sertifikasi ({getPeriodLabel()})
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Realisasi dibandingkan target per jenis kegiatan sertifikasi.
+              </p>
+            </div>
+
+            {/* TOGGLE VIEW MODE */}
+            <div className="inline-flex items-center p-1 rounded-xl bg-slate-100 border border-slate-200/70 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  viewMode === 'grid'
+                    ? 'bg-slate-900 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Grid Kartu
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('table')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  viewMode === 'table'
+                    ? 'bg-slate-900 text-white shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Tabel
+              </button>
+            </div>
           </div>
 
+          {viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {capaianSertifikasi.map((item, idx) => {
+                const widthPct = Math.min(item.persentase, 100);
+                let badgeLabel = 'Mulai';
+                let badgeClass = 'bg-indigo-50 text-indigo-700 border border-indigo-200/70';
+                let barClass = 'bg-gradient-to-r from-indigo-600 to-violet-500';
+
+                if (item.persentase >= 80) {
+                  badgeLabel = 'Tercapai';
+                  badgeClass = 'bg-emerald-50 text-emerald-700 border border-emerald-200/70';
+                  barClass = 'bg-gradient-to-r from-emerald-500 to-teal-500';
+                } else if (item.persentase >= 40) {
+                  badgeLabel = 'Berjalan';
+                  badgeClass = 'bg-amber-50 text-amber-700 border border-amber-200/70';
+                  barClass = 'bg-gradient-to-r from-amber-500 to-orange-400';
+                } else if (item.persentase === 0) {
+                  badgeLabel = 'Kosong';
+                  badgeClass = 'bg-rose-50 text-rose-700 border border-rose-200/70';
+                  barClass = 'bg-rose-500';
+                }
+
+                return (
+                  <div
+                    key={idx}
+                    className="group rounded-2xl border border-slate-200/80 hover:border-indigo-300 bg-slate-50/50 hover:bg-white hover:-translate-y-0.5 hover:shadow-md p-4 transition-all duration-200 flex flex-col justify-between gap-4"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-sm group-hover:text-indigo-700 transition-colors">
+                          {item.jenis}
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-0.5 tabular-nums">
+                          Realisasi{' '}
+                          <span className="font-semibold text-slate-800">{item.realisasi}</span> /{' '}
+                          {item.target}
+                        </p>
+                      </div>
+                      <span
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${badgeClass}`}
+                      >
+                        {badgeLabel}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400">Capaian</span>
+                        <span className="font-extrabold text-slate-900 tabular-nums">
+                          {item.persentase}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-slate-200/80 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${barClass}`}
+                          style={{ width: `${widthPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 text-[11px] uppercase tracking-wider text-slate-500">
+                    <th className="py-3 px-4">Jenis Sertifikasi</th>
+                    <th className="py-3 px-4 text-right">Target</th>
+                    <th className="py-3 px-4 text-right">Realisasi</th>
+                    <th className="py-3 px-4 w-48">Capaian</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {capaianSertifikasi.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3 px-4 font-semibold text-slate-800">{item.jenis}</td>
+                      <td className="py-3 px-4 text-right text-slate-500 tabular-nums">
+                        {item.target}
+                      </td>
+                      <td className="py-3 px-4 text-right font-bold text-slate-900 tabular-nums">
+                        {item.realisasi}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-violet-500 transition-all duration-500"
+                              style={{ width: `${Math.min(item.persentase, 100)}%` }}
+                            />
+                          </div>
+                          <span className="w-10 text-right text-xs font-bold text-slate-800 tabular-nums">
+                            {item.persentase}%
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </Layout>

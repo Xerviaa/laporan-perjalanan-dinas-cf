@@ -13,14 +13,14 @@ export default function PrintMonitoringPage() {
   useEffect(() => {
     const fetchReport = async () => {
       try {
-        const res = await fetch('/api/reports');
+        const res = await fetch('/api/reports', { cache: 'no-store' });
         const data = await res.json();
         if (data.status === 'success') {
-          const found = data.data.find((r: any) => r.id === id);
-          setReport(found);
+          const found = data.data.find((r: any) => Number(r.id) === id);
+          setReport(found || null);
         }
       } catch (error) {
-        console.error("Gagal mengambil data:", error);
+        console.error('Gagal mengambil data:', error);
       } finally {
         setLoading(false);
       }
@@ -28,12 +28,31 @@ export default function PrintMonitoringPage() {
     fetchReport();
   }, [id]);
 
-  if (loading) return <div className="text-center mt-20">Memuat data...</div>;
-  if (!report) return <div className="text-center mt-20 text-red-500">Laporan tidak ditemukan.</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100 text-slate-600 text-sm">
+        Memuat data laporan monitoring...
+      </div>
+    );
+  }
+
+  if (!report) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-100 text-rose-600 text-sm font-semibold">
+        Laporan tidak ditemukan.
+      </div>
+    );
+  }
 
   const formatTanggal = (tgl: string) => {
     if (!tgl) return '-';
-    return new Date(tgl).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+    const d = new Date(tgl);
+    if (Number.isNaN(d.getTime())) return '-';
+    return d.toLocaleDateString('id-ID', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
   };
 
   const formatNamaPerusahaan = (nama: string) => {
@@ -46,202 +65,287 @@ export default function PrintMonitoringPage() {
     return nama;
   };
 
-  const parseFiles = (jsonString: string) => {
-    try {
-      if (!jsonString || jsonString === '[]') return [];
-      return JSON.parse(jsonString);
-    } catch (e) {
-      return [];
+  const parseFiles = (value: any): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.filter(Boolean);
+    if (typeof value === 'string') {
+      if (value === '[]') return [];
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed.filter(Boolean) : [value];
+      } catch {
+        return [value];
+      }
     }
+    return [];
   };
 
-  // --- LOGIKA PENGECEKAN STATUS BERKAS ---
-  const hasSuratTugas = report.suratTugas && report.suratTugas !== '[]';
-  const hasBerkasKegiatan = report.berkasKegiatan && report.berkasKegiatan !== '[]';
-  const hasBerkasPerbaikan = report.berkasPerbaikan && report.berkasPerbaikan !== '[]';
-  const hasPemeriksaan = report.berkasPemeriksaanTindakanPerbaikan && report.berkasPemeriksaanTindakanPerbaikan !== '[]';
+  const suratTugasFiles = parseFiles(report.suratTugas);
+  const berkasKegiatanFiles = parseFiles(report.berkasKegiatan);
+  const berkasPerbaikanFiles = parseFiles(report.berkasPerbaikan);
+  const pemeriksaanFiles = parseFiles(report.berkasPemeriksaanTindakanPerbaikan);
+  const fotoKegiatan = parseFiles(report.fotoKegiatan);
 
-  const totalFileTerisi = [hasSuratTugas, hasBerkasKegiatan, hasBerkasPerbaikan, hasPemeriksaan].filter(Boolean).length;
+  const hasSuratTugas = suratTugasFiles.length > 0;
+  const hasBerkasKegiatan = berkasKegiatanFiles.length > 0;
+  const hasBerkasPerbaikan = berkasPerbaikanFiles.length > 0;
+  const hasPemeriksaan = pemeriksaanFiles.length > 0;
+
+  const berkasItems = [
+    {
+      no: 1,
+      title: 'Surat Tugas',
+      files: suratTugasFiles,
+      ok: hasSuratTugas,
+    },
+    {
+      no: 2,
+      title: 'Berkas Kegiatan',
+      files: berkasKegiatanFiles,
+      ok: hasBerkasKegiatan,
+    },
+    {
+      no: 3,
+      title: 'Berkas Tindakan Perbaikan',
+      files: berkasPerbaikanFiles,
+      ok: hasBerkasPerbaikan,
+    },
+    {
+      no: 4,
+      title: 'Pemeriksaan Tindakan Perbaikan',
+      files: pemeriksaanFiles,
+      ok: hasPemeriksaan,
+    },
+  ];
+
+  const totalFileTerisi = berkasItems.filter((item) => item.ok).length;
   const isLengkap = totalFileTerisi === 4;
 
-  const fotoKegiatan = parseFiles(report.fotoKegiatan);
+  const namaKegiatanBersih = (report.jenisKegiatan || '-')
+    .replace(/Survailen/gi, 'Surveilan')
+    .trim();
 
   const parsePetugas = (petugasString: string) => {
     if (!petugasString) return [];
     return petugasString.split('|').map((p) => {
       const parts = p.split('(');
-      const namaLengkap = parts[0].trim(); 
+      const namaLengkap = parts[0].trim();
       const jabatan = parts[1] ? parts[1].replace(')', '').trim() : 'Anggota Tim';
       let namaBersih = namaLengkap.split(',')[0].trim().toLowerCase();
-      namaBersih = namaBersih.replace(/^drh\.\s*/i, ''); 
+      namaBersih = namaBersih.replace(/^drh\.\s*/i, '');
       namaBersih = namaBersih.replace(/[^a-z0-9\s-]/g, '');
       const namaFile = namaBersih.replace(/\s+/g, '-');
       return { nama: namaLengkap, jabatan, namaFileTtd: `${namaFile}.png` };
     });
   };
 
+  const petugasList = parsePetugas(report.petugasPelaksana);
+
   return (
-    <div className="min-h-screen bg-gray-200 py-10 print:bg-white print:py-0 font-sans text-slate-800">
-      
+    <div className="min-h-screen bg-slate-200/80 py-8 print:bg-white print:py-0 font-sans text-slate-900">
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 1.5cm;
+          }
+          body {
+            background: #ffffff !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+        }
+      `}</style>
+
       {/* Tombol cetak disembunyikan saat print */}
-      <div className="print:hidden">
+      <div className="print:hidden mb-4">
         <TombolCetak />
       </div>
-      
-      {/* Kertas Putih Utama (Ukuran A4 dengan margin 2cm) */}
-      <div className="mx-auto w-[21cm] bg-white shadow-xl print:shadow-none print:w-full p-[2cm] print:p-[2cm]">
-        
-        {/* HEADER ATAS (KOP SURAT) */}
-        <div className="text-center mb-8">
-          <h1 className="text-xl font-bold uppercase tracking-wide text-black">
-            LAPORAN MONITORING SERTIFIKASI
-          </h1>
-          <p className="text-sm text-gray-800 mt-1">BPPMHKP Denpasar</p>
-          <hr className="my-4 border-black w-full" />
 
-          <h2 className="text-2xl font-bold uppercase text-black mt-2">
-            {formatNamaPerusahaan(report.namaPerusahaan)}
-          </h2>
-          
-          <p className="text-sm text-gray-700 mt-1 max-w-2xl mx-auto">
-            {report.alamatPerusahaan || 'Alamat belum diisi'}
+      {/* Kertas Putih Utama (Ukuran A4) */}
+      <div className="mx-auto w-full max-w-[21cm] bg-white shadow-xl print:shadow-none print:max-w-none p-7 sm:p-10 print:p-0 border border-slate-200/80 print:border-0 rounded-xl print:rounded-none">
+        {/* HEADER ATAS (KOP SURAT) */}
+        <header className="text-center pb-5 mb-6 border-b-2 border-slate-900">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">
+            Balai Pengendalian dan Pengujian Mutu Hasil Kelautan dan Perikanan
           </p>
-        </div>
+          <h1 className="text-xl sm:text-2xl font-black uppercase tracking-wide text-slate-900 mt-1">
+            Laporan Monitoring Sertifikasi
+          </h1>
+          <p className="text-xs sm:text-sm font-semibold text-slate-700 mt-0.5">
+            BPPMHKP Denpasar
+          </p>
+
+          <div className="mt-5 pt-4 border-t border-slate-200">
+            <h2 className="text-lg sm:text-xl font-extrabold uppercase text-slate-900 tracking-tight">
+              {formatNamaPerusahaan(report.namaPerusahaan)}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl mx-auto leading-relaxed">
+              {report.alamatPerusahaan || 'Alamat belum diisi'}
+            </p>
+          </div>
+        </header>
 
         <div className="space-y-6 text-sm">
           {/* I. INFORMASI UMUM */}
-          <div>
-            <h2 className="font-bold bg-gray-100 p-2 mb-3 border-l-4 border-black uppercase text-sm">I. INFORMASI UMUM</h2>
-            <div className="grid grid-cols-2 gap-6 px-2">
-              
-              {/* Kolom Kiri */}
-              <div className="space-y-3">
-                <div>
-                  <p className="text-xs text-gray-500">Nama Kegiatan</p>
-                  <p className="font-bold">{report.jenisKegiatan || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Nomor Surat Tugas</p>
-                  <p className="font-bold">{report.noSurat || '-'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500">Pelaksana</p>
-                  <ul className="list-none">
-                    {parsePetugas(report.petugasPelaksana).map((p: any, i: number) => (
-                      <li key={i} className="font-bold">{p.nama} <span className="text-gray-500 font-normal">({p.jabatan})</span></li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
+          <section>
+            <h2 className="font-bold bg-slate-100 px-3 py-2 mb-3 border-l-4 border-slate-900 uppercase text-xs tracking-wider text-slate-900">
+              I. Informasi Umum
+            </h2>
 
-              {/* Kolom Kanan */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 px-2">
               <div className="space-y-3">
                 <div>
-                  <p className="text-xs text-gray-500">Tanggal Pelaksanaan</p>
-                  <p className="font-bold">{formatTanggal(report.tanggal)}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Nama Kegiatan
+                  </p>
+                  <p className="font-bold text-slate-900 mt-0.5">{namaKegiatanBersih}</p>
                 </div>
+
                 <div>
-                  <p className="text-xs text-gray-500">Status</p>
-                  {isLengkap ? (
-                    <span className="inline-block bg-emerald-100 text-emerald-700 px-2 py-1 text-xs rounded font-bold">Berkas Lengkap</span>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Nomor Surat Tugas
+                  </p>
+                  <p className="font-semibold text-slate-800 mt-0.5">{report.noSurat || '-'}</p>
+                </div>
+
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Pelaksana
+                  </p>
+                  {petugasList.length > 0 ? (
+                    <ul className="mt-1 space-y-1">
+                      {petugasList.map((p: any, i: number) => (
+                        <li key={i} className="text-xs sm:text-sm text-slate-800 leading-snug">
+                          <span className="font-bold text-slate-900">{p.nama}</span>{' '}
+                          <span className="text-slate-500 text-xs">({p.jabatan})</span>
+                        </li>
+                      ))}
+                    </ul>
                   ) : (
-                    <span className="inline-block bg-amber-100 text-amber-700 px-2 py-1 text-xs rounded font-bold">Belum Lengkap ({totalFileTerisi}/4)</span>
+                    <p className="text-slate-500 mt-0.5">-</p>
                   )}
                 </div>
               </div>
 
-            </div>
-          </div>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Tanggal Pelaksanaan
+                  </p>
+                  <p className="font-bold text-slate-900 mt-0.5 tabular-nums">
+                    {formatTanggal(report.tanggal)}
+                  </p>
+                </div>
 
-          <hr className="border-gray-300" />
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                    Status Kelengkapan
+                  </p>
+                  <div className="mt-1">
+                    {isLengkap ? (
+                      <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 border border-emerald-200 px-2.5 py-1 text-xs rounded-md font-bold tabular-nums">
+                        ✓ Berkas Lengkap (4/4)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 border border-amber-200 px-2.5 py-1 text-xs rounded-md font-bold tabular-nums">
+                        ! Belum Lengkap ({totalFileTerisi}/4)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
           {/* II. KELENGKAPAN BERKAS */}
-          <div>
-            <h2 className="font-bold bg-gray-100 p-2 mb-3 border-l-4 border-black uppercase text-sm">II. KELENGKAPAN BERKAS</h2>
-            <div className="px-2">
-              <div className="mb-2">
-                <h3 className="font-semibold text-sm">1. Surat Tugas</h3>
-                <p className="text-sm pl-5">
-                  {hasSuratTugas ? (
-                    <span className="text-blue-600 flex items-center gap-1">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Terlampir
+          <section>
+            <h2 className="font-bold bg-slate-100 px-3 py-2 mb-3 border-l-4 border-slate-900 uppercase text-xs tracking-wider text-slate-900">
+              II. Kelengkapan Berkas
+            </h2>
+
+            <div className="divide-y divide-slate-200/80 border border-slate-200/80 rounded-lg overflow-hidden">
+              {berkasItems.map((item) => (
+                <div
+                  key={item.no}
+                  className="px-3.5 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white"
+                >
+                  <div className="text-xs sm:text-sm font-semibold text-slate-800">
+                    {item.no}. {item.title}
+                  </div>
+
+                  {item.ok ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-md w-max tabular-nums">
+                      ✓ Terlampir ({item.files.length} file)
                     </span>
-                  ) : "- Tidak ada"}
-                </p>
-              </div>
-              <div className="mb-2">
-                <h3 className="font-semibold text-sm">2. Berkas Kegiatan</h3>
-                <p className="text-sm pl-5">
-                  {hasBerkasKegiatan ? (
-                    <span className="text-blue-600 flex items-center gap-1">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Terlampir
+                  ) : (
+                    <span className="inline-flex items-center text-xs font-medium text-slate-400 italic">
+                      — Tidak ada
                     </span>
-                  ) : "- Tidak ada"}
-                </p>
-              </div>
-              <div className="mb-2">
-                <h3 className="font-semibold text-sm">3. Berkas Perbaikan</h3>
-                <p className="text-sm pl-5">
-                  {hasBerkasPerbaikan ? (
-                    <span className="text-blue-600 flex items-center gap-1">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Terlampir
-                    </span>
-                  ) : "- Tidak ada"}
-                </p>
-              </div>
-              <div className="mb-2">
-                <h3 className="font-semibold text-sm">4. Pemeriksaan Tindakan Perbaikan</h3>
-                <p className="text-sm pl-5">
-                  {hasPemeriksaan ? (
-                    <span className="text-blue-600 flex items-center gap-1">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Terlampir
-                    </span>
-                  ) : "- Tidak ada"}
-                </p>
-              </div>
+                  )}
+                </div>
+              ))}
             </div>
-          </div>
+          </section>
 
           {/* III. DOKUMENTASI FOTO */}
-          <div>
-            <h2 className="font-bold bg-gray-100 p-2 mb-4 border-l-4 border-black uppercase text-sm">III. DOKUMENTASI FOTO KEGIATAN</h2>
-            <div className="px-2">
+          <section>
+            <h2 className="font-bold bg-slate-100 px-3 py-2 mb-3 border-l-4 border-slate-900 uppercase text-xs tracking-wider text-slate-900">
+              III. Dokumentasi Foto Kegiatan
+            </h2>
+
+            <div className="px-1">
               {fotoKegiatan.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   {fotoKegiatan.map((key: string, idx: number) => (
-                    <div key={idx} className="flex flex-col items-center">
-                      <div className="w-full h-40 border border-gray-200 rounded-lg overflow-hidden flex items-center justify-center bg-gray-50">
-                        <img 
-                          src={`/api/r2/${key}`} 
+                    <div
+                      key={idx}
+                      className="flex flex-col items-center break-inside-avoid"
+                      style={{ pageBreakInside: 'avoid' }}
+                    >
+                      <div className="w-full h-40 border border-slate-200 rounded-lg overflow-hidden flex items-center justify-center bg-slate-50 p-1.5">
+                        <img
+                          src={`/api/r2/${key}`}
                           alt={`Foto Kegiatan ${idx + 1}`}
                           className="w-full h-full object-contain"
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+                            (e.target as HTMLImageElement).src =
+                              'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
                           }}
                         />
                       </div>
-                      <p className="text-xs italic text-gray-600 mt-2">Foto Kegiatan {idx + 1}</p>
+                      <p className="text-xs italic text-slate-600 mt-1.5">
+                        Foto Kegiatan {idx + 1}
+                      </p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm italic text-gray-500">Tidak ada foto kegiatan yang dilampirkan.</p>
+                <p className="text-xs sm:text-sm italic text-slate-500 py-2">
+                  Tidak ada foto kegiatan yang dilampirkan.
+                </p>
               )}
             </div>
-          </div>
+          </section>
 
           {/* IV. TANDA TANGAN PELAKSANA */}
-          <div className="mt-10 mb-12 break-inside-avoid page-break-inside-avoid" style={{ pageBreakInside: 'avoid' }}>
-            <h2 className="font-bold bg-gray-100 p-2 mb-8 border-l-4 border-black uppercase text-sm">
-              IV. TANDA TANGAN PELAKSANA
+          <section
+            className="pt-4 break-inside-avoid"
+            style={{ pageBreakInside: 'avoid' }}
+          >
+            <h2 className="font-bold bg-slate-100 px-3 py-2 mb-6 border-l-4 border-slate-900 uppercase text-xs tracking-wider text-slate-900">
+              IV. Tanda Tangan Pelaksana
             </h2>
-            
-            <div className="grid grid-cols-3 gap-8 px-2">
-              {parsePetugas(report.petugasPelaksana).map((petugas: any, idx: number) => (
-                <div key={idx} className="flex flex-col items-center justify-end text-center h-40">
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 px-2">
+              {petugasList.map((petugas: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="flex flex-col items-center justify-end text-center min-h-[150px]"
+                >
                   <div className="h-20 w-full flex items-end justify-center mb-2">
-                    <img 
-                      src={`/tanda-tangan/${petugas.namaFileTtd}`} 
+                    <img
+                      src={`/tanda-tangan/${petugas.namaFileTtd}`}
                       alt={`TTD ${petugas.nama}`}
                       className="max-h-20 object-contain"
                       onError={(e) => {
@@ -249,14 +353,15 @@ export default function PrintMonitoringPage() {
                       }}
                     />
                   </div>
-                  <div className="w-full border-t border-black mb-2"></div>
-                  <p className="font-bold text-sm text-black">{petugas.nama}</p>
-                  <p className="text-xs text-black">{petugas.jabatan}</p>
+                  <div className="w-full border-t border-slate-900 mb-2" />
+                  <p className="font-bold text-xs sm:text-sm text-slate-900 leading-snug">
+                    {petugas.nama}
+                  </p>
+                  <p className="text-xs text-slate-600 mt-0.5">{petugas.jabatan}</p>
                 </div>
               ))}
             </div>
-          </div>
-
+          </section>
         </div>
       </div>
     </div>
