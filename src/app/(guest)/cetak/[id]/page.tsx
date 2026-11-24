@@ -8,6 +8,7 @@ import TemplateInspeksiCBIB from "@/components/cetak/TemplateInspeksiCBIB";
 import TemplateSurveilanCBIB from "@/components/cetak/TemplateSurveilanCBIB";
 import TemplateSurveilanCPIB from "@/components/cetak/TemplateSurveilanCPIB";
 import TemplateInpres from "@/components/cetak/TemplateInpres";
+import TemplateInspeksiSPDI from "@/components/cetak/TemplateInspeksiSPDI"; // <-- TAMBAHKAN IMPORT INI
 
 import { getDb } from "@/db";
 import { reports } from "@/db/schema";
@@ -74,6 +75,9 @@ export default async function CetakLaporan({
   }
   else if (jenis.includes("skp")) {
     kontenLaporan = <TemplateInspeksiSKP data={data} />;
+  }
+  else if (jenis.includes("inspeksi spdi") || jenis.includes("spdi")) { // <-- TAMBAHKAN KONDISI INI
+    kontenLaporan = <TemplateInspeksiSPDI data={data} />;
   }
   else {
     kontenLaporan = <div className="text-center p-10">Template untuk "{data.jenisKegiatan}" belum tersedia.</div>;

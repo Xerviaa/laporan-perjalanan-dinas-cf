@@ -243,6 +243,10 @@ export default function UploadPage() {
   
   const [hasilKegiatan, setHasilKegiatan] = useState('');
   const [kendala, setKendala] = useState('');
+  
+  // STATE BARU UNTUK CATATAN BAB V SPDI
+  const [catatanBabV, setCatatanBabV] = useState('');
+
   const [narasiManualDiedit, setNarasiManualDiedit] = useState(false);
 
   // State khusus Unit Kerja Terlibat (Inpres)
@@ -595,6 +599,9 @@ export default function UploadPage() {
     formData.append('noSurat', noSurat);
     formData.append('petugasPelaksana', petugasString);
     formData.append('hasilKegiatan', hasilKegiatan);
+    
+    // KIRIM CATATAN BAB V
+    formData.append('catatanBabV', catatanBabV);
 
     if (isInpres) {
       const inpresPayload = {
@@ -643,6 +650,10 @@ export default function UploadPage() {
         setLokusPasarInpres([{ namaPasar: '', sampel: ['', '', '', '', ''] }]);
         setTanggal(''); setWaktuInpres('07.00 WITA'); setNoSurat('');
         setHasilKegiatan(''); setKendala(''); setNarasiManualDiedit(false);
+        
+        // RESET CATATAN BAB V
+        setCatatanBabV('');
+
         setUnitKerjaList(['Dinas Kelautan dan Perikanan Provinsi Bali', 'Dinas Kelautan dan Perikanan Kab. ', '']);
         setPetugasList([{ nama: '', peran: '', customPeran: '', ttd: '' }]);
         setFotoFiles([]);
@@ -829,6 +840,7 @@ export default function UploadPage() {
                     const val = e.target.value;
                     setJenisKegiatan(val); 
                     setDetailKegiatan('');
+                    setCatatanBabV(''); // Reset saat jenis berubah
                     if (val === 'Inpres') {
                       setNarasiManualDiedit(false);
                       setHasilKegiatan(buildTemplateNarasiInpres(lokusPasarInpres, alamatPerusahaan));
@@ -846,7 +858,22 @@ export default function UploadPage() {
               </div>
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">Detail Kegiatan</label>
-                <select value={detailKegiatan} onChange={(e) => setDetailKegiatan(e.target.value)} className={`w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white ${(!jenisKegiatan || jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal') ? 'opacity-50 cursor-not-allowed' : ''}`} disabled={!jenisKegiatan || jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal'} required={jenisKegiatan !== 'Inpres' && jenisKegiatan !== 'Selfdeclare Kapal'}>
+                <select 
+                  value={detailKegiatan} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDetailKegiatan(val);
+                    // AUTO FILL TEKS BAB V JIKA MEMILIH SPDI
+                    if (val === 'SPDI') {
+                      setCatatanBabV("menghasilkan laporan hasil inspeksi berupa temuan ketidaksesuaian dari pemenuhan standar kelayakan mutu, higiene dan sanitasi fasilitas, dan sistem ketertelusuran dokumen (traceability) sehingga dapat dijadikan perbaikan secara berkelanjutan. Penyelesaian dari tindakan perbaikan inspeksi penerapan SPDI diberikan batas waktu maksimal 30 hari kalender. Pemeriksaan tindakan perbaikan dilaksanakan oleh Inspektur Mutu.");
+                    } else {
+                      setCatatanBabV('');
+                    }
+                  }} 
+                  className={`w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white ${(!jenisKegiatan || jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal') ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                  disabled={!jenisKegiatan || jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal'} 
+                  required={jenisKegiatan !== 'Inpres' && jenisKegiatan !== 'Selfdeclare Kapal'}
+                >
                   <option value="">{jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal' ? '-- Tidak ada detail --' : '-- Pilih Detail --'}</option>
                   {getOpsiDetail().map(detail => <option key={detail} value={detail}>{detail}</option>)}
                 </select>
@@ -1114,6 +1141,25 @@ export default function UploadPage() {
                 <div><label className="block text-sm font-semibold text-slate-700 mb-1">Tanggal Pelaksanaan</label><input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} className="w-full border border-slate-300 rounded px-3 py-2 text-sm" required /></div>
                 <div><label className="block text-sm font-semibold text-slate-700 mb-1">No Surat</label><input type="text" value={noSurat} onChange={(e) => setNoSurat(e.target.value)} placeholder="Contoh: 123/BPPMHKP/2026" className="w-full border border-slate-300 rounded px-3 py-2 text-sm" /></div>
               </div>
+
+              {/* --- TAMBAHAN KOLOM KHUSUS SPDI --- */}
+              {jenisKegiatan === 'Inspeksi' && detailKegiatan === 'SPDI' && (
+                <div className="p-4 border border-blue-200 bg-blue-50 rounded-lg shadow-sm mt-4">
+                  <label className="block text-sm font-bold text-slate-800 mb-1">
+                    Catatan Pelaksanaan Kegiatan (Bab V SPDI)
+                  </label>
+                  <p className="text-xs text-slate-500 mb-2 italic">
+                    *Teks ini akan tercetak di Bab V. Silakan edit jika ada penyesuaian khusus.
+                  </p>
+                  <textarea 
+                    value={catatanBabV} 
+                    onChange={(e) => setCatatanBabV(e.target.value)} 
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none h-32 resize-y"
+                    required
+                  ></textarea>
+                </div>
+              )}
+              {/* ----------------------------------- */}
 
               <div className="space-y-4">
                 <div><label className="block text-sm font-semibold text-slate-700 mb-1">Hasil Kegiatan</label><textarea value={hasilKegiatan} onChange={(e) => setHasilKegiatan(e.target.value)} placeholder="Jelaskan hasil kegiatan..." className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none"></textarea></div>

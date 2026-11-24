@@ -26,6 +26,9 @@ export async function POST(request: Request) {
     const petugasPelaksana = (formData.get('petugasPelaksana') as string) || "";
     const hasilKegiatan = (formData.get('hasilKegiatan') as string) || "";
     const kendala = (formData.get('kendala') as string) || "";
+    
+    // TAMBAHKAN BARIS INI UNTUK MENGAMBIL CATATAN BAB V
+    const catatanBabV = (formData.get('catatanBabV') as string) || "";
 
     // VALIDASI
     if (!jenisKegiatan || !namaPerusahaan) {
@@ -108,6 +111,7 @@ export async function POST(request: Request) {
       statusMonitoring: 'Berkas belum upload',
       suratTugas: keySuratTugas,
       berkasPemeriksaanTindakanPerbaikan: keyPemeriksaan,
+      catatanBabV: catatanBabV, // <-- TAMBAHKAN BARIS INI AGAR TERSIMPAN KE DATABASE
     });
 
     // ==========================================================
@@ -115,13 +119,11 @@ export async function POST(request: Request) {
     // ==========================================================
     if (namaPerusahaan && alamatPerusahaan) {
       try {
-        // Cek apakah perusahaan sudah ada di tabel perusahaan
         const existingPerusahaan = await db
           .select()
           .from(perusahaan)
           .where(eq(perusahaan.nama, namaPerusahaan));
 
-        // Jika belum ada, simpan data perusahaan baru
         if (existingPerusahaan.length === 0) {
           await db.insert(perusahaan).values({
             nama: namaPerusahaan,
@@ -129,7 +131,6 @@ export async function POST(request: Request) {
           });
         }
       } catch (err) {
-        // Error saat menyimpan perusahaan tidak akan menggagalkan proses upload laporan
         console.error("Gagal menyimpan data perusahaan baru:", err);
       }
     }
