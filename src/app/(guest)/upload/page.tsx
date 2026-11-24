@@ -244,7 +244,7 @@ export default function UploadPage() {
   const [hasilKegiatan, setHasilKegiatan] = useState('');
   const [kendala, setKendala] = useState('');
   
-  // STATE BARU UNTUK CATATAN BAB V SPDI
+  // STATE UNTUK CATATAN BAB V SPDI (DIKOSONGKAN DEFAULT-NYA)
   const [catatanBabV, setCatatanBabV] = useState('');
 
   const [narasiManualDiedit, setNarasiManualDiedit] = useState(false);
@@ -840,7 +840,7 @@ export default function UploadPage() {
                     const val = e.target.value;
                     setJenisKegiatan(val); 
                     setDetailKegiatan('');
-                    setCatatanBabV(''); // Reset saat jenis berubah
+                    setCatatanBabV('');
                     if (val === 'Inpres') {
                       setNarasiManualDiedit(false);
                       setHasilKegiatan(buildTemplateNarasiInpres(lokusPasarInpres, alamatPerusahaan));
@@ -863,12 +863,7 @@ export default function UploadPage() {
                   onChange={(e) => {
                     const val = e.target.value;
                     setDetailKegiatan(val);
-                    // AUTO FILL TEKS BAB V JIKA MEMILIH SPDI
-                    if (val === 'SPDI') {
-                      setCatatanBabV("menghasilkan laporan hasil inspeksi berupa temuan ketidaksesuaian dari pemenuhan standar kelayakan mutu, higiene dan sanitasi fasilitas, dan sistem ketertelusuran dokumen (traceability) sehingga dapat dijadikan perbaikan secara berkelanjutan. Penyelesaian dari tindakan perbaikan inspeksi penerapan SPDI diberikan batas waktu maksimal 30 hari kalender. Pemeriksaan tindakan perbaikan dilaksanakan oleh Inspektur Mutu.");
-                    } else {
-                      setCatatanBabV('');
-                    }
+                    setCatatanBabV('');
                   }} 
                   className={`w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white ${(!jenisKegiatan || jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal') ? 'opacity-50 cursor-not-allowed' : ''}`} 
                   disabled={!jenisKegiatan || jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal'} 
@@ -1149,13 +1144,13 @@ export default function UploadPage() {
                     Catatan Pelaksanaan Kegiatan (Bab V SPDI)
                   </label>
                   <p className="text-xs text-slate-500 mb-2 italic">
-                    *Teks ini akan tercetak di Bab V. Silakan edit jika ada penyesuaian khusus.
+                    *Teks ini akan tercetak di Bab V. Silakan isi atau sesuaikan sesuai laporan.
                   </p>
                   <textarea 
                     value={catatanBabV} 
                     onChange={(e) => setCatatanBabV(e.target.value)} 
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none h-32 resize-y"
-                    required
+                    placeholder="Contoh: menghasilkan laporan hasil inspeksi berupa temuan ketidaksesuaian dari pemenuhan standar kelayakan mutu, higiene dan sanitasi fasilitas, dan sistem ketertelusuran dokumen (traceability) sehingga dapat dijadikan perbaikan secara berkelanjutan..."
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 outline-none h-32 resize-y"
                   ></textarea>
                 </div>
               )}

@@ -6,12 +6,12 @@ import { eq } from "drizzle-orm";
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
-    
+
     // 1. Ambil semua file
     const filesKegiatan = formData.getAll('foto') as File[];
     const filesBerkasKegiatan = formData.getAll('berkasKegiatan') as File[];
     const filesBerkasPerbaikan = formData.getAll('berkasPerbaikan') as File[];
-    
+
     // AMBIL FILE BARU
     const fileSuratTugas = formData.get('suratTugas') as File | null;
     const filePemeriksaan = formData.get('berkasPemeriksaanTindakanPerbaikan') as File | null;
@@ -26,6 +26,8 @@ export async function POST(request: Request) {
     const petugasPelaksana = (formData.get('petugasPelaksana') as string) || "";
     const hasilKegiatan = (formData.get('hasilKegiatan') as string) || "";
     const kendala = (formData.get('kendala') as string) || "";
+    const catatanBabV =
+      ((formData.get('catatanBabV') ?? formData.get('catatan_bab_v')) as string) || "";
 
     // VALIDASI
     if (!jenisKegiatan || !namaPerusahaan) {
@@ -33,9 +35,12 @@ export async function POST(request: Request) {
     }
 
     const { env } = getCloudflareContext();
-    const bucket = (env as any).MY_BUCKET as R2Bucket;
+    const bucket = (env as any).MY_BUCKET as R2Bucket | undefined;
 
     const uploadToR2 = async (file: File, prefix: string) => {
+      if (!bucket) {
+        throw new Error("Binding R2 MY_BUCKET tidak tersedia pada environment saat ini.");
+      }
       const key = `reports/${prefix}/${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
       await bucket.put(key, file.slice(), {
         httpMetadata: { contentType: file.type },
@@ -89,8 +94,8 @@ export async function POST(request: Request) {
     const db = getDb();
     await db.insert(reports).values({
       title: `${jenisKegiatan} - ${namaPerusahaan}`,
-      fileKey: "-", 
-      uploadedBy: pembuatLaporan, 
+      fileKey: "-",
+      uploadedBy: pembuatLaporan,
       jenisKegiatan: jenisKegiatan,
       noSurat: noSurat,
       petugasPelaksana: petugasPelaksana,
@@ -100,9 +105,10 @@ export async function POST(request: Request) {
       deadline: deadlineDate,
       isRewarded: false,
       fotoKegiatan: JSON.stringify(keysKegiatan),
-      fotoLokasi: JSON.stringify([]), 
+      fotoLokasi: JSON.stringify([]),
       hasilKegiatan: hasilKegiatan,
       kendala: kendala,
+      catatanBabV: catatanBabV,
       berkasKegiatan: JSON.stringify(keysBerkasKegiatan),
       berkasPerbaikan: JSON.stringify(keysBerkasPerbaikan),
       statusMonitoring: 'Berkas belum upload',
@@ -115,13 +121,11 @@ export async function POST(request: Request) {
     // ==========================================================
     if (namaPerusahaan && alamatPerusahaan) {
       try {
-        // Cek apakah perusahaan sudah ada di tabel perusahaan
         const existingPerusahaan = await db
           .select()
           .from(perusahaan)
           .where(eq(perusahaan.nama, namaPerusahaan));
 
-        // Jika belum ada, simpan data perusahaan baru
         if (existingPerusahaan.length === 0) {
           await db.insert(perusahaan).values({
             nama: namaPerusahaan,
@@ -129,7 +133,6 @@ export async function POST(request: Request) {
           });
         }
       } catch (err) {
-        // Error saat menyimpan perusahaan tidak akan menggagalkan proses upload laporan
         console.error("Gagal menyimpan data perusahaan baru:", err);
       }
     }
