@@ -668,41 +668,50 @@ export default function MonitoringDashboardPage() {
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-slate-200/80">
-              <table className="w-full text-xs text-left border-collapse">
-                <thead className="bg-slate-50/90 text-slate-500 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80">
+              <table className="w-full text-sm text-left border-collapse">
+                <thead className="bg-white text-slate-400 font-semibold uppercase text-[11px] tracking-wider border-b border-slate-200/80">
                   <tr>
-                    <th className="px-4 py-3">Jenis Sertifikasi</th>
-                    <th className="px-4 py-3 text-center">Status</th>
-                    <th className="px-4 py-3 text-center">Target</th>
-                    <th className="px-4 py-3 text-center">Realisasi</th>
-                    <th className="px-4 py-3 text-right">Capaian</th>
+                    <th className="px-4 py-3.5">Jenis Sertifikasi</th>
+                    <th className="px-4 py-3.5 text-center">Target</th>
+                    <th className="px-4 py-3.5 text-center">Realisasi</th>
+                    <th className="px-4 py-3.5 text-right w-56">Capaian</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {displayedCapaian.map((item) => {
                     const isMulai = item.realisasi > 0;
+                    const barWidth = Math.min(item.persentase, 100);
+
                     return (
-                      <tr key={item.jenis} className="hover:bg-indigo-50/30 transition-colors">
-                        <td className="px-4 py-3 font-bold text-slate-800">{item.jenis}</td>
-                        <td className="px-4 py-3 text-center">
-                          {isMulai ? (
-                            <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full">
-                              Mulai
-                            </span>
-                          ) : (
-                            <span className="text-[11px] font-semibold text-rose-500 bg-rose-50 px-2.5 py-0.5 rounded-full">
-                              Kosong
-                            </span>
-                          )}
+                      <tr
+                        key={item.jenis}
+                        className="hover:bg-slate-50/80 transition-colors"
+                      >
+                        <td className="px-4 py-3.5 font-semibold text-slate-800">
+                          {item.jenis}
                         </td>
-                        <td className="px-4 py-3 text-center text-slate-600 font-medium tabular-nums">
+                        <td className="px-4 py-3.5 text-center text-slate-400 font-medium tabular-nums">
                           {item.target}
                         </td>
-                        <td className="px-4 py-3 text-center font-extrabold text-slate-900 tabular-nums">
+                        <td className="px-4 py-3.5 text-center font-bold text-slate-900 tabular-nums">
                           {item.realisasi}
                         </td>
-                        <td className="px-4 py-3 text-right font-bold text-slate-800 tabular-nums">
-                          {item.persentase}%
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center justify-end gap-3">
+                            <div className="w-28 h-1.5 rounded-full bg-slate-100 overflow-hidden shrink-0">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  isMulai
+                                    ? 'bg-gradient-to-r from-indigo-500 to-violet-500'
+                                    : 'bg-slate-200'
+                                }`}
+                                style={{ width: `${barWidth}%` }}
+                              />
+                            </div>
+                            <span className="font-bold text-slate-800 text-xs tabular-nums w-9 text-right">
+                              {item.persentase}%
+                            </span>
+                          </div>
                         </td>
                       </tr>
                     );
