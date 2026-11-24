@@ -42,11 +42,6 @@ export const reports = pgTable("reports", {
   kendala: text("kendala"),
 
   // ==========================================
-  // TAMBAHAN BARU: CATATAN BAB V (SPDI)
-  // ==========================================
-  catatanBabV: text("catatan_bab_v"),
-
-  // ==========================================
   // TAMBAHAN BARU: BERKAS & STATUS MONITORING
   // ==========================================
   berkasKegiatan: text("berkas_kegiatan"),
