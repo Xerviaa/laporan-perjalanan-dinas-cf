@@ -252,36 +252,6 @@ export default function MonitoringDashboardPage() {
     );
   }
 
-  // Komponen Donut Chart
-  const DonutChart = ({ percentage, color }: { percentage: number; color: string }) => {
-    const radius = 24;
-    const circumference = 2 * Math.PI * radius;
-    const strokeDashoffset = circumference - (Math.min(percentage, 100) / 100) * circumference;
-
-    return (
-      <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
-        <svg className="transform -rotate-90 w-14 h-14">
-          <circle cx="28" cy="28" r={radius} stroke="#f1f5f9" strokeWidth="5.5" fill="none" />
-          <circle
-            cx="28"
-            cy="28"
-            r={radius}
-            stroke={color}
-            strokeWidth="5.5"
-            fill="none"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-            className="transition-all duration-700 ease-out"
-          />
-        </svg>
-        <div className="absolute text-[11px] font-extrabold text-slate-800 tabular-nums">
-          {percentage}%
-        </div>
-      </div>
-    );
-  };
-
   const lengkapPctBar = totalKegiatan > 0 ? (berkasLengkap / totalKegiatan) * 100 : 0;
   const kurangPctBar = totalKegiatan > 0 ? (belumLengkap / totalKegiatan) * 100 : 0;
   const kosongPctBar = totalKegiatan > 0 ? (belumAdaBerkas / totalKegiatan) * 100 : 0;
@@ -591,7 +561,7 @@ export default function MonitoringDashboardPage() {
           </div>
         </div>
 
-        {/* SECTION CAPAIAN SERTIFIKASI */}
+        {/* SECTION CAPAIAN SERTIFIKASI (GAYA KARTU GUEST) */}
         <div className="bg-white rounded-2xl border border-slate-200/90 p-5 md:p-6 shadow-2xs space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
@@ -640,54 +610,56 @@ export default function MonitoringDashboardPage() {
           </div>
 
           {capaianView === 'grid' ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {displayedCapaian.map((item) => {
-                let strokeColor = '#ef4444';
-                let barColor = 'bg-rose-500';
-                let badgeStyle = 'bg-rose-50 text-rose-700 border-rose-200/70';
-
-                if (item.persentase >= 80) {
-                  strokeColor = '#10b981';
-                  barColor = 'bg-gradient-to-r from-emerald-500 to-teal-500';
-                  badgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200/70';
-                } else if (item.persentase >= 40) {
-                  strokeColor = '#f59e0b';
-                  barColor = 'bg-amber-400';
-                  badgeStyle = 'bg-amber-50 text-amber-700 border-amber-200/70';
-                }
+                const isMulai = item.realisasi > 0;
+                const barWidth = Math.min(item.persentase, 100);
 
                 return (
                   <div
                     key={item.jenis}
-                    className="rounded-2xl border border-slate-200/90 hover:border-indigo-300 p-4 transition-all bg-white flex flex-col justify-between gap-3"
+                    className="rounded-2xl border border-slate-200/90 hover:border-indigo-300 p-4 transition-all bg-white flex flex-col justify-between gap-4 shadow-2xs"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <span className="inline-block text-xs font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-2.5 py-0.5 rounded-full">
+                        <h3 className="text-sm font-extrabold text-slate-900 leading-snug">
                           {item.jenis}
-                        </span>
-                        <p className="text-xs text-slate-500 mt-2 tabular-nums">
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-1 tabular-nums">
                           Realisasi:{' '}
-                          <span className="font-extrabold text-slate-900">{item.realisasi}</span> /{' '}
-                          <span className="font-semibold text-slate-700">{item.target}</span>
+                          <span className="font-bold text-slate-800">{item.realisasi}</span> /{' '}
+                          <span className="text-slate-500">{item.target}</span>
                         </p>
                       </div>
-                      <DonutChart percentage={item.persentase} color={strokeColor} />
+
+                      {isMulai ? (
+                        <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50/80 px-2.5 py-0.5 rounded-full shrink-0">
+                          Mulai
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-semibold text-rose-500 bg-rose-50/80 px-2.5 py-0.5 rounded-full shrink-0">
+                          Kosong
+                        </span>
+                      )}
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400 font-medium">Capaian</span>
+                        <span className="font-bold text-slate-800 tabular-nums">
+                          {item.persentase}%
+                        </span>
+                      </div>
+
                       <div className="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all duration-500 ${barColor}`}
-                          style={{ width: `${Math.min(item.persentase, 100)}%` }}
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            isMulai
+                              ? 'bg-gradient-to-r from-indigo-500 to-violet-500'
+                              : 'bg-slate-200'
+                          }`}
+                          style={{ width: `${barWidth}%` }}
                         />
-                      </div>
-                      <div className="flex justify-end">
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border tabular-nums ${badgeStyle}`}
-                        >
-                          {item.persentase}% tercapai
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -700,30 +672,37 @@ export default function MonitoringDashboardPage() {
                 <thead className="bg-slate-50/90 text-slate-500 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200/80">
                   <tr>
                     <th className="px-4 py-3">Jenis Sertifikasi</th>
+                    <th className="px-4 py-3 text-center">Status</th>
                     <th className="px-4 py-3 text-center">Target</th>
                     <th className="px-4 py-3 text-center">Realisasi</th>
-                    <th className="px-4 py-3 text-center">Capaian</th>
+                    <th className="px-4 py-3 text-right">Capaian</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {displayedCapaian.map((item) => {
-                    let strokeColor = '#ef4444';
-                    if (item.persentase >= 80) strokeColor = '#10b981';
-                    else if (item.persentase >= 40) strokeColor = '#f59e0b';
-
+                    const isMulai = item.realisasi > 0;
                     return (
                       <tr key={item.jenis} className="hover:bg-indigo-50/30 transition-colors">
-                        <td className="px-4 py-2.5 font-bold text-slate-800">{item.jenis}</td>
-                        <td className="px-4 py-2.5 text-center text-slate-600 font-medium tabular-nums">
+                        <td className="px-4 py-3 font-bold text-slate-800">{item.jenis}</td>
+                        <td className="px-4 py-3 text-center">
+                          {isMulai ? (
+                            <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full">
+                              Mulai
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-semibold text-rose-500 bg-rose-50 px-2.5 py-0.5 rounded-full">
+                              Kosong
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center text-slate-600 font-medium tabular-nums">
                           {item.target}
                         </td>
-                        <td className="px-4 py-2.5 text-center font-extrabold text-slate-900 tabular-nums">
+                        <td className="px-4 py-3 text-center font-extrabold text-slate-900 tabular-nums">
                           {item.realisasi}
                         </td>
-                        <td className="px-4 py-2.5">
-                          <div className="flex justify-center">
-                            <DonutChart percentage={item.persentase} color={strokeColor} />
-                          </div>
+                        <td className="px-4 py-3 text-right font-bold text-slate-800 tabular-nums">
+                          {item.persentase}%
                         </td>
                       </tr>
                     );
