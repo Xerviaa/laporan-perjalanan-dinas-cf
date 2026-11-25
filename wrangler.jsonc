@@ -7,6 +7,10 @@
 		"nodejs_compat",
 		"global_fetch_strictly_public"
 	],
+	"vars": {
+		"NEXT_PUBLIC_SUPABASE_URL": "https://vjmcxvxmupprsuvwgvgtd.supabase.co",
+		"NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_9v_YQop-DYuooK4eFwc92A_8w_Vetan"
+	},
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
