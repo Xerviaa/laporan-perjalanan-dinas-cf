@@ -81,8 +81,9 @@ async function main() {
   }
 
   const baseLocalFolder = './backup-temp';
-  const baseUrl = 'https://laporan-dinas-cf.vickyariesta-id.workers.dev/api/r2/';
-  const cetakUrl = 'https://laporan-dinas-cf.vickyariesta-id.workers.dev/cetak/';
+  const appOrigin = (process.env.APP_URL || 'https://monica-imut.vickyariesta-id.workers.dev').replace(/\/+$/, '');
+  const baseUrl = `${appOrigin}/api/r2/`;
+  const cetakUrl = `${appOrigin}/cetak/`;
   
   if (fs.existsSync(baseLocalFolder)) {
     fs.rmSync(baseLocalFolder, { recursive: true, force: true });
