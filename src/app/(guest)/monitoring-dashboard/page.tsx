@@ -3,6 +3,15 @@
 import { useEffect, useState } from 'react';
 import Layout from '@/components/Layout';
 
+const normalizeJenisText = (text?: string) =>
+  (text || '')
+    .replace(/Survailen/gi, 'Surveilan')
+    .replace(/Selfdecare/gi, 'Selfdeclare')
+    .replace(/Self\s+Declare/gi, 'Selfdeclare')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
 export default function MonitoringDashboardPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -136,21 +145,28 @@ export default function MonitoringDashboardPage() {
     { val: '11', name: 'Desember' },
   ];
 
+  const sertifikasiTargets: { [key: string]: number } = {
+    CBIB: 30,
+    CPIB: 30,
+    CPPIB: 30,
+    CPOIB: 30,
+    CDOIB: 30,
+    'CPIB Kapal': 30,
+    HACCP: 30,
+    SKP: 30,
+    SPDI: 30,
+    'Selfdeclare Kapal': 50,
+    Inpres: 50,
+  };
+
+  const sertifikasiKeys = Object.keys(sertifikasiTargets);
+
   const filteredSertifikasi = reports.filter((r: any) => {
     if (!r.jenisKegiatan) return false;
-    const isSertifikasi = [
-      'CBIB',
-      'CPIB',
-      'CPPIB',
-      'CPOIB',
-      'CDOIB',
-      'CPIB Kapal',
-      'HACCP',
-      'SKP',
-      'SPDI',
-      'Selfdecare Kapal',
-      'Inpres',
-    ].some((j) => r.jenisKegiatan.includes(j));
+    const normalizedKegiatan = normalizeJenisText(r.jenisKegiatan).toLowerCase();
+    const isSertifikasi = sertifikasiKeys.some((j) =>
+      normalizedKegiatan.includes(j.toLowerCase())
+    );
     if (!isSertifikasi) return false;
 
     const d = r.tanggal ? new Date(r.tanggal) : new Date(r.createdAt);
@@ -176,22 +192,11 @@ export default function MonitoringDashboardPage() {
     return true;
   });
 
-  const sertifikasiTargets: { [key: string]: number } = {
-    CBIB: 30,
-    CPIB: 30,
-    CPPIB: 30,
-    CPOIB: 30,
-    CDOIB: 30,
-    'CPIB Kapal': 30,
-    HACCP: 30,
-    SKP: 30,
-    SPDI: 30,
-    'Selfdecare Kapal': 50,
-    Inpres: 50,
-  };
-
-  const capaianSertifikasi = Object.keys(sertifikasiTargets).map((jenis) => {
-    const realisasi = filteredSertifikasi.filter((r) => r.jenisKegiatan?.includes(jenis)).length;
+  const capaianSertifikasi = sertifikasiKeys.map((jenis) => {
+    const targetJenis = jenis.toLowerCase();
+    const realisasi = filteredSertifikasi.filter((r) =>
+      normalizeJenisText(r.jenisKegiatan).toLowerCase().includes(targetJenis)
+    ).length;
     const target = sertifikasiTargets[jenis];
     const persentase = target > 0 ? Math.round((realisasi / target) * 100) : 0;
     return { jenis, target, realisasi, persentase };

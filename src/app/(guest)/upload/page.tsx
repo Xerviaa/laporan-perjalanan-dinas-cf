@@ -300,6 +300,7 @@ export default function UploadPage() {
   };
 
   const isInpres = jenisKegiatan === 'Inpres';
+  const isSingleDetailAuto = jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal';
   const jumlahFotoInpresTerisi = inpresSlots.filter(s => s.file !== null).length;
 
   // Ambil data perusahaan dari database saat halaman dimuat
@@ -576,6 +577,12 @@ export default function UploadPage() {
       return;
     }
 
+    if (isInpres && (!suratTugas || !berkasKegiatan)) {
+      showToast('Untuk kegiatan Inpres, wajib menyertakan Surat Tugas dan Berkas Kegiatan.', 'error');
+      setIsSubmitting(false);
+      return;
+    }
+
     const petugasString = petugasList
       .filter(p => p.nama.trim() !== '')
       .map(p => {
@@ -625,6 +632,7 @@ export default function UploadPage() {
         if (item.file) formData.append('foto', item.file);
       });
       if (suratTugas) formData.append('suratTugas', suratTugas);
+      if (berkasKegiatan) formData.append('berkasKegiatan', berkasKegiatan);
     } else {
       formData.append('kendala', kendala);
       fotoFiles.forEach(file => formData.append('foto', file));
@@ -839,8 +847,12 @@ export default function UploadPage() {
                   onChange={(e) => { 
                     const val = e.target.value;
                     setJenisKegiatan(val); 
-                    setDetailKegiatan('');
                     setCatatanBabV('');
+                    if (val === 'Inpres' || val === 'Selfdeclare Kapal') {
+                      setDetailKegiatan(val);
+                    } else {
+                      setDetailKegiatan('');
+                    }
                     if (val === 'Inpres') {
                       setNarasiManualDiedit(false);
                       setHasilKegiatan(buildTemplateNarasiInpres(lokusPasarInpres, alamatPerusahaan));
@@ -858,20 +870,29 @@ export default function UploadPage() {
               </div>
               <div>
                 <label className="text-xs text-slate-500 mb-1 block">Detail Kegiatan</label>
-                <select 
-                  value={detailKegiatan} 
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setDetailKegiatan(val);
-                    setCatatanBabV('');
-                  }} 
-                  className={`w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white ${(!jenisKegiatan || jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal') ? 'opacity-50 cursor-not-allowed' : ''}`} 
-                  disabled={!jenisKegiatan || jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal'} 
-                  required={jenisKegiatan !== 'Inpres' && jenisKegiatan !== 'Selfdeclare Kapal'}
-                >
-                  <option value="">{jenisKegiatan === 'Inpres' || jenisKegiatan === 'Selfdeclare Kapal' ? '-- Tidak ada detail --' : '-- Pilih Detail --'}</option>
-                  {getOpsiDetail().map(detail => <option key={detail} value={detail}>{detail}</option>)}
-                </select>
+                {isSingleDetailAuto ? (
+                  <input
+                    type="text"
+                    value={detailKegiatan}
+                    readOnly
+                    className="w-full border border-slate-200 rounded px-3 py-2 text-sm bg-slate-100 text-slate-700 font-medium cursor-not-allowed"
+                  />
+                ) : (
+                  <select 
+                    value={detailKegiatan} 
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setDetailKegiatan(val);
+                      setCatatanBabV('');
+                    }} 
+                    className={`w-full border border-slate-300 rounded px-3 py-2 text-sm bg-white ${!jenisKegiatan ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                    disabled={!jenisKegiatan} 
+                    required={Boolean(jenisKegiatan)}
+                  >
+                    <option value="">-- Pilih Detail --</option>
+                    {getOpsiDetail().map(detail => <option key={detail} value={detail}>{detail}</option>)}
+                  </select>
+                )}
               </div>
             </div>
           </div>
@@ -1281,14 +1302,23 @@ export default function UploadPage() {
 
           {/* 5. LAMPIRAN BERKAS */}
           {isInpres ? (
-            <div className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
               <div className="border border-blue-300 rounded-lg p-4 bg-blue-50">
-                <label className="block text-sm font-semibold text-blue-800 mb-2">Surat Tugas / Perintah (PDF)</label>
+                <label className="block text-sm font-semibold text-blue-800 mb-2">Surat Tugas (PDF)</label>
                 <button type="button" onClick={() => suratTugasInputRef.current?.click()} className="w-full text-sm text-left text-slate-500 border border-slate-300 rounded-lg cursor-pointer bg-white px-3 py-2 hover:bg-blue-100">
                   {suratTugas ? suratTugas.name : 'Pilih file PDF...'}
                 </button>
                 <input type="file" accept=".pdf" ref={suratTugasInputRef} style={{ display: 'none' }} onChange={(e) => { if (e.target.files && e.target.files[0]) setSuratTugas(e.target.files[0]); }} />
                 {suratTugas && <div className="mt-2 flex items-center justify-between text-xs text-emerald-600 bg-emerald-50 p-2 rounded"><span className="truncate">✔ {suratTugas.name}</span><button type="button" onClick={() => setSuratTugas(null)} className="text-red-500 font-bold ml-2">✕</button></div>}
+              </div>
+
+              <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Berkas Kegiatan</label>
+                <button type="button" onClick={() => berkasKegiatanInputRef.current?.click()} className="w-full text-sm text-left text-slate-500 border border-slate-300 rounded-lg cursor-pointer bg-white px-3 py-2 hover:bg-slate-100">
+                  {berkasKegiatan ? berkasKegiatan.name : 'Pilih file...'}
+                </button>
+                <input type="file" ref={berkasKegiatanInputRef} style={{ display: 'none' }} onChange={(e) => { if (e.target.files && e.target.files[0]) setBerkasKegiatan(e.target.files[0]); }} />
+                {berkasKegiatan && <div className="mt-2 flex items-center justify-between text-xs text-emerald-600 bg-emerald-50 p-2 rounded"><span className="truncate">✔ {berkasKegiatan.name}</span><button type="button" onClick={() => setBerkasKegiatan(null)} className="text-red-500 font-bold ml-2">✕</button></div>}
               </div>
             </div>
           ) : (

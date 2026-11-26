@@ -13,7 +13,7 @@ const SERTIFIKASI_LIST = [
   'HACCP',
   'SKP',
   'SPDI',
-  'Selfdecare Kapal',
+  'Selfdeclare Kapal',
   'Inpres',
 ];
 
@@ -33,6 +33,51 @@ const BULAN_OPTIONS = [
 ];
 
 type PeriodMode = 'bulan' | 'triwulan' | 'semester' | 'tahun';
+
+const normalizeJenisLabel = (val = '') =>
+  val
+    .replace(/Survailen/gi, 'Surveilan')
+    .replace(/Selfdecare\s+Kapal/gi, 'Selfdeclare Kapal')
+    .replace(/Self\s+Declare\s+Kapal/gi, 'Selfdeclare Kapal')
+    .trim();
+
+const isInpresJenis = (rawJenis?: string) => {
+  const lower = normalizeJenisLabel(rawJenis || '').toLowerCase();
+  return lower === 'inpres' || lower.startsWith('inpres ') || lower.includes('germas');
+};
+
+const parseKegiatanDanJenis = (rawJenis?: string) => {
+  const clean = normalizeJenisLabel(rawJenis || '');
+  if (!clean) {
+    return { namaKegiatan: '-', jenisSertifikasi: '-' };
+  }
+
+  const lower = clean.toLowerCase();
+
+  if (isInpresJenis(clean)) {
+    return {
+      namaKegiatan: 'Inpres',
+      jenisSertifikasi: 'Inpres',
+    };
+  }
+
+  if (
+    lower === 'selfdeclare kapal' ||
+    lower.startsWith('selfdeclare') ||
+    lower === 'kapal'
+  ) {
+    return {
+      namaKegiatan: 'Selfdeclare Kapal',
+      jenisSertifikasi: 'Selfdeclare Kapal',
+    };
+  }
+
+  const kegiatanArray = clean.split(/\s+/);
+  return {
+    namaKegiatan: kegiatanArray.length > 0 ? kegiatanArray[0] : '-',
+    jenisSertifikasi: kegiatanArray.length > 1 ? kegiatanArray.slice(1).join(' ') : '-',
+  };
+};
 
 export default function MonitoringPage() {
   const [reports, setReports] = useState<any[]>([]);
@@ -259,20 +304,25 @@ export default function MonitoringPage() {
   };
 
   const getAutoStatus = (report: any) => {
+    const isInpres = isInpresJenis(report.jenisKegiatan);
     const missingFiles: string[] = [];
 
     if (!report.suratTugas || report.suratTugas === '[]') missingFiles.push('Surat Tugas');
     if (!report.berkasKegiatan || report.berkasKegiatan === '[]') missingFiles.push('Berkas Kegiatan');
-    if (!report.berkasPerbaikan || report.berkasPerbaikan === '[]')
-      missingFiles.push('Berkas Tindakan Perbaikan');
-    if (
-      !report.berkasPemeriksaanTindakanPerbaikan ||
-      report.berkasPemeriksaanTindakanPerbaikan === '[]'
-    ) {
-      missingFiles.push('Pemeriksaan Tindakan Perbaikan');
+
+    if (!isInpres) {
+      if (!report.berkasPerbaikan || report.berkasPerbaikan === '[]') {
+        missingFiles.push('Berkas Tindakan Perbaikan');
+      }
+      if (
+        !report.berkasPemeriksaanTindakanPerbaikan ||
+        report.berkasPemeriksaanTindakanPerbaikan === '[]'
+      ) {
+        missingFiles.push('Pemeriksaan Tindakan Perbaikan');
+      }
     }
 
-    const totalWajib = 4;
+    const totalWajib = isInpres ? 2 : 4;
     const terisi = totalWajib - missingFiles.length;
     const persentase = Math.round((terisi / totalWajib) * 100);
 
@@ -302,6 +352,8 @@ export default function MonitoringPage() {
   const simulatedCompleteness = useMemo(() => {
     if (!selectedReport) return { terisi: 0, total: 4, pct: 0 };
 
+    const isInpres = isInpresJenis(selectedReport.jenisKegiatan);
+
     const stRemaining =
       selectedReport.suratTugas && !filesToDelete.includes(selectedReport.suratTugas);
     const hasSt = Boolean(stRemaining) || fileSuratTugas.length > 0;
@@ -312,6 +364,15 @@ export default function MonitoringPage() {
         : [];
     const bkRemaining = existingBk.filter((k) => !filesToDelete.includes(k)).length > 0;
     const hasBk = bkRemaining || fileBerkasKegiatan.length > 0;
+
+    if (isInpres) {
+      const terisiInpres = [hasSt, hasBk].filter(Boolean).length;
+      return {
+        terisi: terisiInpres,
+        total: 2,
+        pct: Math.round((terisiInpres / 2) * 100),
+      };
+    }
 
     const existingBp: string[] =
       selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]'
@@ -391,9 +452,9 @@ export default function MonitoringPage() {
 
   const periodAndJenisReports = useMemo(() => {
     return reports.filter((report) => {
+      const normalizedJenis = normalizeJenisLabel(report.jenisKegiatan || '').toLowerCase();
       const matchJenis =
-        jenisFilter === 'Semua Jenis' ||
-        (report.jenisKegiatan && report.jenisKegiatan.includes(jenisFilter));
+        jenisFilter === 'Semua Jenis' || normalizedJenis.includes(jenisFilter.toLowerCase());
       return matchJenis && matchesPeriodFilter(report);
     });
   }, [
@@ -409,9 +470,9 @@ export default function MonitoringPage() {
   const activeJenisRealisasiCount = useMemo(() => {
     const matchedJenis = new Set<string>();
     periodAndJenisReports.forEach((r) => {
-      const text = (r.jenisKegiatan || '').replace(/Survailen/gi, 'Surveilan');
+      const text = normalizeJenisLabel(r.jenisKegiatan || '').toLowerCase();
       SERTIFIKASI_LIST.forEach((jenis) => {
-        if (text.includes(jenis)) {
+        if (text.includes(jenis.toLowerCase())) {
           matchedJenis.add(jenis);
         }
       });
@@ -422,9 +483,9 @@ export default function MonitoringPage() {
   const filteredReports = useMemo(() => {
     return periodAndJenisReports
       .filter((report) => {
+        const normalizedJenis = normalizeJenisLabel(report.jenisKegiatan || '').toLowerCase();
         const matchSearch =
-          (report.jenisKegiatan &&
-            report.jenisKegiatan.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          normalizedJenis.includes(searchTerm.toLowerCase()) ||
           (report.namaPerusahaan &&
             report.namaPerusahaan.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (report.petugasPelaksana &&
@@ -1139,14 +1200,9 @@ export default function MonitoringPage() {
               </div>
             ) : (
               filteredReports.map((report, index) => {
-                const jenisKegiatanTampil = (report.jenisKegiatan || '').replace(
-                  /Survailen/gi,
-                  'Surveilan'
+                const { namaKegiatan, jenisSertifikasi } = parseKegiatanDanJenis(
+                  report.jenisKegiatan
                 );
-                const kegiatanArray = jenisKegiatanTampil ? jenisKegiatanTampil.split(' ') : [];
-                const namaKegiatan = kegiatanArray.length > 0 ? kegiatanArray[0] : '-';
-                const jenisSertifikasi =
-                  kegiatanArray.length > 1 ? kegiatanArray.slice(1).join(' ') : '-';
                 const autoStatus = getAutoStatus(report);
 
                 return (
@@ -1176,7 +1232,7 @@ export default function MonitoringPage() {
                       </div>
 
                       <div>
-                        <h3 className="font-bold text-slate-900 text-sm capitalize group-hover:text-indigo-700 transition-colors">
+                        <h3 className="font-bold text-slate-900 text-sm group-hover:text-indigo-700 transition-colors">
                           {namaKegiatan}
                         </h3>
                         <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
@@ -1279,15 +1335,9 @@ export default function MonitoringPage() {
                     </tr>
                   ) : (
                     filteredReports.map((report, index) => {
-                      const jenisKegiatanTampil = (report.jenisKegiatan || '').replace(
-                        /Survailen/gi,
-                        'Surveilan'
+                      const { namaKegiatan, jenisSertifikasi } = parseKegiatanDanJenis(
+                        report.jenisKegiatan
                       );
-
-                      const kegiatanArray = jenisKegiatanTampil ? jenisKegiatanTampil.split(' ') : [];
-                      const namaKegiatan = kegiatanArray.length > 0 ? kegiatanArray[0] : '-';
-                      const jenisSertifikasi =
-                        kegiatanArray.length > 1 ? kegiatanArray.slice(1).join(' ') : '-';
                       const autoStatus = getAutoStatus(report);
 
                       return (
@@ -1299,7 +1349,7 @@ export default function MonitoringPage() {
                             {index + 1}
                           </td>
                           <td className="px-4 py-3.5">
-                            <div className="text-slate-900 font-semibold capitalize text-xs md:text-sm">
+                            <div className="text-slate-900 font-semibold text-xs md:text-sm">
                               {namaKegiatan}
                             </div>
                             {report.namaPerusahaan && (
@@ -1378,7 +1428,7 @@ export default function MonitoringPage() {
                                     {autoStatus.teks}
                                   </span>
                                   <span className="text-[11px] font-semibold text-emerald-700 tabular-nums">
-                                    4/4
+                                    {autoStatus.terisi}/{autoStatus.totalWajib}
                                   </span>
                                 </div>
                               )}
@@ -1591,7 +1641,7 @@ export default function MonitoringPage() {
                   </label>
                   <input
                     type="text"
-                    value={selectedReport.jenisKegiatan}
+                    value={normalizeJenisLabel(selectedReport.jenisKegiatan || '')}
                     disabled
                     className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-sm bg-slate-100 text-slate-600 cursor-not-allowed"
                   />
@@ -2080,7 +2130,7 @@ export default function MonitoringPage() {
                     Jenis Kegiatan
                   </p>
                   <p className="font-bold text-slate-900 text-base mt-0.5">
-                    {selectedReport.jenisKegiatan?.replace(/Survailen/gi, 'Surveilan') || '-'}
+                    {normalizeJenisLabel(selectedReport.jenisKegiatan || '') || '-'}
                   </p>
                 </div>
                 <div>
@@ -2116,7 +2166,7 @@ export default function MonitoringPage() {
                             key={i}
                             className="text-xs text-rose-700 font-medium leading-tight"
                           >
-                            • {item}
+                            - {item}
                           </span>
                         ))}
                       </div>
@@ -2188,45 +2238,52 @@ export default function MonitoringPage() {
                     <p className="text-xs text-slate-400 italic">Tidak ada file.</p>
                   )}
                 </div>
-                <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80">
-                  <p className="font-semibold text-slate-800 mb-2 flex items-center gap-2 text-xs">
-                    📄 Berkas Tindakan Perbaikan
-                  </p>
-                  {selectedReport.berkasPerbaikan && selectedReport.berkasPerbaikan !== '[]' ? (
-                    <div className="flex flex-col gap-1">
-                      {JSON.parse(selectedReport.berkasPerbaikan).map((key: string, idx: number) => (
+                {!isInpresJenis(selectedReport.jenisKegiatan) && (
+                  <>
+                    <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80">
+                      <p className="font-semibold text-slate-800 mb-2 flex items-center gap-2 text-xs">
+                        📄 Berkas Tindakan Perbaikan
+                      </p>
+                      {selectedReport.berkasPerbaikan &&
+                      selectedReport.berkasPerbaikan !== '[]' ? (
+                        <div className="flex flex-col gap-1">
+                          {JSON.parse(selectedReport.berkasPerbaikan).map(
+                            (key: string, idx: number) => (
+                              <a
+                                key={idx}
+                                href={`/api/r2/${key}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-indigo-600 hover:underline break-all"
+                              >
+                                {key.split('/').pop()}
+                              </a>
+                            )
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">Tidak ada file.</p>
+                      )}
+                    </div>
+                    <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80">
+                      <p className="font-semibold text-slate-800 mb-2 flex items-center gap-2 text-xs">
+                        📄 Pemeriksaan Tindakan Perbaikan
+                      </p>
+                      {selectedReport.berkasPemeriksaanTindakanPerbaikan ? (
                         <a
-                          key={idx}
-                          href={`/api/r2/${key}`}
+                          href={`/api/r2/${selectedReport.berkasPemeriksaanTindakanPerbaikan}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs text-indigo-600 hover:underline break-all"
                         >
-                          {key.split('/').pop()}
+                          {selectedReport.berkasPemeriksaanTindakanPerbaikan.split('/').pop()}
                         </a>
-                      ))}
+                      ) : (
+                        <p className="text-xs text-slate-400 italic">Tidak ada file.</p>
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-xs text-slate-400 italic">Tidak ada file.</p>
-                  )}
-                </div>
-                <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80">
-                  <p className="font-semibold text-slate-800 mb-2 flex items-center gap-2 text-xs">
-                    📄 Pemeriksaan Tindakan Perbaikan
-                  </p>
-                  {selectedReport.berkasPemeriksaanTindakanPerbaikan ? (
-                    <a
-                      href={`/api/r2/${selectedReport.berkasPemeriksaanTindakanPerbaikan}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-indigo-600 hover:underline break-all"
-                    >
-                      {selectedReport.berkasPemeriksaanTindakanPerbaikan.split('/').pop()}
-                    </a>
-                  ) : (
-                    <p className="text-xs text-slate-400 italic">Tidak ada file.</p>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
 
               {/* DOKUMENTASI FOTO KEGIATAN + LIGHTBOX */}
@@ -2346,7 +2403,7 @@ export default function MonitoringPage() {
             <p className="text-slate-500 text-xs mb-6 leading-relaxed">
               Laporan{' '}
               <strong className="text-slate-800">
-                {reportToDelete.jenisKegiatan?.replace(/Survailen/gi, 'Surveilan')}
+                {normalizeJenisLabel(reportToDelete.jenisKegiatan || '')}
               </strong>{' '}
               akan dihapus permanen.
             </p>

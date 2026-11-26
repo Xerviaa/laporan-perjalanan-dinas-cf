@@ -13,9 +13,15 @@ const SERTIFIKASI_TARGETS: { [key: string]: number } = {
   HACCP: 30,
   SKP: 30,
   SPDI: 30,
-  'Selfdecare Kapal': 50,
+  'Selfdeclare Kapal': 50,
   Inpres: 50,
 };
+
+const normalizeJenisKegiatan = (val = '') =>
+  val
+    .replace(/Selfdecare\s+Kapal/gi, 'Selfdeclare Kapal')
+    .replace(/Self\s+Declare\s+Kapal/gi, 'Selfdeclare Kapal')
+    .trim();
 
 const MONTHS_LIST = [
   { val: '0', name: 'Januari' },
@@ -161,8 +167,9 @@ export default function MonitoringDashboardPage() {
     return reports.filter((r: any) => {
       if (!r.jenisKegiatan) return false;
 
+      const normalizedJenis = normalizeJenisKegiatan(r.jenisKegiatan);
       const isSertifikasi = Object.keys(SERTIFIKASI_TARGETS).some((j) =>
-        r.jenisKegiatan.includes(j)
+        normalizedJenis.includes(j)
       );
       if (!isSertifikasi) return false;
 
@@ -195,7 +202,9 @@ export default function MonitoringDashboardPage() {
 
   const capaianSertifikasi = useMemo(() => {
     return Object.keys(SERTIFIKASI_TARGETS).map((jenis) => {
-      const realisasi = filteredSertifikasi.filter((r) => r.jenisKegiatan?.includes(jenis)).length;
+      const realisasi = filteredSertifikasi.filter((r) =>
+        normalizeJenisKegiatan(r.jenisKegiatan || '').includes(jenis)
+      ).length;
       const target = SERTIFIKASI_TARGETS[jenis];
       const persentase = target > 0 ? Math.round((realisasi / target) * 100) : 0;
       return { jenis, target, realisasi, persentase };
